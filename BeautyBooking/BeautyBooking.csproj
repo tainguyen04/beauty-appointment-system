@@ -21,8 +21,6 @@
     <Folder Include="Controllers\" />
     <Folder Include="DTO\Response\" />
     <Folder Include="DTO\Request\" />
-    <Folder Include="Entities\" />
-    <Folder Include="Infrastructure\" />
     <Folder Include="Interface\Service\" />
     <Folder Include="Interface\Repository\" />
     <Folder Include="MappingProfiles\" />
