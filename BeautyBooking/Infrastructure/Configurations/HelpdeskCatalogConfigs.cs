@@ -21,6 +21,13 @@ namespace BeautyBooking.Infrastructure.Configurations
                     .HasMaxLength(128);
             builder.Property(x => x.IsActived)
                    .HasDefaultValue(false);
+
+            builder.HasQueryFilter(x => x.IsActived);
+
+            builder.HasMany(x => x.HelpdeskContents)
+                    .WithOne(x => x.HelpdeskCatalog)
+                    .HasForeignKey(x => x.CatalogId)
+                    .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

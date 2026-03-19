@@ -20,7 +20,7 @@ namespace BeautyBooking.Infrastructure.Configurations
             builder.HasOne(x => x.HelpdeskCatalog)
                     .WithMany(x => x.HelpdeskContents)
                     .HasForeignKey(x => x.CatalogId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

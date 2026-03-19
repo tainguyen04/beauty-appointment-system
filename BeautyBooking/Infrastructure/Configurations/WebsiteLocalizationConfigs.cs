@@ -18,10 +18,12 @@ namespace BeautyBooking.Infrastructure.Configurations
             builder.Property(x => x.IsActived)
                     .HasDefaultValue(true);
 
+            builder.HasQueryFilter(x => x.IsActived);
+
             builder.HasMany(x => x.WebsiteLocalizationWards)
                     .WithOne(x => x.WebsiteLocalization)
                     .HasForeignKey(x => x.KeyLocalization)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
