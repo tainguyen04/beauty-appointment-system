@@ -1,0 +1,29 @@
+﻿using BeautyBooking.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace BeautyBooking.Infrastructure.Configurations
+{
+    public class StaffProfileConfigs : IEntityTypeConfiguration<StaffProfile>
+    {
+        public void Configure(EntityTypeBuilder<StaffProfile> builder)
+        {
+            builder.HasKey(s => s.Id);
+            builder.Property(s => s.Bio)
+                .IsRequired()
+                .HasMaxLength(255);
+            builder.HasQueryFilter(s => !s.IsDeleted);
+            builder.HasOne(s => s.User)
+                .WithOne(u => u.StaffProfile)
+                .HasForeignKey<StaffProfile>(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.HasMany(s => s.Services)
+                .WithMany(s => s.StaffProfiles);
+            builder.HasMany(s => s.StaffDayOffs)
+                .WithOne(d => d.Staff)
+                .HasForeignKey(d => d.StaffId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+        }
+    }
+}
