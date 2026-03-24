@@ -18,7 +18,6 @@ namespace BeautyBooking.Infrastructure.Configurations
                 .IsRequired()
                 .HasMaxLength(150);
             builder.Property(u => u.Phone)
-                .IsRequired()
                 .HasMaxLength(20);
             builder.HasQueryFilter(u => !u.IsDeleted);
 

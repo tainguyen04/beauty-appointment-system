@@ -52,8 +52,8 @@ namespace BeautyBooking.Controllers
             {
                 if (!ModelState.IsValid)
                     return BadRequest("Dữ liệu không hợp lệ!");
-                var id = await _catalogService.CreateAsync(request);
-                return Ok(id);
+                var result = await _catalogService.CreateAsync(request);
+                return CreatedAtAction(nameof(GetByIdAsync),new { id = result }, result);
             }
             catch (Exception ex)
             {

@@ -69,11 +69,12 @@ namespace BeautyBooking.Services
             if (existingLocalization == null)
                 return false;
             _mapper.Map(request, existingLocalization);
-            if(existingLocalization.WebsiteLocalizationWards != null)
+            if(request.Wards != null && request.Wards.Any())
             {
-                foreach (var ward in existingLocalization.WebsiteLocalizationWards.ToList())
+                if (existingLocalization.WebsiteLocalizationWards != null)
                 {
-                    _wardRepo.Delete(ward);
+                    var oldWard = existingLocalization.WebsiteLocalizationWards.ToList();
+                    _wardRepo.DeleteRange(oldWard);
                 }
                 existingLocalization.WebsiteLocalizationWards = request.Wards.Select(w => new WebsiteLocalizationWard
                 {
@@ -85,7 +86,8 @@ namespace BeautyBooking.Services
                     Latitude = w.Latitude,
                     Longitude = w.Longitude
                 }).ToList();
-            }
+              
+            }    
             await _localizationRepo.SaveChangesAsync();
             return true;
         }

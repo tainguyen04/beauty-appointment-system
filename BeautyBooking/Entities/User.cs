@@ -4,7 +4,7 @@
     {
         public string FullName { get; set; } = null!;
         public string Email { get; set; } = null!;
-        public string Phone { get; set; } = null!;
+        public string? Phone { get; set; } 
         public string PasswordHash { get; set; } = null!;
         public UserRole Role { get; set; } = UserRole.Customer;
         public string? AvatarUrl { get; set; }

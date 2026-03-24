@@ -4,6 +4,7 @@ using BeautyBooking.EF;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BeautyBooking.EF.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260323075925_update-table-User-Phone_can-null")]
+    partial class updatetableUserPhone_cannull
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,10 +53,6 @@ namespace BeautyBooking.EF.Migrations
                     b.Property<int>("EndTime")
                         .HasColumnType("int")
                         .HasColumnName("end_time");
-
-                    b.Property<bool>("IsActived")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_actived");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
@@ -120,10 +119,6 @@ namespace BeautyBooking.EF.Migrations
                         .HasColumnType("int")
                         .HasColumnName("duration_at_booking");
 
-                    b.Property<bool>("IsActived")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_actived");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
                         .HasColumnName("is_deleted");
@@ -172,10 +167,6 @@ namespace BeautyBooking.EF.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("created_by");
-
-                    b.Property<bool>("IsActived")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_actived");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
@@ -296,10 +287,6 @@ namespace BeautyBooking.EF.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("image_url");
 
-                    b.Property<bool>("IsActived")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_actived");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
                         .HasColumnName("is_deleted");
@@ -351,10 +338,6 @@ namespace BeautyBooking.EF.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2")
                         .HasColumnName("date");
-
-                    b.Property<bool>("IsActived")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_actived");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
@@ -409,10 +392,6 @@ namespace BeautyBooking.EF.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("created_by");
-
-                    b.Property<bool>("IsActived")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_actived");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
@@ -472,10 +451,6 @@ namespace BeautyBooking.EF.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("full_name");
-
-                    b.Property<bool>("IsActived")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_actived");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
@@ -635,10 +610,6 @@ namespace BeautyBooking.EF.Migrations
                     b.Property<int>("EndTime")
                         .HasColumnType("int")
                         .HasColumnName("end_time");
-
-                    b.Property<bool>("IsActived")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_actived");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")

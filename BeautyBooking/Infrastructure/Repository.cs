@@ -17,6 +17,8 @@ namespace BeautyBooking.Infrastructure
 
         public void Delete(T entity) => _entities.Remove(entity);
 
+        public void DeleteRange(IEnumerable<T> entities) => _entities.RemoveRange(entities);
+
         public async Task<IReadOnlyList<T>> GetAllAsync() => await _entities.ToListAsync();
 
         public async Task<T?> GetByIdAsync(TId id) => await _entities.FindAsync(id);
