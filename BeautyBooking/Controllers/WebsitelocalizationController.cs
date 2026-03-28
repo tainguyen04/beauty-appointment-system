@@ -1,6 +1,8 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using AutoMapper;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Interface.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,12 +10,15 @@ namespace BeautyBooking.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class WebsitelocalizationController : ControllerBase
     {
         private readonly ILocalizationService _localizationService;
-        public WebsitelocalizationController(ILocalizationService localizationService)
+        private readonly IMapper _mapper;
+        public WebsitelocalizationController(ILocalizationService localizationService, IMapper mapper)
         {
             _localizationService = localizationService;
+            _mapper = mapper;
         }
         [HttpGet]
         public async Task<ActionResult<List<LocalizationResponse>>> GetAllAsync()
@@ -52,8 +57,11 @@ namespace BeautyBooking.Controllers
             {
                 if (!ModelState.IsValid)
                     return BadRequest("Dữ liệu không hợp lệ!");
-                var result = await _localizationService.CreateAsync(request);
-                return CreatedAtAction(nameof(GetByIdAsync), new {id = result }, result);
+                var keyLocal = await _localizationService.CreateAsync(request);
+                var response = _mapper.Map<LocalizationResponse>(request);
+                response.KeyLocalization = keyLocal;
+
+                return CreatedAtAction(nameof(GetByIdAsync), new {key = keyLocal }, response);
             }
             catch (Exception ex)
             {

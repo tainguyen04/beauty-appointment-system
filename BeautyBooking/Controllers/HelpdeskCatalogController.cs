@@ -1,6 +1,8 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using AutoMapper;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Interface.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,12 +10,15 @@ namespace BeautyBooking.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class HelpdeskCatalogController : ControllerBase
     {
         private readonly ICatalogService _catalogService;
-        public HelpdeskCatalogController(ICatalogService catalogService)
+        private readonly IMapper _mapper;
+        public HelpdeskCatalogController(ICatalogService catalogService, IMapper mapper)
         {
             _catalogService = catalogService;
+            _mapper = mapper;
         }
         [HttpGet]
         public async Task<ActionResult<List<HelpdeskCatalogResponse>>> GetAllAsync()
@@ -46,14 +51,16 @@ namespace BeautyBooking.Controllers
             }
         }
         [HttpPost]
-        public async Task<ActionResult<string>> CreateAsync([FromBody] CreateCatalogRequest request)
+        public async Task<ActionResult> CreateAsync([FromBody] CreateCatalogRequest request)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest("Dữ liệu không hợp lệ!");
-                var result = await _catalogService.CreateAsync(request);
-                return CreatedAtAction(nameof(GetByIdAsync),new { id = result }, result);
+                var catalogId = await _catalogService.CreateAsync(request);
+                var catalogResponse = _mapper.Map<HelpdeskCatalogResponse>(request);
+                catalogResponse.CatalogId = catalogId;
+                return CreatedAtAction(nameof(GetByIdAsync),new { id = catalogId }, catalogResponse);
             }
             catch (Exception ex)
             {

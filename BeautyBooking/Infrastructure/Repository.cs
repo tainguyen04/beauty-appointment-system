@@ -1,4 +1,4 @@
-﻿
+﻿using BeautyBooking.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Infrastructure
@@ -23,6 +23,16 @@ namespace BeautyBooking.Infrastructure
 
         public async Task<T?> GetByIdAsync(TId id) => await _entities.FindAsync(id);
 
+        public async Task<IEnumerable<T>> GetRangeByIdsAsync(IEnumerable<int> ids)
+        {
+            if (ids == null || !ids.Any()) return new List<T>();
+            var idList = ids.ToList();
+            // Use Microsoft.EntityFrameworkCore.EF.Property, not BeautyBooking.EF
+            return await _entities
+                .Where(e => idList.Contains(Microsoft.EntityFrameworkCore.EF.Property<int>(e, "Id")))
+                .ToListAsync();
+        }
+            
         public Task SaveChangesAsync() => _dbcontext.SaveChangesAsync();
 
         public void Update(T entity) => _entities.Update(entity);

@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
+using BeautyBooking.EF;
 using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,10 +18,14 @@ namespace BeautyBooking.Services
     {
         private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
-        public UserService(IUserRepository userRepo, IMapper mapper)
+        private readonly IStaffProfileService _staffProfileService;
+        private readonly ApplicationDbContext _dbContext;
+        public UserService(IUserRepository userRepo, IMapper mapper, IStaffProfileService staffProfileService,ApplicationDbContext dbContext)
         {
             _userRepo = userRepo;   
             _mapper = mapper;
+            _staffProfileService = staffProfileService;
+            _dbContext = dbContext;
         }
 
         public async Task<bool> ChangePasswordAsync(int id, ChangePasswordRequest request)
@@ -44,9 +50,35 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public Task<bool> ChangeRoleAsync(ChangeRoleRequest request)
+        public async Task<bool> ChangeRoleAsync(ChangeRoleRequest request)
         {
-            throw new NotImplementedException();
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await _userRepo.GetByIdAsync(request.UserId);
+                if (user == null || user.IsDeleted)
+                    return false;
+                user.Role = request.NewRole;
+                await _userRepo.SaveChangesAsync();
+
+                if (request.NewRole == UserRole.Staff)
+                {
+                    await _staffProfileService.UpSertAsync(new StaffProfileRequest
+                    {
+                        UserId = request.UserId,
+                        Bio = "Nhân viên mới",
+                        ServiceIds = new List<int>()
+                    });
+                }
+
+                await transaction.CommitAsync(); 
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(); 
+                throw new Exception("Đã có lỗi xảy ra khi thay đổi vai trò: " + ex.Message);
+            }
         }
 
         public async Task<bool> DeleteAsync(int id)

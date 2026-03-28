@@ -1,4 +1,4 @@
-using BeautyBooking.EF;
+﻿using BeautyBooking.EF;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.MappingProfiles;
 using Microsoft.EntityFrameworkCore;
@@ -7,13 +7,14 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
 //Connect to DB
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString).UseSnakeCaseNamingConvention()
+    options.UseSqlServer(connectionString, o => o.UseCompatibilityLevel(120)).UseSnakeCaseNamingConvention()
 );
 // DbContext infrastructure layer uses ApplicationDbContext, so we need to register it as well
 builder.Services.AddScoped<DbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
@@ -70,7 +71,38 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "365 AI Beauty API", Version = "v1" });
+
+    // 1. Định nghĩa chuẩn bảo mật JWT cho Swagger
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Nhập Token của bạn vào đây"
+    });
+
+    // 2. Áp dụng bảo mật này cho tất cả các Request trên giao diện Swagger
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 
 var app = builder.Build();
 

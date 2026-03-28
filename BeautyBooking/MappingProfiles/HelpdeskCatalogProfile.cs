@@ -20,6 +20,8 @@ namespace BeautyBooking.MappingProfiles
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
             // Mapper for HelpdeskContent
             CreateMap<HelpdeskContent, HelpdeskContentResponse>();
+
+            CreateMap<CreateCatalogRequest, HelpdeskCatalogResponse>();
         }
     }
 }

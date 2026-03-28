@@ -21,6 +21,8 @@ namespace BeautyBooking.MappingProfiles
 
             // Mapper for Ward
             CreateMap<WebsiteLocalizationWard, WardResponse>();
+
+            CreateMap<CreateLocalizationRequest, LocalizationResponse>();
         }
     }
 }
