@@ -17,15 +17,18 @@ namespace BeautyBooking.Services
     {
         private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
+        private readonly AvatarDefaultSettings _avatarSettings;
         private readonly JwtOptions _jwtOptions;
         private readonly SymmetricSecurityKey _securityKey;
 
-        public AuthService(IUserRepository userRepo, IMapper mapper, IOptions<JwtOptions> jwtOptions, SymmetricSecurityKey securityKey)
+        public AuthService(IUserRepository userRepo, IMapper mapper, IOptions<JwtOptions> jwtOptions, 
+            SymmetricSecurityKey securityKey, AvatarDefaultSettings avatarSettings)
         {
             _userRepo = userRepo;
             _mapper = mapper;
             _jwtOptions = jwtOptions.Value;
             _securityKey = securityKey;
+            _avatarSettings = avatarSettings;
         }
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
@@ -55,6 +58,10 @@ namespace BeautyBooking.Services
 
             // 2. Map request to User entity
             var user = _mapper.Map<User>(request);
+            string avatarUrl = _avatarSettings.DefaultAvatarUrl;
+            string safeName = Uri.EscapeDataString(user.FullName);
+            user.AvatarUrl = string.Format(avatarUrl,safeName);
+            user.AvatarPublicId = null;
 
             // 3. Hash password
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);

@@ -21,15 +21,18 @@ namespace BeautyBooking.Services
         private readonly IMapper _mapper;
         private readonly IStaffProfileService _staffProfileService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IPhotoService _photoService;
         private readonly ApplicationDbContext _dbContext;
         public UserService(IUserRepository userRepo, IMapper mapper, 
-            IStaffProfileService staffProfileService,ApplicationDbContext dbContext, ICurrentUserService currentUserService)
+            IStaffProfileService staffProfileService,ApplicationDbContext dbContext, 
+            ICurrentUserService currentUserService, IPhotoService photoService)
         {
             _userRepo = userRepo;   
             _mapper = mapper;
             _staffProfileService = staffProfileService;
             _dbContext = dbContext;
             _currentUserService = currentUserService;
+            _photoService = photoService;
         }
 
         public async Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request)
@@ -126,7 +129,26 @@ namespace BeautyBooking.Services
             if (user == null || user.IsDeleted)
                 throw new InvalidOperationException("User không tồn tại.");
             _mapper.Map(request, user);
+            string? oldAvatarPublicId = user.AvatarPublicId;
+            if(request.AvatarUrl != null)
+            {
+                var photoResult = await _photoService.UploadPhotoAsync(request.AvatarUrl, true);
+                user.AvatarUrl = photoResult.Url;
+                user.AvatarPublicId = photoResult.PublicId;
+            }
             await _userRepo.SaveChangesAsync();
+            if(request.AvatarUrl != null && !string.IsNullOrEmpty(oldAvatarPublicId))
+            {
+                try
+                {
+                    await _photoService.DeletePhotoAsync(oldAvatarPublicId);
+                }
+                catch (Exception ex)
+                {
+                    // Log lỗi nếu cần thiết
+                    Console.WriteLine($"Lỗi khi xóa ảnh cũ: {ex.Message}");
+                }
+            }
             return true;
         }
 

@@ -8,6 +8,7 @@
         public string PasswordHash { get; set; } = null!;
         public UserRole Role { get; set; } = UserRole.Customer;
         public string? AvatarUrl { get; set; }
+        public string? AvatarPublicId { get; set; }
         public int? WardId { get; set; }
         public WebsiteLocalizationWard? Ward { get; set; } 
         public StaffProfile? StaffProfile { get; set; }

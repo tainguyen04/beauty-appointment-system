@@ -9,6 +9,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using BeautyBooking.Entities;
+using Microsoft.Identity.Client;
+using System.Security.Principal;
+using CloudinaryDotNet;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
@@ -72,6 +75,18 @@ builder.Services.AddAuthorization(option =>
     option.AddPolicy("AdminOnly", policy => policy.RequireRole(nameof(UserRole.Admin)));
     option.AddPolicy("StaffOnly", policy => policy.RequireRole(nameof(UserRole.Staff)));
     option.AddPolicy("CustomerOnly", policy => policy.RequireRole(nameof(UserRole.Customer)));
+});
+builder.Services.AddSingleton(sp =>
+{
+    var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>()!;
+    var account = new Account(cloudinarySettings.CloudName, cloudinarySettings.ApiKey, cloudinarySettings.ApiSecret);
+    return new Cloudinary(account);
+});
+
+builder.Services.AddSingleton(sp =>
+{
+    var settings = builder.Configuration.GetSection("AvatarDefaultSettings").Get<AvatarDefaultSettings>()!;
+    return settings;
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
