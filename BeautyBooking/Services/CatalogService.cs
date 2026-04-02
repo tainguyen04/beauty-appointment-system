@@ -46,11 +46,11 @@ namespace BeautyBooking.Services
 
         public async Task<HelpdeskCatalogResponse?> GetByIdAsync(int id)
         {
-            var catalog = await _catalogRepo.GetWithContentsAsync(id);
+            var catalog = await _catalogRepo.GetContentsByIdAsync(id);
             return catalog == null ? null : _mapper.Map<HelpdeskCatalogResponse?>(catalog);
         }
 
-        public async Task<bool> Update(int id, UpdateCatalogRequest request)
+        public async Task<bool> UpdateAsync(int id, UpdateCatalogRequest request)
         {
             var existingCatalog = await _catalogRepo.GetByIdAsync(id);
             if (existingCatalog == null)

@@ -5,10 +5,11 @@ namespace BeautyBooking.Interface.Service
 {
     public interface ILocalizationService
     {
-        Task<List<LocalizationResponse>> GetAllAsync();
+        Task<IEnumerable<LocalizationResponse>> GetAllAsync();
         Task<LocalizationResponse?> GetByIdAsync(string id);
         Task<string> CreateAsync(CreateLocalizationRequest request);
-        Task<bool> Update(string key,UpdateLocalizationRequest request);
+        Task<bool> UpdateAsync(string key,UpdateLocalizationRequest request);
+        Task<bool> UpdateWardAsync(string key, IEnumerable<UpdateWardRequest> request);  
         Task<bool> DeleteAsync(string id);
     }
 }

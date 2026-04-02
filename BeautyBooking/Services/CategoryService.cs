@@ -28,28 +28,30 @@ namespace BeautyBooking.Services
         {
             var category = await _categoryRepository.GetByIdAsync(id);
             if (category == null)
-                return false;
+                throw new KeyNotFoundException("Danh mục không tồn tại.");
             category.IsDeleted = true;
             await _categoryRepository.SaveChangesAsync();
             return true;
         }
 
-        public async Task<List<CategoryResponse>> GetAllAsync()
+        public async Task<IEnumerable<CategoryResponse>> GetAllAsync()
         {
-            return _mapper.Map<List<CategoryResponse>>(await _categoryRepository.GetAllAsync());
+            return _mapper.Map<IEnumerable<CategoryResponse>>(await _categoryRepository.GetAllAsync());
         }
 
         public async Task<CategoryResponse?> GetByIdAsync(int id)
         {
             var category = await _categoryRepository.GetByIdAsync(id);
-            return category == null ? null : _mapper.Map<CategoryResponse?>(category);
+            if(category == null || category.IsDeleted)
+                throw new KeyNotFoundException("Danh mục không tồn tại.");
+            return _mapper.Map<CategoryResponse?>(category);
         }
 
-        public async Task<bool> Update(int id, CategoryRequest request)
+        public async Task<bool> UpdateAsync(int id, CategoryRequest request)
         {
             var existingCategory = await _categoryRepository.GetByIdAsync(id);
             if (existingCategory == null)
-                return false;
+                throw new KeyNotFoundException("Danh mục không tồn tại.");
             _mapper.Map(request, existingCategory);
             await _categoryRepository.SaveChangesAsync();
             return true;

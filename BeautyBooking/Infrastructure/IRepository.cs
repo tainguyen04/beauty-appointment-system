@@ -1,4 +1,6 @@
-﻿namespace BeautyBooking.Infrastructure
+﻿using BeautyBooking.DTO.Response;
+
+namespace BeautyBooking.Infrastructure
 {
     public interface IRepository<T, TId> where T : class
     {

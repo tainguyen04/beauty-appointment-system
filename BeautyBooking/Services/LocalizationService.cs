@@ -51,7 +51,7 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<List<LocalizationResponse>> GetAllAsync()
+        public async Task<IEnumerable<LocalizationResponse>> GetAllAsync()
         {
             var localization =  await _localizationRepo.GetAllWithWardsAsync();
             return _mapper.Map<List<LocalizationResponse>>(localization);
@@ -63,33 +63,34 @@ namespace BeautyBooking.Services
             return localization == null ? null : _mapper.Map<LocalizationResponse>(localization);
         }
 
-        public async Task<bool> Update(string key, UpdateLocalizationRequest request)
+        public async Task<bool> UpdateAsync(string key, UpdateLocalizationRequest request)
         {
             var existingLocalization = await _localizationRepo.GetByKeyWithWardAsync(key);
             if (existingLocalization == null)
                 return false;
             _mapper.Map(request, existingLocalization);
-            if(request.Wards != null && request.Wards.Any())
-            {
-                if (existingLocalization.WebsiteLocalizationWards != null)
-                {
-                    var oldWard = existingLocalization.WebsiteLocalizationWards.ToList();
-                    _wardRepo.DeleteRange(oldWard);
-                }
-                existingLocalization.WebsiteLocalizationWards = request.Wards.Select(w => new WebsiteLocalizationWard
-                {
-                    KeyLocalization = existingLocalization.KeyLocalization,
-                    Name = w.Name,
-                    NameEn = w.NameEn,
-                    FullName = w.FullName,
-                    FullNameEn = w.FullNameEn,
-                    Latitude = w.Latitude,
-                    Longitude = w.Longitude
-                }).ToList();
-              
-            }    
+            
             await _localizationRepo.SaveChangesAsync();
             return true;
+        }
+        public async Task<bool> UpdateWardAsync(string key, IEnumerable<UpdateWardRequest> request)
+        {
+            var existingLocalization = await _localizationRepo.GetByKeyWithWardAsync(key);
+            if (existingLocalization == null)
+                throw new KeyNotFoundException("Localization không tồn tại.");
+            if(existingLocalization.WebsiteLocalizationWards == null)
+                existingLocalization.WebsiteLocalizationWards = new List<WebsiteLocalizationWard>();
+            else
+                existingLocalization.WebsiteLocalizationWards.Clear();
+            foreach (var ward in request)
+            {
+                var wardEntity = _mapper.Map<WebsiteLocalizationWard>(ward);
+                wardEntity.KeyLocalization = key;
+                existingLocalization.WebsiteLocalizationWards.Add(wardEntity);
+            }
+            await _localizationRepo.SaveChangesAsync();
+            return true;
+
         }
     }
 }

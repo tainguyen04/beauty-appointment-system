@@ -23,6 +23,10 @@ namespace BeautyBooking.Infrastructure.Configurations
                 .WithOne(d => d.Staff)
                 .HasForeignKey(d => d.StaffId)
                 .OnDelete(DeleteBehavior.Cascade);
+            builder.HasMany(s => s.Appointments)
+                .WithOne(a => a.Staff)
+                .HasForeignKey(a => a.StaffId)
+                .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

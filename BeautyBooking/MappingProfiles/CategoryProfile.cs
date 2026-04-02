@@ -10,8 +10,9 @@ namespace BeautyBooking.MappingProfiles
         public CategoryProfile()
         {
             CreateMap<Category, CategoryResponse>();
-            CreateMap<CategoryRequest, Category>();
-            CreateMap<CategoryRequest, CategoryResponse>();
+            CreateMap<CategoryRequest, Category>()
+                .IgnoreAuditFields()
+                .ForMember(dest => dest.Services, opt => opt.Ignore());
         }
     }
 }

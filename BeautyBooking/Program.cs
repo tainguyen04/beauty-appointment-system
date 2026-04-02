@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using BeautyBooking.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
@@ -21,8 +22,6 @@ builder.Services.AddScoped<DbContext>(provider => provider.GetRequiredService<Ap
 //AutoMapper
 builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(UserProfile).Assembly));
 
-// With this line:
-builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(UserProfile).Assembly));
 // Add services to the container.
 builder.Services.AddScoped(typeof(IRepository<,>),typeof(Repository<,>));
 // Scan repositories in Repository layer
@@ -68,7 +67,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     }
     );
-
+builder.Services.AddAuthorization(option =>
+{
+    option.AddPolicy("AdminOnly", policy => policy.RequireRole(nameof(UserRole.Admin)));
+    option.AddPolicy("StaffOnly", policy => policy.RequireRole(nameof(UserRole.Staff)));
+    option.AddPolicy("CustomerOnly", policy => policy.RequireRole(nameof(UserRole.Customer)));
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();

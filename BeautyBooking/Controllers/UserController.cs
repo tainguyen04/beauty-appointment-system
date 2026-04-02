@@ -1,6 +1,8 @@
 ﻿using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
+using BeautyBooking.Entities;
 using BeautyBooking.Interface.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,63 +10,50 @@ namespace BeautyBooking.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
-        private readonly IUserSerivce _userService;
+        private readonly IUserService _userService;
 
-        public UserController(IUserSerivce userService)
+        public UserController(IUserService userService)
         {
             _userService = userService;
         }
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserResponse>>> GetAll()
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<PagedResult<UserResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var users = await _userService.GetAllAsync();
-            if (users == null || !users.Any())
-                return NoContent();
-            return Ok(users);
+            var result = await _userService.GetAllAsync(pageNumber, pageSize);
+            return Ok(result);
         }
 
+        [HttpGet("role/{role}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<PagedResult<UserResponse>>> GetUsersByRole(UserRole role, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var result = await _userService.GetUsersByRoleAsync(role, pageNumber, pageSize);
+            return Ok(result);
+        }
         [HttpGet("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<UserResponse>> GetById(int id)
         {
             var user = await _userService.GetByIdAsync(id);
-            if (user == null)
-                return NotFound();
             return Ok(user);
         }
-
-        [HttpPut("{id}/profile")]
-        public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateUserRequest request)
-        {
-            var result = await _userService.UpdateProfileAsync(id, request);
-            if (!result)
-                return NotFound();
-            return NoContent();
-        }
-
-        [HttpPut("{id}/change-password")]
-        public async Task<ActionResult> ChangePassword(int id, [FromBody] ChangePasswordRequest request)
-        {
-            var result = await _userService.ChangePasswordAsync(id, request);
-            if (!result)
-                return BadRequest("Mật khẩu hiện tại không chính xác.");
-            return NoContent();
-        }
-
         [HttpPut("{id}/status")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> UpdateStatus(int id, [FromQuery] bool isActive)
         {
-            var result = await _userService.UpdateStatusAsync(id, isActive);
-            if (!result)
-                return NotFound();
+            await _userService.UpdateStatusAsync(id, isActive);
             return NoContent();
         }
-        [HttpPut("{id}/role")]
-        public async Task<IActionResult> ChangeRole(int id, [FromBody] ChangeRoleRequest request)
+
+        [HttpPut("role")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> ChangeRole([FromBody] ChangeRoleRequest request)
         {
-            if (id != request.UserId)
-                return BadRequest("ID trong URL và body không khớp.");
             var result = await _userService.ChangeRoleAsync(request);
             if (!result)
                 return NotFound();
@@ -72,6 +61,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _userService.DeleteAsync(id);
@@ -80,12 +70,29 @@ namespace BeautyBooking.Controllers
             return NoContent();
         }
 
-        [HttpGet("check-email")]
+        [HttpPut("me/profile")]
+        public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateUserRequest request)
+        {
+            var result = await _userService.UpdateMyProfileAsync(request);
+            if (!result)
+                return BadRequest();
+            return NoContent();
+        }
+
+        [HttpPut("me/password")]
+        public async Task<IActionResult> ChangeMyPassword([FromBody] ChangePasswordRequest request)
+        {
+            var result = await _userService.ChangeMyPasswordAsync(request);
+            if (!result)
+                return BadRequest();
+            return NoContent();
+        }
+
+        [AllowAnonymous]
+        [HttpGet("email-availability")]
         public async Task<ActionResult<bool>> IsEmailAvailable([FromQuery] string email)
         {
             var available = await _userService.IsEmailAvailableAsync(email);
-            if (available)
-                return Conflict(new { message = "Email đã được sử dụng" });
             return Ok(available);
         }
     }

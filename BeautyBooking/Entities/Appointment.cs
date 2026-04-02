@@ -4,7 +4,7 @@
     {
         public int UserId { get; set; }
         public int StaffId { get; set; }
-        public DateTime AppointmentDate { get; set; }
+        public DateOnly AppointmentDate { get; set; }
         public int StartTime { get; set; }
         public int EndTime { get; set; }
         public AppointmentStatus AppointmentStatus { get; set; } = AppointmentStatus.Pending;

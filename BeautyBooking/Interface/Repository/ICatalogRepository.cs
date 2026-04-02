@@ -6,6 +6,6 @@ namespace BeautyBooking.Interface.Repository
     public interface ICatalogRepository: IRepository<HelpdeskCatalog, int>
     {
         Task<List<HelpdeskCatalog>> GetAllWithContentsAsync();
-        Task<HelpdeskCatalog?> GetWithContentsAsync(int id);
+        Task<HelpdeskCatalog?> GetContentsByIdAsync(int id);
     }
 }

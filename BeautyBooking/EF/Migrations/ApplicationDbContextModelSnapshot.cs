@@ -31,8 +31,8 @@ namespace BeautyBooking.EF.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("AppointmentDate")
-                        .HasColumnType("datetime2")
+                    b.Property<DateOnly>("AppointmentDate")
+                        .HasColumnType("date")
                         .HasColumnName("appointment_date");
 
                     b.Property<int>("AppointmentStatus")
@@ -694,9 +694,9 @@ namespace BeautyBooking.EF.Migrations
             modelBuilder.Entity("BeautyBooking.Entities.Appointment", b =>
                 {
                     b.HasOne("BeautyBooking.Entities.StaffProfile", "Staff")
-                        .WithMany()
+                        .WithMany("Appointments")
                         .HasForeignKey("StaffId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_appointments_staff_profiles_staff_id");
 
@@ -855,6 +855,8 @@ namespace BeautyBooking.EF.Migrations
 
             modelBuilder.Entity("BeautyBooking.Entities.StaffProfile", b =>
                 {
+                    b.Navigation("Appointments");
+
                     b.Navigation("StaffDayOffs");
                 });
 

@@ -6,6 +6,7 @@ using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
+using BeautyBooking.MappingProfiles;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -14,39 +15,36 @@ using System.Security.Claims;
 
 namespace BeautyBooking.Services
 {
-    public class UserService : IUserSerivce
+    public class UserService : IUserService
     {
         private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
         private readonly IStaffProfileService _staffProfileService;
+        private readonly ICurrentUserService _currentUserService;
         private readonly ApplicationDbContext _dbContext;
-        public UserService(IUserRepository userRepo, IMapper mapper, IStaffProfileService staffProfileService,ApplicationDbContext dbContext)
+        public UserService(IUserRepository userRepo, IMapper mapper, 
+            IStaffProfileService staffProfileService,ApplicationDbContext dbContext, ICurrentUserService currentUserService)
         {
             _userRepo = userRepo;   
             _mapper = mapper;
             _staffProfileService = staffProfileService;
             _dbContext = dbContext;
+            _currentUserService = currentUserService;
         }
 
-        public async Task<bool> ChangePasswordAsync(int id, ChangePasswordRequest request)
+        public async Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request)
         {
-            // 1. Get user by id
-            var user = await _userRepo.GetByIdAsync(id);
+            var currentUserId = _currentUserService.UserId;
+            if (currentUserId <= 0)
+                throw new InvalidOperationException("Không tìm thấy User.");
+            var user = await _userRepo.GetByIdAsync(currentUserId);
             if (user == null || user.IsDeleted)
-                return false;
-
-            // 2. Verify current password
-            if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
-                return false;
-
-            // 3. Hash new password
+                throw new InvalidOperationException("User không tồn tại.");
+            if(!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+                throw new InvalidOperationException("Mật khẩu cũ không chính xác");
             var newHashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-
-            // 4. Update password
             user.PasswordHash = newHashedPassword;
-            _userRepo.Update(user);
             await _userRepo.SaveChangesAsync();
-
             return true;
         }
 
@@ -63,12 +61,16 @@ namespace BeautyBooking.Services
 
                 if (request.NewRole == UserRole.Staff)
                 {
-                    await _staffProfileService.UpSertAsync(new StaffProfileRequest
+                    var existingProfile = await _staffProfileService.GetByUserIdAsync(request.UserId);
+                    if(existingProfile == null)
                     {
-                        UserId = request.UserId,
-                        Bio = "Nhân viên mới",
-                        ServiceIds = new List<int>()
-                    });
+                        await _staffProfileService.CreateAsync(new CreateStaffProfileRequest
+                        {
+                            UserId = request.UserId,
+                            Bio = "Nhân viên mới",
+                            ServiceIds = new List<int>()
+                        });
+                    }
                 }
 
                 await transaction.CommitAsync(); 
@@ -85,15 +87,18 @@ namespace BeautyBooking.Services
         {
             var user = await _userRepo.GetByIdAsync(id);
             if (user == null || user.IsDeleted)
-                return false;
+                throw new KeyNotFoundException("Tài khoản không tồn tại.");
+            if(user.Id == _currentUserService.UserId)
+                throw new InvalidOperationException("Bạn không thể xóa tài khoản của chính mình.");
             user.IsDeleted = true;
             await _userRepo.SaveChangesAsync();
             return true;
         }
 
-        public async Task<IEnumerable<UserResponse>> GetAllAsync()
+        public async Task<PagedResult<UserResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
-            return _mapper.Map<IEnumerable<UserResponse>>(await _userRepo.GetAllWithProfileAsync());
+            var pagedUsers = await _userRepo.GetAllWithProfileAsync(pageNumber, pageSize);
+            return pagedUsers.ToPagedResult<User, UserResponse>(_mapper);
         }
 
         public async Task<UserResponse?> GetByIdAsync(int id)
@@ -101,9 +106,10 @@ namespace BeautyBooking.Services
             return _mapper.Map<UserResponse?>(await _userRepo.GetWithProfileByIdAsync(id));
         }
 
-        public async Task<IEnumerable<UserResponse>> GetUsersByRoleAsync(UserRole role)
+        public async Task<PagedResult<UserResponse>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)
         {
-            return _mapper.Map<IEnumerable<UserResponse>>(await _userRepo.GetUserByRoleAsync(role));
+            var pagedUsers = await _userRepo.GetUsersByRoleAsync(role, pageNumber, pageSize);
+            return pagedUsers.ToPagedResult<User, UserResponse>(_mapper);
         }
 
         public async Task<bool> IsEmailAvailableAsync(string email)
@@ -111,21 +117,15 @@ namespace BeautyBooking.Services
             return  await _userRepo.IsEmailUniqueAsync(email);
         }
 
-        public async Task<bool> UpdateProfileAsync(int id, UpdateUserRequest request)
+        public async Task<bool> UpdateMyProfileAsync(UpdateUserRequest request)
         {
-            // 1. Get user by id
-            var user = await _userRepo.GetByIdAsync(id);
+            var currentUserId = _currentUserService.UserId;
+            if (currentUserId <= 0)
+                throw new InvalidOperationException("Không tìm thấy User.");
+            var user = await _userRepo.GetByIdAsync(currentUserId);
             if (user == null || user.IsDeleted)
-                return false;
-
-            // 2. Update fields if provided
-            if (!string.IsNullOrWhiteSpace(request.Name))
-                user.FullName = request.Name;
-            if (!string.IsNullOrWhiteSpace(request.Phone))
-                user.Phone = request.Phone;
-            if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
-                user.AvatarUrl = request.AvatarUrl;
-            
+                throw new InvalidOperationException("User không tồn tại.");
+            _mapper.Map(request, user);
             await _userRepo.SaveChangesAsync();
             return true;
         }
@@ -135,7 +135,7 @@ namespace BeautyBooking.Services
             // 1. Get user by id
             var user = await _userRepo.GetByIdAsync(id);
             if (user == null || user.IsDeleted)
-                return false;
+                throw new KeyNotFoundException("Tài khoản không tồn tại.");
 
             // 2. Update status
             user.IsActived = isActive;

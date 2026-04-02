@@ -69,7 +69,7 @@ namespace BeautyBooking.Services
 
         public string GenerateToken(User user)
         {
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
@@ -77,6 +77,10 @@ namespace BeautyBooking.Services
                 new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+            if(user.StaffProfile != null)
+            {
+                claims.Add(new Claim("staffId", user.StaffProfile.Id.ToString()));
+            }
             var credentials = new SigningCredentials(_securityKey, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 
 namespace BeautyBooking.MappingProfiles
@@ -15,6 +16,13 @@ namespace BeautyBooking.MappingProfiles
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore());
+        }
+
+        public static PagedResult<TDestination> ToPagedResult<TSource, TDestination>(
+            this PagedResult<TSource> source, IMapper mapper)
+        {
+            var mappedItems = mapper.Map<IEnumerable<TDestination>>(source.Items);
+            return new PagedResult<TDestination>(mappedItems, source.TotalCount, source.PageSize, source.CurrentPage);
         }
     }
 }

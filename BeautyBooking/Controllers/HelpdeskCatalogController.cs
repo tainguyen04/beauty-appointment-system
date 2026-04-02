@@ -10,7 +10,7 @@ namespace BeautyBooking.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class HelpdeskCatalogController : ControllerBase
     {
         private readonly ICatalogService _catalogService;
@@ -21,6 +21,7 @@ namespace BeautyBooking.Controllers
             _mapper = mapper;
         }
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<List<HelpdeskCatalogResponse>>> GetAllAsync()
         {
             try
@@ -36,6 +37,7 @@ namespace BeautyBooking.Controllers
             }
         }
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<HelpdeskCatalogResponse>> GetByIdAsync(int id)
         {
             try
@@ -51,6 +53,7 @@ namespace BeautyBooking.Controllers
             }
         }
         [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> CreateAsync([FromBody] CreateCatalogRequest request)
         {
             try
@@ -68,13 +71,14 @@ namespace BeautyBooking.Controllers
             }
         }
         [HttpPut("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> Update(int id, [FromBody] UpdateCatalogRequest request)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest("Dữ liệu không hợp lệ!");
-                var result = await _catalogService.Update(id, request);
+                var result = await _catalogService.UpdateAsync(id, request);
                 if (!result)
                     return NotFound($"Không tìm thấy dữ liệu với id {id}");
                 return NoContent();
@@ -85,6 +89,7 @@ namespace BeautyBooking.Controllers
             }
         }
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> DeleteAsync(int id)
         {
             try

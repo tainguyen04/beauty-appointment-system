@@ -10,6 +10,7 @@ namespace BeautyBooking.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Policy = "AdminOnly")]
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
@@ -22,7 +23,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<CategoryResponse>>> GetAll()
+        public async Task<ActionResult<IEnumerable<CategoryResponse>>> GetAll()
         {
             var categories = await _categoryService.GetAllAsync();
             return Ok(categories);
@@ -32,8 +33,6 @@ namespace BeautyBooking.Controllers
         public async Task<ActionResult<CategoryResponse>> GetById(int id)
         {
             var category = await _categoryService.GetByIdAsync(id);
-            if (category == null)
-                return NotFound();
             return Ok(category);
         }
 
@@ -50,7 +49,7 @@ namespace BeautyBooking.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, CategoryRequest request)
         {
-            var updated = await _categoryService.Update(id, request);
+            var updated = await _categoryService.UpdateAsync(id, request);
             if (!updated)
                 return NotFound();
             return NoContent();
@@ -59,9 +58,7 @@ namespace BeautyBooking.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var deleted = await _categoryService.DeleteAsync(id);
-            if (!deleted)
-                return NotFound();
+            await _categoryService.DeleteAsync(id);
             return NoContent();
         }
     }

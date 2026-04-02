@@ -17,7 +17,7 @@ namespace BeautyBooking.Repository
             return await _entities.Include(c => c.HelpdeskContents).ToListAsync();
         }
 
-        public async Task<HelpdeskCatalog?> GetWithContentsAsync(int id)
+        public async Task<HelpdeskCatalog?> GetContentsByIdAsync(int id)
         {
             return await _entities.Include(c => c.HelpdeskContents)
                 .FirstOrDefaultAsync(c => c.CatalogId == id);

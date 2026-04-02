@@ -1,15 +1,16 @@
 ﻿using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
+using BeautyBooking.Entities;
 
 namespace BeautyBooking.Interface.Service
 {
     public interface IStaffDayOffService
     {
         Task<int> CreateAsync(StaffDayOffRequest staffDayOff);
-        Task<IEnumerable<StaffDayOffResponse>> GetAllByMonthAsync(int month, int year);
-        Task<IEnumerable<StaffDayOffResponse>> GetAllWithStaffAsync();
+        Task<IEnumerable<StaffDayOffResponse>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus status);
+        Task<PagedResult<StaffDayOffResponse>> GetAllWithStaffAsync(int pageNumber, int pageSize);
         Task<StaffDayOffResponse?> GetByIdAsync(int id);
-        Task<IEnumerable<StaffDayOffResponse>> GetMyHistoryAsync(int staffId);
+        Task<IEnumerable<StaffDayOffResponse>> GetMyHistoryAsync(int staffId, StaffDayOffStatus status);
         Task<bool> CancelAsync(int id);
         Task<bool> ApproveAsync(int id);
         Task<IEnumerable<StaffDayOffResponse>> GetPendingDayOffAsync();

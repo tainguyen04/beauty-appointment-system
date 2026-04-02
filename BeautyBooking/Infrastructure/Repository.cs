@@ -1,6 +1,6 @@
-﻿using BeautyBooking.Entities;
+﻿using BeautyBooking.DTO.Response;
+using BeautyBooking.Entities;
 using Microsoft.EntityFrameworkCore;
-
 namespace BeautyBooking.Infrastructure
 {
     public class Repository<T, TId> : IRepository<T, TId> where T : class
@@ -27,7 +27,7 @@ namespace BeautyBooking.Infrastructure
         {
             if (ids == null || !ids.Any()) return new List<T>();
             var idList = ids.ToList();
-            // Use Microsoft.EntityFrameworkCore.EF.Property, not BeautyBooking.EF
+            
             return await _entities
                 .Where(e => idList.Contains(Microsoft.EntityFrameworkCore.EF.Property<int>(e, "Id")))
                 .ToListAsync();

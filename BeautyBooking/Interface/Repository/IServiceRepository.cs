@@ -1,13 +1,16 @@
-﻿using BeautyBooking.Entities;
+﻿using BeautyBooking.DTO.Response;
+using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
-
 namespace BeautyBooking.Interface.Repository
 {
     public interface IServiceRepository: IRepository<Entities.Service, int>
     {
-        Task<List<Entities.Service>> GetAllWithCategoryAsync();
+        Task<PagedResult<Entities.Service>> GetAllWithCategoryAsync(int pageNumber, int pageSize);
         Task<Entities.Service?> GetByIdWithCategoryAsync(int id);
-        Task<IEnumerable<Entities.Service>> GetWithCategoryIdAsync(int categoryId);
+        Task<IEnumerable<Entities.Service>> GetByCategoryIdAsync(int categoryId);
         
+        Task<IEnumerable<Entities.Service>> GetByStaffIdAsync(int staffId);
+        Task<IEnumerable<Entities.Service>> GetByIdsAsync(List<int> ids);
+
     }
 }

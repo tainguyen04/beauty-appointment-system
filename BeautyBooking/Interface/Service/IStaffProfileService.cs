@@ -5,10 +5,13 @@ namespace BeautyBooking.Interface.Service
 {
     public interface IStaffProfileService
     {
-        Task<List<StaffProfileResponse>> GetAllAsync();
+        Task<PagedResult<StaffProfileResponse>> GetAllAsync(int pageNumber, int pageSize);
         Task<StaffProfileResponse?> GetByIdAsync(int id);
-        Task<StaffProfileResponse> GetByUserIdAsync(int userId);
-        Task<int> UpSertAsync(StaffProfileRequest request);
+        Task<StaffProfileResponse?> GetByUserIdAsync(int userId);
+        Task<IEnumerable<StaffProfileResponse>> GetByServiceIdAsync(int serviceId);
+        Task<int> CreateAsync(CreateStaffProfileRequest request);
+        Task<bool> UpdateAsync(int id, UpdateStaffProfileRequest request);
         Task<bool> DeleteAsync(int id);
+        Task<IEnumerable<StaffProfileResponse>> GetAvailableAsync(DateOnly date, int startTime, int endTime);
     }
 }

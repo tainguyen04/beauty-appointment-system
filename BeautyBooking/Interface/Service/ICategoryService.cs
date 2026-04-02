@@ -5,10 +5,10 @@ namespace BeautyBooking.Interface.Service
 {
     public interface ICategoryService
     {
-        Task<List<CategoryResponse>> GetAllAsync();
+        Task<IEnumerable<CategoryResponse>> GetAllAsync();
         Task<CategoryResponse?> GetByIdAsync(int id);
         Task<int> CreateAsync(CategoryRequest request);
-        Task<bool> Update(int id, CategoryRequest request);
+        Task<bool> UpdateAsync(int id, CategoryRequest request);
         Task<bool> DeleteAsync(int id);
     }
 }

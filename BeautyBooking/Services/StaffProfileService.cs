@@ -4,71 +4,125 @@ using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
+using BeautyBooking.MappingProfiles;
+using BeautyBooking.Repository;
 
 namespace BeautyBooking.Services
 {
     public class StaffProfileService : IStaffProfileService
     {
         private readonly IStaffProfileRepository _staffProfileRepository;
-        private readonly IServiceRepository _serviceRepository; 
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
-        public StaffProfileService(IStaffProfileRepository staffProfileRepository, IMapper mapper, IServiceRepository serviceRepository)
+        public StaffProfileService(IStaffProfileRepository staffProfileRepository,
+            IMapper mapper, IServiceRepository serviceRepository, IUserRepository userRepository,ICurrentUserService currentUserService)
         {
             _staffProfileRepository = staffProfileRepository;
             _mapper = mapper;
             _serviceRepository = serviceRepository;
+            _userRepository = userRepository;
+            _currentUserService = currentUserService;
         }
+
+        public async Task<int> CreateAsync(CreateStaffProfileRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(request.UserId);
+            if (user == null)
+                throw new InvalidOperationException("User không tồn tại.");
+
+            var existingProfile = await _staffProfileRepository.GetByUserIdAsync(request.UserId);
+            if (existingProfile != null)
+                throw new InvalidOperationException("User đã có profile nhân viên.");
+            
+            var staffProfile = _mapper.Map<StaffProfile>(request);
+            if (request.ServiceIds != null && request.ServiceIds.Any())
+            {
+                var serviceIds = request.ServiceIds.Distinct().ToList();
+                var services = await _serviceRepository.GetRangeByIdsAsync(serviceIds);
+                if (services.Count() != serviceIds.Count())
+                    throw new KeyNotFoundException("Một hoặc nhiều dịch vụ không tồn tại.");
+                staffProfile.Services = services.ToList();
+            }
+            await _staffProfileRepository.CreateAsync(staffProfile);
+            await _staffProfileRepository.SaveChangesAsync();
+            return staffProfile.Id;
+        }
+
         public async Task<bool> DeleteAsync(int id)
         {
             var staffProfile = await _staffProfileRepository.GetByIdAsync(id);
             if (staffProfile == null)
-                return false;
+                throw new KeyNotFoundException("Staff không tồn tại");
             staffProfile.IsDeleted = true;
             await _staffProfileRepository.SaveChangesAsync();
             return true;
         }
-
-        public async Task<List<StaffProfileResponse>> GetAllAsync()
+        public async Task<PagedResult<StaffProfileResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
-            return _mapper.Map<List<StaffProfileResponse>>(await _staffProfileRepository.GetAllStaffWithDetailsAsync());
+            var pagedStaffProfiles = await _staffProfileRepository.GetAllWithUserAndServicesAsync(pageNumber, pageSize);
+            return pagedStaffProfiles.ToPagedResult<StaffProfile, StaffProfileResponse>(_mapper);
+        }
+
+        public async Task<IEnumerable<StaffProfileResponse>> GetAvailableAsync(DateOnly date, int startTime, int endTime)
+        {
+            var staffProfiles = await _staffProfileRepository.GetAvailableByTimeSlotAsync(date, startTime, endTime);
+            return _mapper.Map<IEnumerable<StaffProfileResponse>>(staffProfiles);
         }
 
         public async Task<StaffProfileResponse?> GetByIdAsync(int id)
         {
-            return _mapper.Map<StaffProfileResponse?>(await _staffProfileRepository.GetByIdWithDetailsAsync(id));
-        }
-
-        public async Task<StaffProfileResponse> GetByUserIdAsync(int userId)
-        {
-            return _mapper.Map<StaffProfileResponse>(await _staffProfileRepository.GetByUserIdAsync(userId,true));
-        }
-        public async Task<int> UpSertAsync(StaffProfileRequest request)
-        {
-            var staffProfile = await _staffProfileRepository.GetByUserIdAsync(request.UserId);
-
-            var selectedServices = await _serviceRepository.GetRangeByIdsAsync(request.ServiceIds);
-            if(selectedServices.Count() != request.ServiceIds.Count())
-            {
-                throw new Exception("Một hoặc nhiều dịch vụ không tồn tại.");
-            }
+            var staffProfile = await _staffProfileRepository.GetByIdWithUserAndServicesAsync(id);
             if (staffProfile == null)
+                throw new KeyNotFoundException("Staff không tồn tại.");
+            var currentRole = _currentUserService.Role;
+            var currentStaffId = _currentUserService.StaffId;
+            if (currentStaffId != id && currentRole != UserRole.Admin)
+                throw new UnauthorizedAccessException("Bạn không có quyền truy cập thông tin của nhân viên khác.");
+            return _mapper.Map<StaffProfileResponse>(staffProfile);
+        }
+
+        public async Task<IEnumerable<StaffProfileResponse>> GetByServiceIdAsync(int serviceId)
+        {
+            var currentRole = _currentUserService.Role;
+            var currentStaffId = _currentUserService.StaffId;
+            var allStaff = await _staffProfileRepository.GetByServiceIdAsync(serviceId);
+            if(currentRole == UserRole.Staff)
             {
-                staffProfile = _mapper.Map<StaffProfile>(request);
-                staffProfile.Services = selectedServices.ToList();
-                await _staffProfileRepository.CreateAsync(staffProfile);
+                var staffProfiles = allStaff.Where(s => s.Id == currentStaffId);
+                return _mapper.Map<IEnumerable<StaffProfileResponse>>(staffProfiles);
             }
-            else
+            return _mapper.Map<IEnumerable<StaffProfileResponse>>(allStaff);
+        }
+
+        public async Task<StaffProfileResponse?> GetByUserIdAsync(int userId)
+        {
+            var staffProfile = await _staffProfileRepository.GetByUserIdWithUserAsync(userId);
+            if (staffProfile == null)
+                throw new KeyNotFoundException("Staff không tồn tại.");
+            return _mapper.Map<StaffProfileResponse>(staffProfile);
+        }
+
+        public async Task<bool> UpdateAsync(int id, UpdateStaffProfileRequest request)
+        {
+            var staffProfile = await _staffProfileRepository.GetByIdWithUserAndServicesAsync(id);
+            if (staffProfile == null)
+                throw new KeyNotFoundException("Staff không tồn tại.");
+
+            _mapper.Map(request, staffProfile);
+
+            if (request.ServiceIds != null && request.ServiceIds.Any())
             {
-                _mapper.Map(request, staffProfile);
-                staffProfile.Services.Clear();
-                foreach (var service in selectedServices)
-                {
-                    staffProfile.Services.Add(service);
-                }
-                _staffProfileRepository.Update(staffProfile);
+                var serviceIds = request.ServiceIds.Distinct().ToList();
+                var services = await _serviceRepository.GetRangeByIdsAsync(serviceIds);
+                if(services.Count() != serviceIds.Count)
+                    throw new KeyNotFoundException("Một hoặc nhiều dịch vụ không tồn tại.");
+                staffProfile.Services = services.ToList();
             }
+            
             await _staffProfileRepository.SaveChangesAsync();
-            return staffProfile.Id;
+            return true;
         }
     }
 }
