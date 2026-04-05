@@ -101,6 +101,10 @@ namespace BeautyBooking.Services
             var staffProfile = await _staffProfileRepository.GetByUserIdWithUserAsync(userId);
             if (staffProfile == null)
                 return null;
+            var currentRole = _currentUserService.Role;
+            var currentUserId = _currentUserService.UserId;
+            if(currentRole == UserRole.Admin && staffProfile.UserId != currentUserId)
+                throw new UnauthorizedAccessException("Bạn không có quyền truy cập thông tin của nhân viên khác.");
             return _mapper.Map<StaffProfileResponse>(staffProfile);
         }
 
@@ -123,6 +127,37 @@ namespace BeautyBooking.Services
             
             await _staffProfileRepository.SaveChangesAsync();
             return true;
+        }
+        public async Task<bool> AssignServicesAsync(int id, AssignServicesRequest request)
+        {
+            var staffProfile = await _staffProfileRepository.GetByIdWithServicesAsync(id);
+            if (staffProfile == null)
+                throw new KeyNotFoundException("Staff không tồn tại.");
+            var services = await _serviceRepository.GetRangeByIdsAsync(request.ServiceIds);
+            if (services.Count() != request.ServiceIds.Distinct().Count())
+                throw new KeyNotFoundException("Một hoặc nhiều dịch vụ không tồn tại.");
+            var currentServiceIds = staffProfile.Services.Select(s => s.Id).ToHashSet();
+            var newServices = services.Where(s => !currentServiceIds.Contains(s.Id)).ToList();
+            if(newServices.Any())
+            {
+                foreach (var service in newServices)
+                {
+                    staffProfile.Services.Add(service);
+                }
+            }
+            await _staffProfileRepository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<StaffProfileResponse?> GetMyProfileAsync()
+        {
+            var currentUserId = _currentUserService.UserId;
+            if (!currentUserId.HasValue)
+                throw new InvalidOperationException("Không tìm thấy người dùng.");
+            var staffProfile = await _staffProfileRepository.GetByUserIdAsync(currentUserId.Value);
+            if (staffProfile == null)
+                return null;
+            return _mapper.Map<StaffProfileResponse>(staffProfile);
         }
     }
 }

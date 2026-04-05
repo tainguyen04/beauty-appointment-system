@@ -52,6 +52,15 @@ namespace BeautyBooking.Repository
                     )
                 .ToListAsync();
         }
+
+        public async Task<StaffProfile?> GetByIdWithServicesAsync(int id)
+        {
+            return await _entities
+                .Include(sp => sp.Services)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(sp => sp.Id == id && !sp.IsDeleted);
+        }
+
         public async Task<StaffProfile?> GetByIdWithUserAndServicesAsync(int id)
         {
             return await _entities

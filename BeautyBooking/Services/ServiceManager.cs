@@ -21,7 +21,6 @@ namespace BeautyBooking.Services
             _staffProfileRepo = staffProfileRepo;
             _photoService = photoService;
         }
-
         public async Task<decimal> CalculateTotalAmountAsync(IEnumerable<int> serviceIds)
         {
             var distinctServiceIds = serviceIds.Distinct().ToList();

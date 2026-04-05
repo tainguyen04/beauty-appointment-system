@@ -2,6 +2,7 @@
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Interface.Service;
+using BeautyBooking.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -48,6 +49,15 @@ namespace BeautyBooking.Controllers
                 return NotFound();
             return Ok(staff);
         }
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<ActionResult<StaffProfileResponse>> GetMyProfile()
+        {
+            var staff = await _staffProfileService.GetMyProfileAsync();
+            if (staff == null)
+                return NotFound("Bạn chưa có hồ sơ nhân viên.");
+            return Ok(staff);
+        }
 
         [HttpGet("service/{serviceId}")]
         [Authorize]
@@ -65,6 +75,16 @@ namespace BeautyBooking.Controllers
             var createdStaff = await _staffProfileService.GetByIdAsync(id);
 
             return CreatedAtAction(nameof(GetById), new { id }, createdStaff);
+        }
+
+        [HttpPost("{id}/services")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> AssignServices(int id, [FromBody] AssignServicesRequest request)
+        {
+            var result = await _staffProfileService.AssignServicesAsync(id, request);
+            if (!result)
+                return BadRequest("Không thể gán dịch vụ. Vui lòng kiểm tra lại.");
+            return NoContent();
         }
 
         [HttpPut("{id}")]

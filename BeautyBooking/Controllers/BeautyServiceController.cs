@@ -67,7 +67,9 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateServiceRequest request)
         {
-            await _serviceManager.UpdateAsync(id, request);
+            var result = await _serviceManager.UpdateAsync(id, request);
+            if(!result)
+                return BadRequest("Không thể cập nhật dịch vụ. Vui lòng kiểm tra lại.");
             return NoContent();
         }
 
