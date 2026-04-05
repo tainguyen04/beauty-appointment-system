@@ -78,7 +78,7 @@ namespace BeautyBooking.Services
                 throw new KeyNotFoundException("Staff không tồn tại.");
             var currentRole = _currentUserService.Role;
             var currentStaffId = _currentUserService.StaffId;
-            if (currentStaffId != id && currentRole != UserRole.Admin)
+            if (currentRole != UserRole.Admin  && currentStaffId != id)
                 throw new UnauthorizedAccessException("Bạn không có quyền truy cập thông tin của nhân viên khác.");
             return _mapper.Map<StaffProfileResponse>(staffProfile);
         }

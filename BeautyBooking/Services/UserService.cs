@@ -37,7 +37,10 @@ namespace BeautyBooking.Services
 
         public async Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request)
         {
-            var currentUserId = _currentUserService.UserId;
+            var userId = _currentUserService.UserId;
+            if(!userId.HasValue)
+                throw new InvalidOperationException("Không tìm thấy người dùng.");
+            var currentUserId = userId.Value;
             if (currentUserId <= 0)
                 throw new InvalidOperationException("Không tìm thấy User.");
             var user = await _userRepo.GetByIdAsync(currentUserId);
@@ -122,10 +125,10 @@ namespace BeautyBooking.Services
 
         public async Task<bool> UpdateMyProfileAsync(UpdateUserRequest request)
         {
-            var currentUserId = _currentUserService.UserId;
-            if (currentUserId <= 0)
-                throw new InvalidOperationException("Không tìm thấy User.");
-            var user = await _userRepo.GetByIdAsync(currentUserId);
+            var userId = _currentUserService.UserId;
+            if (!userId.HasValue)
+                throw new InvalidOperationException("Không tìm thấy người dùng.");
+            var user = await _userRepo.GetByIdAsync(userId.Value);
             if (user == null || user.IsDeleted)
                 throw new InvalidOperationException("User không tồn tại.");
             _mapper.Map(request, user);

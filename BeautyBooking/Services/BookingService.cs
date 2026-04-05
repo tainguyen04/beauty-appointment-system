@@ -73,7 +73,10 @@ namespace BeautyBooking.Services
         {
             
             var appointment = _mapper.Map<Appointment>(request);
-            appointment.UserId = _currentUserService.UserId;
+            var userId = _currentUserService.UserId;
+            if(!userId.HasValue)
+                throw new Exception("Không tìm thấy người dùng");
+            appointment.UserId = userId.Value;
             appointment.AppointmentStatus = AppointmentStatus.Pending;
             var services = (await _serviceRepository.GetRangeByIdsAsync(request.ServiceIds)).ToList();
             if (services.Count() != request.ServiceIds.Distinct().ToList().Count())
@@ -136,18 +139,18 @@ namespace BeautyBooking.Services
         public async Task<PagedResult<AppointmentResponse>> GetMyAppointmentsAsync(int pageNumber, int pageSize)
         {
             var customerId = _currentUserService.UserId;
-            if(customerId <= 0)
-                throw new Exception("Không tìm thấy người dùng");
-            var pagedAppointments = await _appointmentRepository.GetAppointmentsByUserIdAsync(customerId, pageNumber, pageSize);
+            if(!customerId.HasValue)
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
+            var pagedAppointments = await _appointmentRepository.GetAppointmentsByUserIdAsync(customerId.Value, pageNumber, pageSize);
             return pagedAppointments.ToPagedResult<Appointment, AppointmentResponse>(_mapper);
         }
 
         public async Task<IEnumerable<AppointmentResponse>> GetMyScheduleAsync(DateOnly date)
         {
             var staffId = _currentUserService.StaffId;
-            if(staffId <= 0)
-                throw new Exception("Không tìm thấy nhân viên");
-            return _mapper.Map<IEnumerable<AppointmentResponse>>(await _appointmentRepository.GetAppointmentsByStaffIdAsync(staffId, date));
+            if(!staffId.HasValue)
+                throw new KeyNotFoundException("Không tìm thấy nhân viên");
+            return _mapper.Map<IEnumerable<AppointmentResponse>>(await _appointmentRepository.GetAppointmentsByStaffIdAsync(staffId.Value, date));
         }
         
 

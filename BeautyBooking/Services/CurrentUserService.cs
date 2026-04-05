@@ -11,7 +11,7 @@ namespace BeautyBooking.Services
         {
             _httpContextAccessor = httpContextAccessor;
         }
-        public int UserId
+        public int? UserId
         {
             get
             {
@@ -21,7 +21,7 @@ namespace BeautyBooking.Services
                 {
                     return userId;
                 }
-                throw new UnauthorizedAccessException();
+                return null;
             }
         }
 
@@ -52,7 +52,7 @@ namespace BeautyBooking.Services
                 throw new UnauthorizedAccessException();
             }
         }
-        public int StaffId
+        public int? StaffId
         {
             get
             {
@@ -62,7 +62,7 @@ namespace BeautyBooking.Services
                 {
                     return staffId;
                 }
-                throw new UnauthorizedAccessException();
+                return null;
             }
         }
     }
