@@ -100,7 +100,7 @@ namespace BeautyBooking.Services
         {
             var staffProfile = await _staffProfileRepository.GetByUserIdWithUserAsync(userId);
             if (staffProfile == null)
-                throw new KeyNotFoundException("Staff không tồn tại.");
+                return null;
             return _mapper.Map<StaffProfileResponse>(staffProfile);
         }
 

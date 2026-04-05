@@ -82,7 +82,7 @@ namespace BeautyBooking.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(); 
-                throw new Exception("Đã có lỗi xảy ra khi thay đổi vai trò: " + ex.Message);
+                throw new Exception("Đã có lỗi xảy ra khi thay đổi vai trò: " + ex.ToString());
             }
         }
 
