@@ -123,6 +123,18 @@ namespace BeautyBooking.Services
             return  await _userRepo.IsEmailUniqueAsync(email);
         }
 
+        public async Task<bool> ResetPasswordAsync(int id)
+        {
+            const string newPassword = "123456";
+            var user = await _userRepo.GetByIdAsync(id);
+            if (user == null || user.IsDeleted)
+                throw new KeyNotFoundException("Tài khoản không tồn tại.");
+            var newHashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            user.PasswordHash = newHashedPassword;
+            await _userRepo.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<bool> UpdateMyProfileAsync(UpdateUserRequest request)
         {
             var userId = _currentUserService.UserId;

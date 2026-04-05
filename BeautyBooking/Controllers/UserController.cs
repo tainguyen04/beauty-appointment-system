@@ -42,6 +42,16 @@ namespace BeautyBooking.Controllers
             var user = await _userService.GetByIdAsync(id);
             return Ok(user);
         }
+        [HttpPost("{id}/reset-password")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> ResetPassword(int id)
+        {
+            var result = await _userService.ResetPasswordAsync(id);
+            if (!result)
+                return NotFound();
+            return NoContent();
+        }
+
         [HttpPut("{id}/status")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> UpdateStatus(int id, [FromQuery] bool isActive)
@@ -70,6 +80,7 @@ namespace BeautyBooking.Controllers
             return NoContent();
         }
 
+
         [HttpPut("me/profile")]
         public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateUserRequest request)
         {
@@ -87,6 +98,7 @@ namespace BeautyBooking.Controllers
                 return BadRequest();
             return NoContent();
         }
+        
 
         [AllowAnonymous]
         [HttpGet("email-availability")]
