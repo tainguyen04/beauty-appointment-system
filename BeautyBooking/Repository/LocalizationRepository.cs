@@ -11,16 +11,16 @@ namespace BeautyBooking.Repository
         public LocalizationRepository(ApplicationDbContext dbcontext) : base(dbcontext)
         {
         }
-
-        public async Task<List<WebsiteLocalization>> GetAllWithWardsAsync()
-        {
-            return await _entities.Include(l => l.WebsiteLocalizationWards).ToListAsync();
-        }
-
+        
         public async Task<WebsiteLocalization?> GetByKeyWithWardAsync(string key)
         {
             return await _entities.Include(l => l.WebsiteLocalizationWards)
                 .FirstOrDefaultAsync(l => l.KeyLocalization == key);
+        }
+
+        public IQueryable<WebsiteLocalization> QueryDetailed()
+        {
+            return _entities.Include(l => l.WebsiteLocalizationWards).AsNoTracking();
         }
     }
 }

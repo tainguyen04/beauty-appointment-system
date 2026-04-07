@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
+using BeautyBooking.Helper;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
 using BeautyBooking.MappingProfiles;
+using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
 {
@@ -27,11 +30,10 @@ namespace BeautyBooking.Services
             if(!distinctServiceIds.Any())
                 return 0;
 
-            var services = await _serviceRepo.GetByIdsAsync(distinctServiceIds);
-            var serviceList = services.ToList();
-            if(serviceList.Count != distinctServiceIds.Count)
+            var services = await _serviceRepo.Query().Where(s => distinctServiceIds.Contains(s.Id)).ToListAsync();
+            if(services.Count != distinctServiceIds.Count)
             {
-                var existingIds = serviceList.Select(s => s.Id);
+                var existingIds = services.Select(s => s.Id);
                 var missingIds = distinctServiceIds.Except(existingIds);
                 throw new KeyNotFoundException($"Dịch vụ với Id(s) {string.Join(", ", missingIds)} không tồn tại.");
             }
@@ -57,7 +59,7 @@ namespace BeautyBooking.Services
         {
             var service = await _serviceRepo.GetByIdAsync(id);
             if (service == null)
-                throw new KeyNotFoundException("Service khọng tồn tại.");
+                throw new KeyNotFoundException("Service không tồn tại.");
             service.IsDeleted = true;
             await _serviceRepo.SaveChangesAsync();
             return true;
@@ -65,17 +67,22 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<ServiceResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
-            var pagedServices = await _serviceRepo.GetAllWithCategoryAsync(pageNumber, pageSize);
-            return pagedServices.ToPagedResult<Service, ServiceResponse>(_mapper);
+            return await _serviceRepo
+                .QueryDetailed()
+                .Where(s => !s.IsDeleted)
+                .ProjectTo<ServiceResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(pageNumber, pageSize);
         }
 
         public async Task<IEnumerable<ServiceResponse>> GetByCategoryIdAsync(int categoryId)
         {
-            var category = await _serviceRepo.GetByCategoryIdAsync(categoryId);
-            if(category == null)
-                throw new KeyNotFoundException("Category không tồn tại");
-
-            return _mapper.Map<List<ServiceResponse>>(category);
+            var services = await _serviceRepo
+                .GetByCategoryId(categoryId)
+                .ProjectTo<ServiceResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            if(!services.Any())
+                throw new KeyNotFoundException("Không tìm thấy dịch vụ nào trong category này.");
+            return services;
         }
 
         public async Task<ServiceResponse?> GetByIdAsync(int id)
@@ -91,8 +98,14 @@ namespace BeautyBooking.Services
             var staffProfile = await _staffProfileRepo.GetByIdAsync(staffId);
             if (staffProfile == null)
                 throw new KeyNotFoundException("Staff không tồn tại.");
-            var services = await _serviceRepo.GetByStaffIdAsync(staffId);
-            return _mapper.Map<IEnumerable<ServiceResponse>>(services);
+            var services = await _serviceRepo
+                .GetByStaffId(staffId)
+                .Where(s => s.StaffProfiles.Any(sp => sp.Id == staffId) && !s.IsDeleted)
+                .ProjectTo<ServiceResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            if (!services.Any())
+                throw new KeyNotFoundException("Không tìm thấy dịch vụ nào cho nhân viên này.");
+            return services;
         }
 
         public async Task<bool> UpdateAsync(int id, UpdateServiceRequest request)

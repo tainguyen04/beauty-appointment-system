@@ -10,7 +10,7 @@ namespace BeautyBooking.DTO.Response
         public int StaffId { get; set; }
         public string? UserName { get; set; }
         public string? StaffName { get; set; }
-        public DateTime AppointmentDate { get; set; }
+        public DateOnly AppointmentDate { get; set; }
         public int StartTime { get; set; }
         public int EndTime { get; set; }
         public string TimeRange => TimeHelper.FormatToTimeRange(StartTime, EndTime);

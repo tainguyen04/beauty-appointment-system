@@ -6,10 +6,10 @@ namespace BeautyBooking.Interface.Repository
 {
     public interface IUserRepository : IRepository<User, int>
     {
-        Task<PagedResult<User>> GetAllWithProfileAsync(int pageNumber, int pageSize);
+        IQueryable<User> QueryDetailed();
         Task<User?> GetByEmailAsync(string email);
         Task<bool> IsEmailUniqueAsync(string email);
-        Task<User?> GetWithProfileByIdAsync(int userId);
-        Task<PagedResult<User>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize);
+        Task<User?> GetWithProfileByIdAsync(int id);
+        IQueryable<User> GetUsersByRole(UserRole role);
     }
 }

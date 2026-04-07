@@ -11,8 +11,9 @@ namespace BeautyBooking.Interface.Service
         Task<bool> DeleteAsync(int id);
         Task<PagedResult<WorkScheduleResponse>> GetAllAsync(int pageNumber, int pageSize);
         Task<WorkScheduleResponse?> GetDetailedByIdAsync(int id);
+        Task<IEnumerable<WorkScheduleResponse>> GetMyScheduleAsync();
         Task<IEnumerable<WorkScheduleResponse>> GetByStaffIdAsync(int staffId);
-        Task<IEnumerable<WorkScheduleResponse>> GetByStaffIdAndDayOfWeekAsync(int staffId, DayOfWeek dayOfWeek);
+        Task<IEnumerable<WorkScheduleResponse>> GetMyScheduleByDayAsync(DayOfWeek dayOfWeek);
         Task<IEnumerable<WorkScheduleResponse>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek);
     }
 }

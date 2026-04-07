@@ -1,6 +1,7 @@
 ﻿using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 using Microsoft.EntityFrameworkCore;
+
 namespace BeautyBooking.Infrastructure
 {
     public class Repository<T, TId> : IRepository<T, TId> where T : class
@@ -32,7 +33,9 @@ namespace BeautyBooking.Infrastructure
                 .Where(e => idList.Contains(Microsoft.EntityFrameworkCore.EF.Property<int>(e, "Id")))
                 .ToListAsync();
         }
-            
+
+        public IQueryable<T> Query() => _entities.AsNoTracking();
+
         public Task SaveChangesAsync() => _dbcontext.SaveChangesAsync();
 
         public void Update(T entity) => _entities.Update(entity);

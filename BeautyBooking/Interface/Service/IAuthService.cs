@@ -7,5 +7,6 @@ namespace BeautyBooking.Interface.Service
     {
         Task<LoginResponse?> LoginAsync(LoginRequest request);
         Task<UserResponse> RegisterAsync(CreateUserRequest request);
+        Task<bool> LogoutAsync(string token);
     }
 }

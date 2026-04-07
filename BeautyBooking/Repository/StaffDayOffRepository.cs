@@ -14,18 +14,11 @@ namespace BeautyBooking.Repository
         {
         }
 
-        public async Task<IEnumerable<StaffDayOff>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus status)
+        public IQueryable<StaffDayOff> GetAllByMonth(int month, int year, StaffDayOffStatus status)
         {
-            return await _entities.Where(s => s.Date.Month == month && s.Date.Year == year && s.Status == status && !s.IsDeleted).ToListAsync();
-        }
-
-        public async Task<PagedResult<StaffDayOff>> GetAllWithStaffAsync(int pageNumber, int pageSize)
-        {
-            return await _entities
-                .Where(s => !s.IsDeleted)
-                .Include(s => s.Staff).ThenInclude(s => s.User)
-                .OrderByDescending(s => s.Date)
-                .ToPagedResultAsync(pageNumber, pageSize);
+            return _entities
+                .Where(s => s.Date.Month == month && s.Date.Year == year && s.Status == status)
+                .AsNoTracking();
         }
 
         public async Task<StaffDayOff?> GetByIdWithStaffAsync(int id)
@@ -36,17 +29,18 @@ namespace BeautyBooking.Repository
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
         }
 
-        public async Task<IEnumerable<StaffDayOff>> GetByStaffIdAsync(int staffId, StaffDayOffStatus status)
+        public IQueryable<StaffDayOff> GetByStaffId(int staffId, StaffDayOffStatus status)
         {
-            return await _entities
-                .Include(s => s.Staff)
-                    .ThenInclude(s => s.User)
-                .Where(s => s.StaffId == staffId && s.Status == status).ToListAsync();
+            return _entities
+                .Where(s => s.StaffId == staffId && s.Status == status)
+                .AsNoTracking();
         }
 
-        public async Task<IEnumerable<StaffDayOff>> GetPendingDayOffAsync()
+        public IQueryable<StaffDayOff> GetPendingDayOff()
         {
-            return await _entities.Where(s => s.Status == StaffDayOffStatus.Pending && !s.IsDeleted).ToListAsync();
+            return _entities
+                .Where(s => s.Status == StaffDayOffStatus.Pending)
+                .AsNoTracking();
         }
 
         public async Task<List<int>> GetStaffIdsOffByDateAsync(DateOnly date)
@@ -62,5 +56,14 @@ namespace BeautyBooking.Repository
         {
             return await _entities.AnyAsync(s => s.StaffId == staffId && s.Date == date);
         }
+
+        public IQueryable<StaffDayOff> QueryDetailed()
+        {
+            return _entities
+                .Include(s => s.Staff)
+                    .ThenInclude(s => s.User)
+                .AsNoTracking();
+        }
+        
     }
 }

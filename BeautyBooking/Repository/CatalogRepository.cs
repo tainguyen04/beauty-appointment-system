@@ -11,16 +11,16 @@ namespace BeautyBooking.Repository
         public CatalogRepository(ApplicationDbContext dbcontext) : base(dbcontext)
         {
         }
-
-        public async Task<List<HelpdeskCatalog>> GetAllWithContentsAsync()
-        {
-            return await _entities.Include(c => c.HelpdeskContents).ToListAsync();
-        }
-
         public async Task<HelpdeskCatalog?> GetContentsByIdAsync(int id)
         {
             return await _entities.Include(c => c.HelpdeskContents)
-                .FirstOrDefaultAsync(c => c.CatalogId == id);
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.CatalogId == id && c.IsActived);
+        }
+
+        public IQueryable<HelpdeskCatalog> QueryDetailed()
+        {
+            return _entities.Include(c => c.HelpdeskContents).AsNoTracking();
         }
     }
 }

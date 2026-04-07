@@ -11,6 +11,7 @@ namespace BeautyBooking.Infrastructure
         void Delete(T entity);
         void DeleteRange(IEnumerable<T> entities);
         Task<IEnumerable<T>> GetRangeByIdsAsync(IEnumerable<int> ids);
+        IQueryable<T> Query();
         Task SaveChangesAsync();
     }
 }

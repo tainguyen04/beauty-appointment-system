@@ -14,12 +14,14 @@ namespace BeautyBooking.Repository
         {
         }
 
-
-        public async Task<PagedResult<Service>> GetAllWithCategoryAsync(int pageNumber, int pageSize)
+        public IQueryable<Service> GetByCategoryId(int categoryId)
         {
-            return await _entities.Where(s => !s.IsDeleted)
-                .Include(s => s.Category)
-                .ToPagedResultAsync(pageNumber, pageSize);
+            return _entities.Where(s => s.CategoryId == categoryId && !s.IsDeleted).AsNoTracking();
+        }
+        
+        public IQueryable<Service> GetByIds(List<int> ids)
+        {
+            return _entities.Where(s => ids.Contains(s.Id) && !s.IsDeleted).AsNoTracking();
         }
 
         public async Task<Service?> GetByIdWithCategoryAsync(int id)
@@ -28,25 +30,21 @@ namespace BeautyBooking.Repository
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
         }
 
-        public async Task<IEnumerable<Service>> GetByIdsAsync(List<int> ids)
+        public IQueryable<Service> GetByStaffId(int staffId)
         {
-            return await _entities.Where(s => ids.Contains(s.Id) && !s.IsDeleted)
-                .Include(s => s.Category)
-                .ToListAsync();
+            return _entities
+                .Where(s => s.StaffProfiles.Any(sp => sp.Id == staffId) && !s.IsDeleted)
+                .AsNoTracking();
         }
 
-        public async Task<IEnumerable<Service>> GetByStaffIdAsync(int staffId)
+        public IQueryable<Service> QueryDetailed()
         {
-            return await _entities.Where(s => s.StaffProfiles.Any(ss => ss.Id == staffId) && !s.IsDeleted)
+            return _entities
                 .Include(s => s.Category)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Service>> GetByCategoryIdAsync(int categoryId)
-        {
-            return await _entities.Include(s => s.Category)
-                .Where(s => s.CategoryId == categoryId && !s.IsDeleted)
-                .ToListAsync();
+                .Include(s => s.StaffProfiles)
+                .Include(s => s.AppointmentServices)
+                .AsSplitQuery()
+                .AsNoTracking();
         }
     }
 }

@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
+using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
 {
@@ -53,8 +55,11 @@ namespace BeautyBooking.Services
 
         public async Task<IEnumerable<LocalizationResponse>> GetAllAsync()
         {
-            var localization =  await _localizationRepo.GetAllWithWardsAsync();
-            return _mapper.Map<List<LocalizationResponse>>(localization);
+            return await _localizationRepo
+                .QueryDetailed()
+                .Where(l => l.IsActived)
+                .ProjectTo<LocalizationResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<LocalizationResponse?> GetByIdAsync(string id)

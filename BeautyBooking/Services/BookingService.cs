@@ -1,11 +1,14 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Azure.Core;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
+using BeautyBooking.Helper;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
 using BeautyBooking.MappingProfiles;
+using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
 {
@@ -113,8 +116,10 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<AppointmentResponse>> GetAllWithDetailedAsync(int pageNumber, int pageSize)
         {
-            var pagedAppointments = await _appointmentRepository.GetAllDetailedAsync(pageNumber, pageSize);
-            return pagedAppointments.ToPagedResult<Appointment, AppointmentResponse>(_mapper);
+            return await _appointmentRepository
+                .QueryDetailed()
+                .ProjectTo<AppointmentResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(pageNumber,pageSize);
         }
 
         public async Task<AppointmentResponse?> GetByIdWithDetailsAsync(int id)
@@ -139,18 +144,26 @@ namespace BeautyBooking.Services
         public async Task<PagedResult<AppointmentResponse>> GetMyAppointmentsAsync(int pageNumber, int pageSize)
         {
             var customerId = _currentUserService.UserId;
-            if(!customerId.HasValue)
-                throw new KeyNotFoundException("Không tìm thấy người dùng");
-            var pagedAppointments = await _appointmentRepository.GetAppointmentsByUserIdAsync(customerId.Value, pageNumber, pageSize);
-            return pagedAppointments.ToPagedResult<Appointment, AppointmentResponse>(_mapper);
+            if (!customerId.HasValue)
+                throw new UnauthorizedAccessException("Người dùng chưa đăng nhập");
+
+            return await _appointmentRepository
+                    .QueryDetailed()
+                    .Where(a => a.UserId == customerId.Value)
+                    .ProjectTo<AppointmentResponse>(_mapper.ConfigurationProvider)
+                    .ToPagedResultAsync(pageNumber, pageSize);
         }
 
         public async Task<IEnumerable<AppointmentResponse>> GetMyScheduleAsync(DateOnly date)
         {
             var staffId = _currentUserService.StaffId;
             if(!staffId.HasValue)
-                throw new KeyNotFoundException("Không tìm thấy nhân viên");
-            return _mapper.Map<IEnumerable<AppointmentResponse>>(await _appointmentRepository.GetAppointmentsByStaffIdAsync(staffId.Value, date));
+                throw new UnauthorizedAccessException("Nhân viên chưa đăng nhập");
+            return await _appointmentRepository
+                .QueryDetailed()
+                .Where(a => a.StaffId == staffId.Value && a.AppointmentDate == date)
+                .ProjectTo<AppointmentResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
         
 
@@ -244,8 +257,9 @@ namespace BeautyBooking.Services
                 throw new Exception("Nhân viên đã nghỉ vào thời gian này.");
 
             var dayOfWeek = date.DayOfWeek;
-            var schedules = await _workScheduleRepository.GetByStaffIdAndDayOfWeekAsync(staffId, dayOfWeek);
-            bool isWithinSchedule = schedules != null && schedules.Any(s => startTime >= s.StartTime && endTime <= s.EndTime);
+            var isWithinSchedule = await _workScheduleRepository
+                .GetByStaffIdAndDayOfWeek(staffId, dayOfWeek)
+                .AnyAsync(s => startTime >= s.StartTime && endTime <= s.EndTime);
             if (!isWithinSchedule)
                 throw new InvalidOperationException("Thời gian hẹn không nằm trong lịch làm việc của nhân viên.");
 

@@ -10,6 +10,7 @@ namespace BeautyBooking.Interface.Service
         Task<PagedResult<UserResponse>> GetAllAsync(int pageNumber, int pageSize);
         Task<PagedResult<UserResponse>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize);
         Task<UserResponse?> GetByIdAsync(int id);
+        Task<bool> BlockAccountAsync(int id);
         Task<bool> UpdateStatusAsync(int id, bool isActive);
         Task<bool> ChangeRoleAsync(ChangeRoleRequest request);
         Task<bool> ResetPasswordAsync(int id);

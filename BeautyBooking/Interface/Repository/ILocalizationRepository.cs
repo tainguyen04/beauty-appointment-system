@@ -5,7 +5,7 @@ namespace BeautyBooking.Interface.Repository
 {
     public interface ILocalizationRepository: IRepository<WebsiteLocalization, string>
     {
-        Task<List<WebsiteLocalization>> GetAllWithWardsAsync(); 
+        IQueryable<WebsiteLocalization> QueryDetailed(); 
         Task<WebsiteLocalization?> GetByKeyWithWardAsync(string key);
     }
 }

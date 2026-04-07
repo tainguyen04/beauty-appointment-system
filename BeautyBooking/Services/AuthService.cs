@@ -7,9 +7,12 @@ using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
+using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
 
 namespace BeautyBooking.Services
 {
@@ -17,18 +20,20 @@ namespace BeautyBooking.Services
     {
         private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
+        private readonly IBlacklistTokenRepository _blacklistTokenRepo;
         private readonly AvatarDefaultSettings _avatarSettings;
         private readonly JwtOptions _jwtOptions;
         private readonly SymmetricSecurityKey _securityKey;
 
         public AuthService(IUserRepository userRepo, IMapper mapper, IOptions<JwtOptions> jwtOptions, 
-            SymmetricSecurityKey securityKey, AvatarDefaultSettings avatarSettings)
+            SymmetricSecurityKey securityKey, AvatarDefaultSettings avatarSettings, IBlacklistTokenRepository blacklistTokenRepo)
         {
             _userRepo = userRepo;
             _mapper = mapper;
             _jwtOptions = jwtOptions.Value;
             _securityKey = securityKey;
             _avatarSettings = avatarSettings;
+            _blacklistTokenRepo = blacklistTokenRepo;
         }
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
@@ -100,5 +105,25 @@ namespace BeautyBooking.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public async Task<bool> LogoutAsync(string token)
+        {
+            try
+            {
+                var handler = new JsonWebTokenHandler();
+                var jwt = handler.ReadJsonWebToken(token);
+                var jti = jwt.Id;
+                var expiryDate = jwt.ValidTo;
+                await _blacklistTokenRepo.BlacklistTokenAsync(jti, expiryDate);
+                await _blacklistTokenRepo.SaveChangesAsync();
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
     }
 }

@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
+using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
 {
@@ -40,14 +42,19 @@ namespace BeautyBooking.Services
 
         public async Task<List<HelpdeskCatalogResponse>> GetAllAsync()
         {
-            var catalog = await _catalogRepo.GetAllWithContentsAsync();
-            return _mapper.Map<List<HelpdeskCatalogResponse>>(catalog);
+            return await _catalogRepo
+                .QueryDetailed()
+                .Where(c => c.IsActived)
+                .ProjectTo<HelpdeskCatalogResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<HelpdeskCatalogResponse?> GetByIdAsync(int id)
         {
             var catalog = await _catalogRepo.GetContentsByIdAsync(id);
-            return catalog == null ? null : _mapper.Map<HelpdeskCatalogResponse?>(catalog);
+            if (catalog == null || !catalog.IsActived)
+                return null;
+            return _mapper.Map<HelpdeskCatalogResponse>(catalog);
         }
 
         public async Task<bool> UpdateAsync(int id, UpdateCatalogRequest request)

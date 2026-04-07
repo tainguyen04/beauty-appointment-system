@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
+using BeautyBooking.Helper;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
 using BeautyBooking.MappingProfiles;
+using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
 {
@@ -12,12 +15,15 @@ namespace BeautyBooking.Services
     {
         private readonly IWorkScheduleRepository _workScheduleRepository;
         private readonly IStaffProfileRepository _staffProfileRepository;
+        private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
-        public WorkScheduleService(IWorkScheduleRepository workScheduleRepository, IStaffProfileRepository staffProfileRepository, IMapper mapper)
+        public WorkScheduleService(IWorkScheduleRepository workScheduleRepository, 
+            IStaffProfileRepository staffProfileRepository, IMapper mapper, ICurrentUserService currentUserService)
         {
             _workScheduleRepository = workScheduleRepository;
             _staffProfileRepository = staffProfileRepository;
             _mapper = mapper;
+            _currentUserService = currentUserService;
         }
         public async Task<int> CreateAsync(CreateWorkScheduleRequest request)
         {
@@ -46,7 +52,10 @@ namespace BeautyBooking.Services
 
         public async Task<IEnumerable<WorkScheduleResponse>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek)
         {
-            return _mapper.Map<IEnumerable<WorkScheduleResponse>>(await _workScheduleRepository.GetAllSchedulesByDayOfWeekAsync(dayOfWeek));
+            return await _workScheduleRepository
+                .GetAllSchedulesByDayOfWeek(dayOfWeek)
+                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<WorkScheduleResponse?> GetDetailedByIdAsync(int id)
@@ -54,20 +63,29 @@ namespace BeautyBooking.Services
             return _mapper.Map<WorkScheduleResponse?>(await _workScheduleRepository.GetDetailedByIdAsync(id));
         }
 
-        public async Task<IEnumerable<WorkScheduleResponse>> GetByStaffIdAndDayOfWeekAsync(int staffId, DayOfWeek dayOfWeek)
+        public async Task<IEnumerable<WorkScheduleResponse>> GetMyScheduleByDayAsync(DayOfWeek dayOfWeek)
         {
-            var staff = await _staffProfileRepository.GetByIdAsync(staffId);
-            if (staff == null || staff.IsDeleted)
-                throw new ArgumentException("ID không tồn tại.");
-            return _mapper.Map<IEnumerable<WorkScheduleResponse>>(await _workScheduleRepository.GetByStaffIdAndDayOfWeekAsync(staffId, dayOfWeek));
+            var staffId = _currentUserService.StaffId;
+            if (staffId == null)
+                throw new InvalidOperationException("Người dùng hiện tại không phải là nhân viên.");
+            var staff = await _staffProfileRepository.GetByIdAsync(staffId.Value);
+            return await _workScheduleRepository
+                .GetByStaffIdAndDayOfWeek(staffId.Value, dayOfWeek)
+                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
         }
 
-        public async Task<IEnumerable<WorkScheduleResponse>> GetByStaffIdAsync(int staffId)
+        public async Task<IEnumerable<WorkScheduleResponse>> GetMyScheduleAsync()
         {
-            var staff = await _staffProfileRepository.GetByIdAsync(staffId);
-            if (staff == null || staff.IsDeleted)
-                throw new ArgumentException("ID không tồn tại.");
-            return _mapper.Map<IEnumerable<WorkScheduleResponse>>(await _workScheduleRepository.GetByStaffIdAsync(staffId));
+            var staffId = _currentUserService.StaffId;
+            if (staffId == null)
+                throw new InvalidOperationException("Người dùng hiện tại không phải là nhân viên.");
+            var staff = await _staffProfileRepository.GetByIdAsync(staffId.Value);
+            return await _workScheduleRepository
+                .GetByStaffIdAsync(staffId.Value)
+                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<bool> UpdateAsync(int id, UpdateWorkScheduleRequest request)
@@ -87,8 +105,22 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<WorkScheduleResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
-            var pageSchedules = await _workScheduleRepository.GetAllSchedulesAsync(pageNumber, pageSize);
-            return pageSchedules.ToPagedResult<WorkSchedule, WorkScheduleResponse>(_mapper);
+            return await _workScheduleRepository
+                .Query()
+                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(pageNumber, pageSize);
+        }
+
+        public async Task<IEnumerable<WorkScheduleResponse>> GetByStaffIdAsync(int staffId)
+        {
+            var staff = await _staffProfileRepository.GetByIdAsync(staffId);
+            if (staff == null || staff.IsDeleted)
+                throw new ArgumentException("ID không tồn tại.");
+            return await _workScheduleRepository
+                .Query()
+                .Where(ws => ws.StaffId == staffId)
+                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
     }
 }

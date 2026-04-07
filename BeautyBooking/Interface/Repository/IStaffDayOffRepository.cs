@@ -7,11 +7,11 @@ namespace BeautyBooking.Interface.Repository
     public interface IStaffDayOffRepository: IRepository<StaffDayOff, int>
     {
         Task<bool> IsAlreadyOffAsync(int staffId, DateOnly date);
-        Task<IEnumerable<StaffDayOff>> GetByStaffIdAsync(int staffId, StaffDayOffStatus status);
-        Task<IEnumerable<StaffDayOff>> GetPendingDayOffAsync();
+        IQueryable<StaffDayOff> GetByStaffId(int staffId, StaffDayOffStatus status);
+        IQueryable<StaffDayOff> GetPendingDayOff();
         Task<StaffDayOff?> GetByIdWithStaffAsync(int id);
-        Task<IEnumerable<StaffDayOff>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus status);
-        Task<PagedResult<StaffDayOff>> GetAllWithStaffAsync(int pageNumber, int pageSize);
+        IQueryable<StaffDayOff> GetAllByMonth(int month, int year, StaffDayOffStatus status);
+        IQueryable<StaffDayOff> QueryDetailed();
         Task<List<int>> GetStaffIdsOffByDateAsync(DateOnly date);
     }
 }

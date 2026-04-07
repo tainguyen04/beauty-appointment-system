@@ -8,10 +8,10 @@ namespace BeautyBooking.Interface.Repository
     {
         Task<bool> HasOverlapAsync(int staffId, DayOfWeek dayOfWeek, int startTime, int endTime, int? excludeScheduleId = null);
         Task<WorkSchedule?> GetDetailedByIdAsync(int id);
-        Task<IEnumerable<WorkSchedule>> GetByStaffIdAsync(int staffId);
-        Task<IEnumerable<WorkSchedule>> GetByStaffIdAndDayOfWeekAsync(int staffId, DayOfWeek dayOfWeek);
-        Task<IEnumerable<WorkSchedule>> GetAllSchedulesByDayOfWeekAsync(DayOfWeek dayOfWeek);
-        Task<PagedResult<WorkSchedule>> GetAllSchedulesAsync(int pageNumber, int pageSize);
+        IQueryable<WorkSchedule> GetByStaffIdAsync(int staffId);
+        IQueryable<WorkSchedule> GetByStaffIdAndDayOfWeek(int staffId, DayOfWeek dayOfWeek);
+        IQueryable<WorkSchedule> GetAllSchedulesByDayOfWeek(DayOfWeek dayOfWeek);
+        IQueryable<WorkSchedule> QueryDetailed();
 
     }
 }

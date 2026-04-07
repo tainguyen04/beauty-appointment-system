@@ -11,10 +11,12 @@ namespace BeautyBooking.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IHttpContextAccessor httpContextAccessor)
         {
             _authService = authService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpPost("login")]
@@ -31,6 +33,17 @@ namespace BeautyBooking.Controllers
         {
             var result = await _authService.RegisterAsync(request);
             return Created(string.Empty,result);
+        }
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            if (token == null)
+                return BadRequest("Token không được cung cấp.");
+            var result = await _authService.LogoutAsync(token);
+            if (!result)
+                return BadRequest();
+            return NoContent();
         }
     }
 }

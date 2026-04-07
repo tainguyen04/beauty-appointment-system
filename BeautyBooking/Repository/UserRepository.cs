@@ -14,48 +14,35 @@ namespace BeautyBooking.Repository
         {
         }
 
-        public async Task<PagedResult<User>> GetAllWithProfileAsync(int pageNumber, int pageSize)
-        {
-            return await _entities
-                .Include(u => u.StaffProfile)
-                .Include(u => u.Ward)
-                .Where(u => !u.IsDeleted)
-                .AsNoTracking()
-                .ToPagedResultAsync(pageNumber,pageSize);
-
-        }
-
         public async Task<User?> GetByEmailAsync(string email)
         {
             return await _entities.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
         }
 
-        public async Task<List<User>> GetUserByRoleAsync(UserRole role)
+        public IQueryable<User> GetUsersByRole(UserRole role)
         {
-            return await _entities.Where(u => u.Role == role && !u.IsDeleted).ToListAsync();
+            return _entities.Where(u => u.Role == role && !u.IsDeleted);
         }
 
-        public async Task<PagedResult<User>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)
-        {
-            return await _entities
-                .Where(u => u.Role == role && !u.IsDeleted)
-                .Include(u => u.StaffProfile)
-                .Include(u => u.Ward)
-                .AsNoTracking()
-                .ToPagedResultAsync(pageNumber,pageSize);
-        }
-
-        public async Task<User?> GetWithProfileByIdAsync(int userId)
+        public async Task<User?> GetWithProfileByIdAsync(int id)
         {
            return await _entities
                 .Include(u => u.StaffProfile)
                 .Include(u => u.Ward)
-                .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+                .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
         }
 
         public async Task<bool> IsEmailUniqueAsync(string email)
         {
             return !await _entities.AnyAsync(u => u.Email == email && !u.IsDeleted);
+        }
+
+        public IQueryable<User> QueryDetailed()
+        {
+            return _entities
+                .Include(u => u.StaffProfile)
+                .Include(u => u.Ward)
+                .Where(u => !u.IsDeleted);
         }
     }
 }

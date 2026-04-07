@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
+using BeautyBooking.Helper;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
 using BeautyBooking.MappingProfiles;
+using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
 {
@@ -71,13 +74,18 @@ namespace BeautyBooking.Services
 
         public async Task<IEnumerable<StaffDayOffResponse>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus status)
         {
-            return _mapper.Map<IEnumerable<StaffDayOffResponse>>(await _staffDayOffRepository.GetAllByMonthAsync(month, year,status));
+            return await _staffDayOffRepository
+                .GetAllByMonth(month,year,status)
+                .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<PagedResult<StaffDayOffResponse>> GetAllWithStaffAsync(int pageNumber, int pageSize)
         {
-            var pagedStaffDayOffs = await _staffDayOffRepository.GetAllWithStaffAsync(pageNumber, pageSize);
-            return pagedStaffDayOffs.ToPagedResult<StaffDayOff,StaffDayOffResponse>(_mapper);
+            return await _staffDayOffRepository
+                .QueryDetailed()
+                .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(pageNumber, pageSize);
         }
 
         public async Task<StaffDayOffResponse?> GetByIdAsync(int id)
@@ -92,12 +100,21 @@ namespace BeautyBooking.Services
             var currentStaffId = _currentUserService.StaffId;
             if (currentStaffId != staffId)
                 throw new Exception("Bạn không có quyền xem lịch sử xin nghỉ của người khác");
-            return _mapper.Map<IEnumerable<StaffDayOffResponse>>(await _staffDayOffRepository.GetByStaffIdAsync(staffId,status));
+            var dayOffs = await _staffDayOffRepository
+                .GetByStaffId(staffId, status)
+                .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            if(dayOffs == null || !dayOffs.Any())
+                throw new KeyNotFoundException("Không tìm thấy lịch sử xin nghỉ nào.");
+            return dayOffs;
         }
 
         public async Task<IEnumerable<StaffDayOffResponse>> GetPendingDayOffAsync()
         {
-            return _mapper.Map<IEnumerable<StaffDayOffResponse>>(await _staffDayOffRepository.GetPendingDayOffAsync());
+            return await _staffDayOffRepository
+                .GetPendingDayOff()
+                .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<bool> RejectAsync(int id)

@@ -61,20 +61,20 @@ namespace BeautyBooking.Controllers
                 return NotFound();
             return Ok(schedule);
         }
-
-        [HttpGet("staff/{staffId}")]
+        
+        [HttpGet("me")]
         [Authorize(Policy = "StaffOnly")]
-        public async Task<ActionResult<IEnumerable<WorkScheduleResponse>>> GetByStaffId(int staffId)
+        public async Task<ActionResult<IEnumerable<WorkScheduleResponse>>> GetMySchedule()
         {
-            var schedules = await _workScheduleService.GetByStaffIdAsync(staffId);
+            var schedules = await _workScheduleService.GetMyScheduleAsync();
             return Ok(schedules);
         }
 
-        [HttpGet("staff/{staffId}/day/{dayOfWeek}")]
+        [HttpGet("me/schedule/{dayOfWeek}")]
         [Authorize(Policy = "StaffOnly")]
-        public async Task<ActionResult<IEnumerable<WorkScheduleResponse>>> GetByStaffIdAndDayOfWeek(int staffId, DayOfWeek dayOfWeek)
+        public async Task<ActionResult<IEnumerable<WorkScheduleResponse>>> GetMyScheduleByDay(DayOfWeek dayOfWeek)
         {
-            var schedules = await _workScheduleService.GetByStaffIdAndDayOfWeekAsync(staffId, dayOfWeek);
+            var schedules = await _workScheduleService.GetMyScheduleByDayAsync(dayOfWeek);
             return Ok(schedules);
         }
 
@@ -85,5 +85,13 @@ namespace BeautyBooking.Controllers
             var schedules = await _workScheduleService.GetByDayOfWeekAsync(dayOfWeek);
             return Ok(schedules);
         }
+        [HttpGet("staff/{staffId}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<IEnumerable<WorkScheduleResponse>>> GetByStaffId(int staffId)
+        {
+            var schedules = await _workScheduleService.GetByStaffIdAsync(staffId);
+            return Ok(schedules);
+        }
+
     }
 }

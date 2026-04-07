@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.EF;
 using BeautyBooking.Entities;
+using BeautyBooking.Helper;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
@@ -33,6 +35,19 @@ namespace BeautyBooking.Services
             _dbContext = dbContext;
             _currentUserService = currentUserService;
             _photoService = photoService;
+        }
+
+        public async Task<bool> BlockAccountAsync(int id)
+        {
+            var currentUserId = _currentUserService.UserId;
+            if(!currentUserId.HasValue)
+                throw new UnauthorizedAccessException("Người dùng chưa đăng nhập.");
+            var user = await _userRepo.GetByIdAsync(currentUserId.Value);
+            if (user == null || user.IsDeleted)
+                throw new KeyNotFoundException("Tài khoản không tồn tại.");
+            user.IsActived = false;
+            await _userRepo.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request)
@@ -103,8 +118,11 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<UserResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
-            var pagedUsers = await _userRepo.GetAllWithProfileAsync(pageNumber, pageSize);
-            return pagedUsers.ToPagedResult<User, UserResponse>(_mapper);
+            return await _userRepo
+                .Query()
+                .Where(u => !u.IsDeleted)
+                .ProjectTo<UserResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(pageNumber, pageSize);
         }
 
         public async Task<UserResponse?> GetByIdAsync(int id)
@@ -114,8 +132,10 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<UserResponse>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)
         {
-            var pagedUsers = await _userRepo.GetUsersByRoleAsync(role, pageNumber, pageSize);
-            return pagedUsers.ToPagedResult<User, UserResponse>(_mapper);
+            return await _userRepo
+                .GetUsersByRole(role)
+                .ProjectTo<UserResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(pageNumber, pageSize);
         }
 
         public async Task<bool> IsEmailAvailableAsync(string email)
