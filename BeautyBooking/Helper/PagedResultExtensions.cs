@@ -16,6 +16,7 @@ namespace BeautyBooking.Helper
             var items = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
+                .AsNoTracking()
                 .ToListAsync();
             return new PagedResult<T>(items, count, pageSize, pageNumber);
         }

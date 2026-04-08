@@ -64,19 +64,14 @@ namespace BeautyBooking.Services
         }
         public async Task<PagedResult<StaffProfileResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
-            return await _staffProfileRepository
-                .Query()
-                .Where(s => !s.IsDeleted)
-                .ProjectTo<StaffProfileResponse>(_mapper.ConfigurationProvider)
-                .ToPagedResultAsync(pageNumber, pageSize);
+            var pagedStaffProfiles = await _staffProfileRepository.GetPagedWithUserAndServicesAsync(pageNumber, pageSize);
+            return pagedStaffProfiles.ToPagedResult<StaffProfile, StaffProfileResponse>(_mapper);
         }
 
         public async Task<IEnumerable<StaffProfileResponse>> GetAvailableAsync(DateOnly date, int startTime, int endTime)
         {
-            return await _staffProfileRepository
-                .GetAvailableByTimeSlot(date, startTime, endTime)
-                .ProjectTo<StaffProfileResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var staffProfiles = await _staffProfileRepository.GetAvailableByTimeSlotAsync(date, startTime, endTime);
+            return _mapper.Map<IEnumerable<StaffProfileResponse>>(staffProfiles);
         }
 
         public async Task<StaffProfileResponse?> GetByIdAsync(int id)
@@ -99,15 +94,14 @@ namespace BeautyBooking.Services
         {
             var currentRole = _currentUserService.Role;
             var currentStaffId = _currentUserService.StaffId;
-            var query = _staffProfileRepository.GetByServiceId(serviceId);
+            var allStaff = await _staffProfileRepository.GetByServiceIdAsync(serviceId);
             if (currentRole == UserRole.Staff && currentStaffId.HasValue)
             {
-                query = query.Where(s => s.Id == currentStaffId.Value);
+                var staffProfiles = allStaff.Where(s => s.Id == currentStaffId);
+                return _mapper.Map<IEnumerable<StaffProfileResponse>>(staffProfiles);
             }
-            return await query
-                    .ProjectTo<StaffProfileResponse>(_mapper.ConfigurationProvider)
-                    .ToListAsync();
-}
+            return _mapper.Map<IEnumerable<StaffProfileResponse>>(allStaff);
+        }
 
         public async Task<StaffProfileResponse?> GetByUserIdAsync(int userId)
         {
@@ -123,9 +117,7 @@ namespace BeautyBooking.Services
 
         public async Task<bool> UpdateAsync(int id, UpdateStaffProfileRequest request)
         {
-            var staffProfile = await _staffProfileRepository
-                .QueryDetailed()
-                .FirstOrDefaultAsync(s => s.Id == id);
+            var staffProfile = await _staffProfileRepository.GetByIdWithUserAndServicesAsync(id);
             if (staffProfile == null)
                 throw new KeyNotFoundException("Staff không tồn tại.");
             var currentRole = _currentUserService.Role;
@@ -148,10 +140,7 @@ namespace BeautyBooking.Services
         }
         public async Task<bool> AssignServicesAsync(int id, AssignServicesRequest request)
         {
-            var staffProfile = await _staffProfileRepository
-                .Query()
-                .Include(s => s.Services)
-                .FirstOrDefaultAsync(s => s.Id == id);
+            var staffProfile = await _staffProfileRepository.GetByIdWithServicesAsync(id);
             if (staffProfile == null)
                 throw new KeyNotFoundException("Staff không tồn tại.");
             var currentRole = _currentUserService.Role;

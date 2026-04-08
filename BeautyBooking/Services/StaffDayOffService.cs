@@ -74,18 +74,13 @@ namespace BeautyBooking.Services
 
         public async Task<IEnumerable<StaffDayOffResponse>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus status)
         {
-            return await _staffDayOffRepository
-                .GetAllByMonth(month,year,status)
-                .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            return _mapper.Map<IEnumerable<StaffDayOffResponse>>(await _staffDayOffRepository.GetAllByMonthAsync(month, year, status));
         }
 
         public async Task<PagedResult<StaffDayOffResponse>> GetAllWithStaffAsync(int pageNumber, int pageSize)
         {
-            return await _staffDayOffRepository
-                .QueryDetailed()
-                .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
-                .ToPagedResultAsync(pageNumber, pageSize);
+            var dayOffs = await _staffDayOffRepository.GetPagedWithStaffAsync(pageNumber, pageSize);
+            return dayOffs.ToPagedResult<StaffDayOff, StaffDayOffResponse>(_mapper);
         }
 
         public async Task<StaffDayOffResponse?> GetByIdAsync(int id)
@@ -100,21 +95,15 @@ namespace BeautyBooking.Services
             var currentStaffId = _currentUserService.StaffId;
             if (currentStaffId != staffId)
                 throw new Exception("Bạn không có quyền xem lịch sử xin nghỉ của người khác");
-            var dayOffs = await _staffDayOffRepository
-                .GetByStaffId(staffId, status)
-                .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var dayOffs = await _staffDayOffRepository.GetByStaffIdAsync(staffId, status);
             if(dayOffs == null || !dayOffs.Any())
                 throw new KeyNotFoundException("Không tìm thấy lịch sử xin nghỉ nào.");
-            return dayOffs;
+            return _mapper.Map<IEnumerable<StaffDayOffResponse>>(dayOffs);
         }
 
         public async Task<IEnumerable<StaffDayOffResponse>> GetPendingDayOffAsync()
         {
-            return await _staffDayOffRepository
-                .GetPendingDayOff()
-                .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            return _mapper.Map<IEnumerable<StaffDayOffResponse>>(await _staffDayOffRepository.GetPendingDayOffAsync());
         }
 
         public async Task<bool> RejectAsync(int id)

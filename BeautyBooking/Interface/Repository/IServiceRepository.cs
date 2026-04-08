@@ -5,12 +5,12 @@ namespace BeautyBooking.Interface.Repository
 {
     public interface IServiceRepository: IRepository<Entities.Service, int>
     {
-        IQueryable<Entities.Service> QueryDetailed();
+        Task<PagedResult<Entities.Service>> GetPagedWithCategoryAsync(int pageNumber, int pageSize);
         Task<Entities.Service?> GetByIdWithCategoryAsync(int id);
-        IQueryable<Entities.Service> GetByCategoryId(int categoryId);
+        Task<IEnumerable<Entities.Service>> GetByCategoryIdAsync(int categoryId);
 
-        IQueryable<Entities.Service> GetByStaffId(int staffId);
-        IQueryable<Entities.Service> GetByIds(List<int> ids);
+        Task<IEnumerable<Entities.Service>> GetByStaffIdAsync(int staffId);
+        Task<IEnumerable<Entities.Service>> GetByIdsAsync(List<int> ids);
 
     }
 }

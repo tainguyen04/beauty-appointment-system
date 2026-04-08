@@ -14,34 +14,73 @@ namespace BeautyBooking.Repository
         {
         }
 
-        public IQueryable<StaffProfile> GetActive()
+        public async Task<IEnumerable<StaffProfile>> GetActiveAsync()
         {
-            return _entities.Where(sp => sp.IsActived && !sp.IsDeleted).AsNoTracking();
+            return await _entities
+                .Include(sp => sp.User)
+                .Include(sp => sp.Services)
+                .AsSplitQuery()
+                .Where(sp => !sp.IsDeleted && sp.User != null && !sp.User.IsDeleted && sp.User.IsActived)
+                .ToListAsync();
         }
 
-        public IQueryable<StaffProfile> GetAvailableByTimeSlot(DateOnly date, int? startTime = null, int? endTime = null)
+        public async Task<PagedResult<StaffProfile>> GetPagedWithUserAndServicesAsync(int pageNumber, int pageSize)
         {
-            return _entities
-                .Where(sp => sp.IsActived && !sp.IsDeleted)
-                .Where(sp => !sp.Appointments.Any(a =>
-                    a.AppointmentDate == date &&
-                    (startTime == null || a.StartTime < startTime) &&
-                    (endTime == null || a.EndTime > endTime)))
-                .AsNoTracking();
+            return await _entities
+                .Include(sp => sp.User)
+                .Include(sp => sp.Services)
+                .Where(sp => !sp.IsDeleted)
+                .OrderByDescending(sp => sp.Id)
+                .AsSplitQuery()
+                .AsNoTracking()
+                .ToPagedResultAsync(pageNumber, pageSize);
         }
 
-        public IQueryable<StaffProfile> GetByServiceId(int serviceId)
+        public async Task<IEnumerable<StaffProfile>> GetAvailableByTimeSlotAsync(DateOnly date, int? startTime = null, int? endTime = null)
         {
-            return _entities
+            return await _entities
+                .Include(sp => sp.User)
+                .Include(sp => sp.Services)
+                .Include(sp => sp.Appointments)
+                .AsSplitQuery()
+                .Where(sp => !sp.IsDeleted && sp.User != null && !sp.User.IsDeleted && sp.User.IsActived && 
+                        !sp.Appointments.Any(a =>
+                            a.AppointmentDate == date &&
+                            (
+                                startTime == null || endTime == null
+                                ? true
+                                : a.StartTime < startTime && a.EndTime > endTime
+                            )
+                       )
+                    )
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<StaffProfile?> GetByIdWithServicesAsync(int id)
+        {
+            return await _entities
+                .Include(sp => sp.Services)
+                .FirstOrDefaultAsync(sp => sp.Id == id && !sp.IsDeleted);
+        }
+
+        public async Task<StaffProfile?> GetByIdWithUserAndServicesAsync(int id)
+        {
+            return await _entities
+                .Include(sp => sp.User)
+                .Include(sp => sp.Services)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(sp => sp.Id == id && !sp.IsDeleted); 
+        }
+
+        public async Task<IEnumerable<StaffProfile>> GetByServiceIdAsync(int serviceId)
+        {
+            return await _entities
+                .Include(sp => sp.User)
+                .Include(sp => sp.Services)
                 .Where(sp => sp.Services.Any(s => s.Id == serviceId) && !sp.IsDeleted)
-                .AsNoTracking();
-        }
-
-        public IQueryable<StaffProfile> GetByServiceIds(List<int> serviceIds)
-        {
-            return _entities
-                .Where(sp => sp.Services.Any(s => serviceIds.Contains(s.Id)) && !sp.IsDeleted)
-                .AsNoTracking();
+                .AsSplitQuery()
+                .ToListAsync();
         }
 
         public async Task<StaffProfile?> GetByUserIdAsync(int userId)
@@ -70,24 +109,26 @@ namespace BeautyBooking.Repository
                 .ToListAsync();
         }
 
-        public IQueryable<StaffProfile> GetWorkingByDate(DateOnly date)
+        public async Task<PagedResult<StaffProfile>> GetByServiceIdsAsync(List<int> serviceIds, int pageNumber, int pageSize)
         {
-            return _entities
-                .Where(sp => sp.Appointments.Any(a => a.AppointmentDate == date && 
-                             a.AppointmentStatus != AppointmentStatus.Cancelled) && 
-                             !sp.IsDeleted)
-                .AsNoTracking();
-        }
-
-        public IQueryable<StaffProfile> QueryDetailed()
-        {
-            return _entities
+            return await _entities
                 .Include(sp => sp.User)
                 .Include(sp => sp.Services)
-                .Include(sp => sp.StaffDayOffs)
-                .Include(sp => sp.Appointments)
+                .Where(sp => sp.Services.Any(s => serviceIds.Contains(s.Id)) && !sp.IsDeleted)
                 .AsSplitQuery()
-                .Where(sp => !sp.IsDeleted);
+                .ToPagedResultAsync(pageNumber, pageSize);
+        }
+
+        public async Task<IEnumerable<StaffProfile>> GetWorkingByDateAsync(DateOnly date)
+        {
+            return await _entities
+                .Include(sp => sp.User)
+                .Include(sp => sp.Services)
+                .Where(sp => sp.Appointments.Any(a => a.AppointmentDate == date &&
+                             a.AppointmentStatus != AppointmentStatus.Cancelled) &&
+                             !sp.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

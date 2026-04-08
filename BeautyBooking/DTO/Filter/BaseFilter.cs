@@ -1,4 +1,6 @@
-﻿namespace BeautyBooking.DTO.Filter
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BeautyBooking.DTO.Filter
 {
     public class BaseFilter
     {

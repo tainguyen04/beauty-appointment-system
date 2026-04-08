@@ -13,15 +13,31 @@ namespace BeautyBooking.Repository
         public UserRepository(ApplicationDbContext dbcontext) : base(dbcontext)
         {
         }
+        public async Task<PagedResult<User>> GetPagedWithProfileAsync(int pageNumber, int pageSize)
+        {
+            return await _entities
+                .Include(u => u.StaffProfile)
+                .Include(u => u.Ward)
+                .Where(u => !u.IsDeleted)
+                .OrderBy(u => u.FullName)
+                .AsNoTracking()
+                .ToPagedResultAsync(pageNumber, pageSize);
+
+        }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
             return await _entities.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
         }
 
-        public IQueryable<User> GetUsersByRole(UserRole role)
+        public async Task<PagedResult<User>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)
         {
-            return _entities.Where(u => u.Role == role && !u.IsDeleted);
+            return await _entities
+                .Where(u => u.Role == role && !u.IsDeleted)
+                .Include(u => u.StaffProfile)
+                .Include(u => u.Ward)
+                .AsNoTracking()
+                .ToPagedResultAsync(pageNumber, pageSize);
         }
 
         public async Task<User?> GetWithProfileByIdAsync(int id)

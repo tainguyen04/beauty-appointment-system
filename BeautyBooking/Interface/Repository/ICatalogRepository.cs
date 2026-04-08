@@ -5,7 +5,7 @@ namespace BeautyBooking.Interface.Repository
 {
     public interface ICatalogRepository: IRepository<HelpdeskCatalog, int>
     {
-        IQueryable<HelpdeskCatalog> QueryDetailed();
+        Task<List<HelpdeskCatalog>> GetAllWithContentsAsync();
         Task<HelpdeskCatalog?> GetContentsByIdAsync(int id);
     }
 }

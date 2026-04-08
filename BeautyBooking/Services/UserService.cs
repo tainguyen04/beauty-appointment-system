@@ -118,11 +118,8 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<UserResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
-            return await _userRepo
-                .Query()
-                .Where(u => !u.IsDeleted)
-                .ProjectTo<UserResponse>(_mapper.ConfigurationProvider)
-                .ToPagedResultAsync(pageNumber, pageSize);
+            var users = await _userRepo.GetPagedWithProfileAsync(pageNumber, pageSize);
+            return users.ToPagedResult<User, UserResponse>(_mapper);
         }
 
         public async Task<UserResponse?> GetByIdAsync(int id)
@@ -132,10 +129,11 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<UserResponse>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)
         {
-            return await _userRepo
-                .GetUsersByRole(role)
-                .ProjectTo<UserResponse>(_mapper.ConfigurationProvider)
-                .ToPagedResultAsync(pageNumber, pageSize);
+            var currentRole = _currentUserService.Role;
+            if (currentRole != UserRole.Admin)
+                throw new UnauthorizedAccessException("Chỉ Admin mới có quyền truy cập.");
+            var users = await _userRepo.GetUsersByRoleAsync(role, pageNumber, pageSize);
+            return users.ToPagedResult<User,UserResponse>(_mapper);
         }
 
         public async Task<bool> IsEmailAvailableAsync(string email)

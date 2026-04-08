@@ -43,7 +43,7 @@ namespace BeautyBooking.Services
         public async Task<List<HelpdeskCatalogResponse>> GetAllAsync()
         {
             return await _catalogRepo
-                .QueryDetailed()
+                .Query()
                 .Where(c => c.IsActived)
                 .ProjectTo<HelpdeskCatalogResponse>(_mapper.ConfigurationProvider)
                 .ToListAsync();

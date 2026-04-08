@@ -18,9 +18,9 @@ namespace BeautyBooking.Repository
                 .FirstOrDefaultAsync(l => l.KeyLocalization == key);
         }
 
-        public IQueryable<WebsiteLocalization> QueryDetailed()
+        public async Task<List<WebsiteLocalization>> GetAllWithWardsAsync()
         {
-            return _entities.Include(l => l.WebsiteLocalizationWards).AsNoTracking();
+            return await _entities.Include(l => l.WebsiteLocalizationWards).ToListAsync();
         }
     }
 }

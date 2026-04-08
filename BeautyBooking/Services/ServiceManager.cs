@@ -67,22 +67,17 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<ServiceResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
-            return await _serviceRepo
-                .QueryDetailed()
-                .Where(s => !s.IsDeleted)
-                .ProjectTo<ServiceResponse>(_mapper.ConfigurationProvider)
-                .ToPagedResultAsync(pageNumber, pageSize);
+            var pagedServices = await _serviceRepo.GetPagedWithCategoryAsync(pageNumber, pageSize);
+            return pagedServices.ToPagedResult<Service, ServiceResponse>(_mapper);
         }
 
         public async Task<IEnumerable<ServiceResponse>> GetByCategoryIdAsync(int categoryId)
         {
-            var services = await _serviceRepo
-                .GetByCategoryId(categoryId)
-                .ProjectTo<ServiceResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
-            if(!services.Any())
+            var services = await _serviceRepo.GetByCategoryIdAsync(categoryId);
+            if (!services.Any())
                 throw new KeyNotFoundException("Không tìm thấy dịch vụ nào trong category này.");
-            return services;
+
+            return _mapper.Map<List<ServiceResponse>>(services);
         }
 
         public async Task<ServiceResponse?> GetByIdAsync(int id)
@@ -98,14 +93,10 @@ namespace BeautyBooking.Services
             var staffProfile = await _staffProfileRepo.GetByIdAsync(staffId);
             if (staffProfile == null)
                 throw new KeyNotFoundException("Staff không tồn tại.");
-            var services = await _serviceRepo
-                .GetByStaffId(staffId)
-                .Where(s => s.StaffProfiles.Any(sp => sp.Id == staffId) && !s.IsDeleted)
-                .ProjectTo<ServiceResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var services = await _serviceRepo.GetByStaffIdAsync(staffId);
             if (!services.Any())
                 throw new KeyNotFoundException("Không tìm thấy dịch vụ nào cho nhân viên này.");
-            return services;
+            return _mapper.Map<IEnumerable<ServiceResponse>>(services);
         }
 
         public async Task<bool> UpdateAsync(int id, UpdateServiceRequest request)

@@ -18,9 +18,9 @@ namespace BeautyBooking.Repository
                 .FirstOrDefaultAsync(c => c.CatalogId == id && c.IsActived);
         }
 
-        public IQueryable<HelpdeskCatalog> QueryDetailed()
+        public async Task<List<HelpdeskCatalog>> GetAllWithContentsAsync()
         {
-            return _entities.Include(c => c.HelpdeskContents).AsNoTracking();
+            return await _entities.Include(c => c.HelpdeskContents).ToListAsync();
         }
     }
 }

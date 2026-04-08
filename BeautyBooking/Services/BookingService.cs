@@ -116,10 +116,8 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<AppointmentResponse>> GetAllWithDetailedAsync(int pageNumber, int pageSize)
         {
-            return await _appointmentRepository
-                .QueryDetailed()
-                .ProjectTo<AppointmentResponse>(_mapper.ConfigurationProvider)
-                .ToPagedResultAsync(pageNumber,pageSize);
+            var pagedAppointments = await _appointmentRepository.GetPagedAsync(pageNumber, pageSize);
+            return pagedAppointments.ToPagedResult<Appointment, AppointmentResponse>(_mapper);
         }
 
         public async Task<AppointmentResponse?> GetByIdWithDetailsAsync(int id)
@@ -148,7 +146,7 @@ namespace BeautyBooking.Services
                 throw new UnauthorizedAccessException("Người dùng chưa đăng nhập");
 
             return await _appointmentRepository
-                    .QueryDetailed()
+                    .Query()
                     .Where(a => a.UserId == customerId.Value)
                     .ProjectTo<AppointmentResponse>(_mapper.ConfigurationProvider)
                     .ToPagedResultAsync(pageNumber, pageSize);
@@ -159,11 +157,7 @@ namespace BeautyBooking.Services
             var staffId = _currentUserService.StaffId;
             if(!staffId.HasValue)
                 throw new UnauthorizedAccessException("Nhân viên chưa đăng nhập");
-            return await _appointmentRepository
-                .QueryDetailed()
-                .Where(a => a.StaffId == staffId.Value && a.AppointmentDate == date)
-                .ProjectTo<AppointmentResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            return _mapper.Map<IEnumerable<AppointmentResponse>>(await _appointmentRepository.GetAppointmentsByStaffIdAsync(staffId.Value, date));
         }
         
 
@@ -257,9 +251,8 @@ namespace BeautyBooking.Services
                 throw new Exception("Nhân viên đã nghỉ vào thời gian này.");
 
             var dayOfWeek = date.DayOfWeek;
-            var isWithinSchedule = await _workScheduleRepository
-                .GetByStaffIdAndDayOfWeek(staffId, dayOfWeek)
-                .AnyAsync(s => startTime >= s.StartTime && endTime <= s.EndTime);
+            var schedules = await _workScheduleRepository.GetByStaffIdAndDayOfWeekAsync(staffId, dayOfWeek);
+            bool isWithinSchedule = schedules != null && schedules.Any(s => startTime >= s.StartTime && endTime <= s.EndTime);
             if (!isWithinSchedule)
                 throw new InvalidOperationException("Thời gian hẹn không nằm trong lịch làm việc của nhân viên.");
 

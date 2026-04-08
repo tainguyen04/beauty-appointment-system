@@ -14,6 +14,30 @@ namespace BeautyBooking.Repository
         {
         }
 
+        public async Task<IEnumerable<Appointment>> GetAppointmentsByStaffIdAsync(int staffId, DateOnly date)
+        {
+            return await _entities
+                .Where(a => a.StaffId == staffId &&
+                            a.AppointmentDate == date &&
+                            a.AppointmentStatus != AppointmentStatus.Cancelled &&
+                            !a.IsDeleted)
+                .Include(a => a.User)
+                .Include(a => a.AppointmentServices)
+                    .ThenInclude(a => a.Service)
+                .ToListAsync();
+        }
+
+        public async Task<PagedResult<Appointment>> GetAppointmentsByUserIdAsync(int userId, int pageNumber, int pageSize)
+        {
+            return await _entities
+                .Where(a => a.UserId == userId && !a.IsDeleted)
+                .Include(a => a.Staff)
+                .Include(a => a.AppointmentServices)
+                    .ThenInclude(a => a.Service)
+                .AsSplitQuery()
+                .ToPagedResultAsync(pageNumber, pageSize);
+        }
+
         public async Task<bool> HasAnyAppointmentsAsync(int staffId, DateOnly date)
         {
             return await _entities.AnyAsync(a =>
@@ -44,16 +68,17 @@ namespace BeautyBooking.Repository
                 .FirstOrDefaultAsync();
         }
 
-        public IQueryable<Appointment> QueryDetailed()
+        public async Task<PagedResult<Appointment>> GetPagedAsync(int pageNumber, int pageSize)
         {
-            return _entities
+            return await _entities
                 .Where(a => !a.IsDeleted)
                 .Include(a => a.User)
                 .Include(a => a.Staff)
                 .Include(a => a.AppointmentServices)
                     .ThenInclude(a => a.Service)
+                .OrderByDescending(a => a.AppointmentDate)
                 .AsSplitQuery()
-                .AsNoTracking();
+                .ToPagedResultAsync(pageNumber, pageSize);
         }
 
         public IQueryable<Appointment> QueryByStaff(int staffId, DateOnly date)

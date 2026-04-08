@@ -8,13 +8,15 @@ namespace BeautyBooking.Interface.Repository
     {
         Task<StaffProfile?> GetByUserIdAsync(int userId);
         Task<StaffProfile?> GetByUserIdWithUserAsync(int userId);
-        IQueryable<StaffProfile> QueryDetailed();
-        IQueryable<StaffProfile> GetByServiceIds(List<int> serviceIds);
-        IQueryable<StaffProfile> GetByServiceId(int serviceId);
+        Task<PagedResult<StaffProfile>> GetPagedWithUserAndServicesAsync(int pageNumber, int pageSize);
+        Task<PagedResult<StaffProfile>> GetByServiceIdsAsync(List<int> serviceIds, int pageNumber, int pageSize);
+        Task<IEnumerable<StaffProfile>> GetByServiceIdAsync(int serviceId);
+        Task<StaffProfile?> GetByIdWithUserAndServicesAsync(int id);
+        Task<StaffProfile?> GetByIdWithServicesAsync(int id);
         Task<IEnumerable<int>> GetServiceIdsByIdAsync(int id);
-        IQueryable<StaffProfile> GetWorkingByDate(DateOnly date);
-        IQueryable<StaffProfile> GetActive();
-        IQueryable<StaffProfile> GetAvailableByTimeSlot(DateOnly date, int? startTime = null, int? endTime = null);
+        Task<IEnumerable<StaffProfile>> GetWorkingByDateAsync(DateOnly date);
+        Task<IEnumerable<StaffProfile>> GetActiveAsync();
+        Task<IEnumerable<StaffProfile>> GetAvailableByTimeSlotAsync(DateOnly date, int? startTime = null, int? endTime = null);
 
     }
 }

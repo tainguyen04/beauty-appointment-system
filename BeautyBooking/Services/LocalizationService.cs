@@ -56,7 +56,7 @@ namespace BeautyBooking.Services
         public async Task<IEnumerable<LocalizationResponse>> GetAllAsync()
         {
             return await _localizationRepo
-                .QueryDetailed()
+                .Query()
                 .Where(l => l.IsActived)
                 .ProjectTo<LocalizationResponse>(_mapper.ConfigurationProvider)
                 .ToListAsync();

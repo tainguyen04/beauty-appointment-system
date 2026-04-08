@@ -52,10 +52,7 @@ namespace BeautyBooking.Services
 
         public async Task<IEnumerable<WorkScheduleResponse>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek)
         {
-            return await _workScheduleRepository
-                .GetAllSchedulesByDayOfWeek(dayOfWeek)
-                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            return _mapper.Map<IEnumerable<WorkScheduleResponse>>(await _workScheduleRepository.GetAllSchedulesByDayOfWeekAsync(dayOfWeek));
         }
 
         public async Task<WorkScheduleResponse?> GetDetailedByIdAsync(int id)
@@ -69,10 +66,8 @@ namespace BeautyBooking.Services
             if (staffId == null)
                 throw new InvalidOperationException("Người dùng hiện tại không phải là nhân viên.");
             var staff = await _staffProfileRepository.GetByIdAsync(staffId.Value);
-            return await _workScheduleRepository
-                .GetByStaffIdAndDayOfWeek(staffId.Value, dayOfWeek)
-                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var schedules = await _workScheduleRepository.GetByStaffIdAndDayOfWeekAsync(staffId.Value, dayOfWeek);
+            return _mapper.Map<IEnumerable<WorkScheduleResponse>>(schedules);
 
         }
 
@@ -82,10 +77,8 @@ namespace BeautyBooking.Services
             if (staffId == null)
                 throw new InvalidOperationException("Người dùng hiện tại không phải là nhân viên.");
             var staff = await _staffProfileRepository.GetByIdAsync(staffId.Value);
-            return await _workScheduleRepository
-                .GetByStaffIdAsync(staffId.Value)
-                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var schedules = await _workScheduleRepository.GetByStaffIdAsync(staffId.Value);
+            return _mapper.Map<IEnumerable<WorkScheduleResponse>>(schedules);
         }
 
         public async Task<bool> UpdateAsync(int id, UpdateWorkScheduleRequest request)
@@ -105,10 +98,8 @@ namespace BeautyBooking.Services
 
         public async Task<PagedResult<WorkScheduleResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
-            return await _workScheduleRepository
-                .Query()
-                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
-                .ToPagedResultAsync(pageNumber, pageSize);
+            var schedules = await _workScheduleRepository.GetPagedSchedulesAsync(pageNumber, pageSize);
+            return schedules.ToPagedResult<WorkSchedule, WorkScheduleResponse>(_mapper);
         }
 
         public async Task<IEnumerable<WorkScheduleResponse>> GetByStaffIdAsync(int staffId)

@@ -37,14 +37,35 @@ namespace BeautyBooking.Repository
                 .AsNoTracking();
         }
 
-        public IQueryable<Service> QueryDetailed()
+        public async Task<PagedResult<Service>> GetPagedWithCategoryAsync(int pageNumber, int pageSize)
         {
-            return _entities
+            return await _entities.Where(s => !s.IsDeleted)
                 .Include(s => s.Category)
-                .Include(s => s.StaffProfiles)
-                .Include(s => s.AppointmentServices)
-                .AsSplitQuery()
-                .AsNoTracking();
+                .OrderBy(s => s.Name)
+                .ToPagedResultAsync(pageNumber, pageSize);
+        }
+        public async Task<IEnumerable<Service>> GetByIdsAsync(List<int> ids)
+        {
+            return await _entities.Where(s => ids.Contains(s.Id) && !s.IsDeleted)
+                .Include(s => s.Category)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        public async Task<IEnumerable<Service>> GetByStaffIdAsync(int staffId)
+        {
+            return await _entities
+                .Where(s => s.StaffProfiles.Any(ss => ss.Id == staffId) && !s.IsDeleted)
+                .Include(s => s.Category)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        public async Task<IEnumerable<Service>> GetByCategoryIdAsync(int categoryId)
+        {
+            return await _entities
+                .Include(s => s.Category)
+                .Where(s => s.CategoryId == categoryId && !s.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

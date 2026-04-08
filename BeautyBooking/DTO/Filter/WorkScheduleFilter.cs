@@ -3,6 +3,6 @@
     public class WorkScheduleFilter : BaseFilter
     {
         public string? Keyword { get; set; }
-        public DateOnly? Date { get; set; }
+        public DayOfWeek? Date { get; set; }
     }
 }
