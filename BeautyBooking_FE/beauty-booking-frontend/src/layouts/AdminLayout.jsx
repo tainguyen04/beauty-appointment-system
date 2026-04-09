@@ -87,8 +87,29 @@ useEffect(() => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
-        <div style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.2)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-          {!collapsed ? 'BEAUTY ADMIN' : 'B'}
+        <div style={{ 
+          margin: 16, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center' 
+        }}>
+          <img 
+            src="https://res.cloudinary.com/dznt3hdyj/image/upload/v1775732462/logo_web_km6kza.png"
+            alt="logo"
+            style={{ 
+              height: 32,
+              objectFit: 'contain'
+            }}
+          />
+          {!collapsed && (
+            <span style={{ 
+              color: 'white', 
+              marginLeft: 8, 
+              fontWeight: 'bold' 
+            }}>
+              Glowly
+            </span>
+          )}
         </div>
         <Menu 
           theme="dark" 
