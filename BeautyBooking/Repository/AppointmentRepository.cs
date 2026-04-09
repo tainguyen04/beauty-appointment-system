@@ -34,6 +34,7 @@ namespace BeautyBooking.Repository
                 .Include(a => a.Staff)
                 .Include(a => a.AppointmentServices)
                     .ThenInclude(a => a.Service)
+                .OrderBy(a => a.AppointmentDate)
                 .AsSplitQuery()
                 .ToPagedResultAsync(pageNumber, pageSize);
         }

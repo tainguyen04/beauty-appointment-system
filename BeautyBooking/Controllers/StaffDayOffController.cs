@@ -56,11 +56,11 @@ namespace BeautyBooking.Controllers
             return Ok(dayOff);
         }
 
-        [HttpGet("my-history/{staffId}")]
+        [HttpGet("my-history")]
         [Authorize(Policy = "StaffOnly")]
-        public async Task<ActionResult<IEnumerable<StaffDayOffResponse>>> GetMyHistory(int staffId, [FromQuery] StaffDayOffStatus status)
+        public async Task<ActionResult<IEnumerable<StaffDayOffResponse>>> GetMyHistory([FromQuery] StaffDayOffStatus status)
         {
-            var result = await _staffDayOffService.GetMyHistoryAsync(staffId, status);
+            var result = await _staffDayOffService.GetMyHistoryAsync(status);
             return Ok(result);
         }
 

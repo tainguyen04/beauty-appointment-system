@@ -35,11 +35,22 @@ namespace BeautyBooking.Controllers
             var result = await _userService.GetUsersByRoleAsync(role, pageNumber, pageSize);
             return Ok(result);
         }
-        [HttpGet("{id}")]
+        [HttpPost("{id}/block")]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<UserResponse>> GetById(int id)
+        public async Task<IActionResult> Block(int id)
         {
-            var user = await _userService.GetByIdAsync(id);
+            var result = await _userService.BlockAccountAsync(id);
+            if (!result)
+                return NotFound();
+            return NoContent();
+        }
+
+        [HttpGet("me/profile")]
+        public async Task<ActionResult<UserResponse>> GetMyProfile()
+        {
+            var user = await _userService.GetMyProfileAsync();
+            if (user == null)
+                return NotFound();
             return Ok(user);
         }
         [HttpPost("{id}/reset-password")]

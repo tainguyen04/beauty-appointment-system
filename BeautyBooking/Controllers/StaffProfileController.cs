@@ -23,7 +23,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "AdminOnly")]
+        [AllowAnonymous]
         public async Task<ActionResult<PagedResult<StaffProfileResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var result = await _staffProfileService.GetAllAsync(pageNumber, pageSize);
@@ -31,7 +31,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "AdminOnly")]
+        [AllowAnonymous]
         public async Task<ActionResult<StaffProfileResponse>> GetById(int id)
         {
             var staff = await _staffProfileService.GetByIdAsync(id);
@@ -50,7 +50,7 @@ namespace BeautyBooking.Controllers
             return Ok(staff);
         }
         [HttpGet("me")]
-        [Authorize]
+        [Authorize(Policy = "StaffOnly")]
         public async Task<ActionResult<StaffProfileResponse>> GetMyProfile()
         {
             var staff = await _staffProfileService.GetMyProfileAsync();
@@ -60,7 +60,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("service/{serviceId}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<StaffProfileResponse>>> GetByServiceId(int serviceId)
         {
             var staff = await _staffProfileService.GetByServiceIdAsync(serviceId);
@@ -108,7 +108,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("available")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<StaffProfileResponse>>> GetAvailable([FromQuery] DateOnly date, [FromQuery] int startTime, [FromQuery] int endTime)
         {
             var staff = await _staffProfileService.GetAvailableAsync(date, startTime, endTime);

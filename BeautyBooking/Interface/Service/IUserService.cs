@@ -21,7 +21,8 @@ namespace BeautyBooking.Interface.Service
 
         //Common
         Task<bool> IsEmailAvailableAsync(string email);
-        
-        
+        Task<UserResponse?> GetMyProfileAsync();
+
+
     }
 }

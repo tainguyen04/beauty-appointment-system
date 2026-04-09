@@ -27,7 +27,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("categories")]
-        [Authorize(Policy = "AdminOnly")]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<CategoryResponse>>> GetCategories([FromQuery] CategoryFilter filter)
         {
             var result = await _searchService.SearchCategoriesAsync(filter);
@@ -35,7 +35,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("services")]
-        [Authorize(Policy = "AdminOnly")]
+        [AllowAnonymous]
         public async Task<ActionResult<PagedResult<ServiceResponse>>> GetServices([FromQuery] ServiceFilter filter)
         {
             var result = await _searchService.SearchServicesAsync(filter);
@@ -43,7 +43,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("staff-profiles")]
-        [Authorize(Policy = "AdminOnly")]
+        [AllowAnonymous]
         public async Task<ActionResult<PagedResult<StaffProfileResponse>>> GetStaffProfiles([FromQuery] StaffProfileFilter filter)
         {
             var result = await _searchService.SearchStaffProfilesAsync(filter);

@@ -10,19 +10,17 @@ namespace BeautyBooking.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize]
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
-        private readonly IMapper _mapper;
-
-        public CategoryController(ICategoryService categoryService, IMapper mapper)
+        public CategoryController(ICategoryService categoryService)
         {
             _categoryService = categoryService;
-            _mapper = mapper;
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<CategoryResponse>>> GetAll()
         {
             var categories = await _categoryService.GetAllAsync();
@@ -30,23 +28,27 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<CategoryResponse>> GetById(int id)
         {
             var category = await _categoryService.GetByIdAsync(id);
+            if (category == null)
+                return NotFound();
             return Ok(category);
         }
 
         [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<int>> Create(CategoryRequest request)
         {
             var id = await _categoryService.CreateAsync(request);
-            var categoryResponse = _mapper.Map<CategoryResponse>(request);
-            categoryResponse.Id = id;
+            var categoryResponse = await _categoryService.GetByIdAsync(id);
 
             return CreatedAtAction(nameof(GetById), new { id }, categoryResponse);
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, CategoryRequest request)
         {
             var updated = await _categoryService.UpdateAsync(id, request);
@@ -56,6 +58,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             await _categoryService.DeleteAsync(id);

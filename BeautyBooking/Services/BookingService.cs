@@ -145,11 +145,8 @@ namespace BeautyBooking.Services
             if (!customerId.HasValue)
                 throw new UnauthorizedAccessException("Người dùng chưa đăng nhập");
 
-            return await _appointmentRepository
-                    .Query()
-                    .Where(a => a.UserId == customerId.Value)
-                    .ProjectTo<AppointmentResponse>(_mapper.ConfigurationProvider)
-                    .ToPagedResultAsync(pageNumber, pageSize);
+            var pagedAppointments = await _appointmentRepository.GetAppointmentsByUserIdAsync(customerId.Value, pageNumber, pageSize);
+            return pagedAppointments.ToPagedResult<Appointment, AppointmentResponse>(_mapper);
         }
 
         public async Task<IEnumerable<AppointmentResponse>> GetMyScheduleAsync(DateOnly date)

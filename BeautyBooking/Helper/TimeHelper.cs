@@ -2,8 +2,7 @@
 {
     public static class TimeHelper
     {
-        //Chuyển đổi DateTime sang phút để dễ dàng tính toán
-        public static int ToMinutes(DateTime dt) => dt.Hour * 60 + dt.Minute;
+        //Chuyển đổi số phút từ 00:00 sang định dạng HH:mm
         public static string FormatMinutesToTime(int minutes)
         {
             int hours = minutes / 60;

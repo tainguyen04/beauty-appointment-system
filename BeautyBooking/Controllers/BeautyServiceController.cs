@@ -21,7 +21,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "AdminOnly")]
+        [AllowAnonymous]
         public async Task<ActionResult<PagedResult<ServiceResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var result = await _serviceManager.GetAllAsync(pageNumber, pageSize);
@@ -29,7 +29,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<ServiceResponse>> GetById(int id)
         {
             var service = await _serviceManager.GetByIdAsync(id);
@@ -39,7 +39,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("staff/{staffId}")]
-        [Authorize(Policy = "StaffOnly")]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<ServiceResponse>>> GetByStaffId(int staffId)
         {
             var services = await _serviceManager.GetByStaffIdAsync(staffId);
@@ -47,7 +47,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("category/{categoryId}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<ServiceResponse>>> GetByCategoryId(int categoryId)
         {
             var services = await _serviceManager.GetByCategoryIdAsync(categoryId);

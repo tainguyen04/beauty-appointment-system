@@ -37,9 +37,10 @@ namespace BeautyBooking.Services
 
         public async Task<bool> CancelAsync(int id)
         {
+            var currentStaffId = _currentUserService.StaffId;
             var dayOff = await _staffDayOffRepository.GetByIdAsync(id);
-            if (dayOff == null || dayOff.Status != StaffDayOffStatus.Pending)
-                return false;
+            if (dayOff == null || dayOff.Status != StaffDayOffStatus.Pending || dayOff.StaffId != currentStaffId)
+                throw new KeyNotFoundException("Không tìm thấy đơn xin nghỉ nào hoặc bạn không có quyền hủy đơn này.");
             dayOff.IsDeleted = true;
             await _staffDayOffRepository.SaveChangesAsync();
             return true;
@@ -90,12 +91,12 @@ namespace BeautyBooking.Services
             return _mapper.Map<StaffDayOffResponse?>(await _staffDayOffRepository.GetByIdWithStaffAsync(id));
         }
 
-        public async Task<IEnumerable<StaffDayOffResponse>> GetMyHistoryAsync(int staffId, StaffDayOffStatus status)
+        public async Task<IEnumerable<StaffDayOffResponse>> GetMyHistoryAsync(StaffDayOffStatus status)
         {
             var currentStaffId = _currentUserService.StaffId;
-            if (currentStaffId != staffId)
-                throw new Exception("Bạn không có quyền xem lịch sử xin nghỉ của người khác");
-            var dayOffs = await _staffDayOffRepository.GetByStaffIdAsync(staffId, status);
+            if (!currentStaffId.HasValue)
+                throw new UnauthorizedAccessException("Bạn không có quyền truy cập vào tài nguyên này.");
+            var dayOffs = await _staffDayOffRepository.GetByStaffIdAsync(currentStaffId.Value, status);
             if(dayOffs == null || !dayOffs.Any())
                 throw new KeyNotFoundException("Không tìm thấy lịch sử xin nghỉ nào.");
             return _mapper.Map<IEnumerable<StaffDayOffResponse>>(dayOffs);

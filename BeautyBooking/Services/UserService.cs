@@ -127,6 +127,14 @@ namespace BeautyBooking.Services
             return _mapper.Map<UserResponse?>(await _userRepo.GetWithProfileByIdAsync(id));
         }
 
+        public async Task<UserResponse?> GetMyProfileAsync()
+        {
+            var userId = _currentUserService.UserId;
+            if (!userId.HasValue)
+                throw new InvalidOperationException("Người dùng chưa đăng nhập.");
+            return _mapper.Map<UserResponse?>(await _userRepo.GetWithProfileByIdAsync(userId.Value));
+        }
+
         public async Task<PagedResult<UserResponse>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)
         {
             var currentRole = _currentUserService.Role;

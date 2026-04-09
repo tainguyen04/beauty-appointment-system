@@ -57,7 +57,19 @@ namespace BeautyBooking.Services
 
         public async Task<WorkScheduleResponse?> GetDetailedByIdAsync(int id)
         {
-            return _mapper.Map<WorkScheduleResponse?>(await _workScheduleRepository.GetDetailedByIdAsync(id));
+            var currentStaffId = _currentUserService.StaffId;
+            var userRole = _currentUserService.Role;
+            var workSchedule = await _workScheduleRepository.GetByIdAsync(id);
+            if(workSchedule == null || workSchedule.IsDeleted)
+                throw new KeyNotFoundException("Không tìm thấy ca làm việc nào với ID này.");
+            if(userRole == UserRole.Customer)
+                throw new UnauthorizedAccessException("Bạn không có quyền truy cập ca làm việc này.");
+            else if (userRole == UserRole.Staff)
+            {
+                if(!currentStaffId.HasValue || workSchedule.StaffId != currentStaffId.Value)
+                    throw new UnauthorizedAccessException("Bạn không có quyền truy cập ca làm việc này.");
+            }
+            return _mapper.Map<WorkScheduleResponse?>(workSchedule);
         }
 
         public async Task<IEnumerable<WorkScheduleResponse>> GetMyScheduleByDayAsync(DayOfWeek dayOfWeek)
