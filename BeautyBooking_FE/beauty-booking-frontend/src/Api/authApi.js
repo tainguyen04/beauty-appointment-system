@@ -12,6 +12,11 @@ const authApi = {
     const url = '/Auth/register';
     return axiosClient.post(url, data);
   },
+  // Hàm gọi API đăng xuất
+  logout: (data) => {
+    const url = '/Auth/logout';
+    return axiosClient.post(url, data);
+  },
 };
 
 export default authApi;

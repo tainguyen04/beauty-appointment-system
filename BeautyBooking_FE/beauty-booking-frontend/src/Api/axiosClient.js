@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Tạo một instance của axios với cấu hình mặc định
 const axiosClient = axios.create({
-  baseURL: 'https://beauty-booking-7gd4.onrender.com', // TẠM THỜI ĐỂ VẬY, bạn sẽ thay bằng Port thật của C# sau
+  baseURL: 'https://beauty-booking-7gd4.onrender.com/api', // TẠM THỜI ĐỂ VẬY, bạn sẽ thay bằng Port thật của C# sau
   headers: {
     'Content-Type': 'application/json',
   },
@@ -32,8 +32,10 @@ axiosClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
     // Nếu Backend trả về lỗi 401 (Hết hạn Token hoặc chưa đăng nhập)
-    if (error.response?.status === 401) {
+    if (status === 401 && !url.includes('/Auth/login') && !url.includes('/Auth/register')) {
       localStorage.removeItem('token');
       window.location.href = '/login'; // Đá văng ra trang đăng nhập
     }

@@ -19,8 +19,9 @@ const Login = () => {
 
       // 2. Lấy dữ liệu từ Backend trả về 
       // (Lưu ý: C# .NET 8 mặc định sẽ đổi tên biến thành viết thường chữ cái đầu camelCase)
+      console.log("Dữ liệu từ BE:", response);
       const token = response.token;
-      const userInfo = response.userResponse; // Thay "userResponse" bằng đúng tên trường BE trả về nếu khác
+      const userInfo = response.user; // Thay "userResponse" bằng đúng tên trường BE trả về nếu khác
 
       // 3. Lưu vào LocalStorage
       localStorage.setItem('token', token); 
