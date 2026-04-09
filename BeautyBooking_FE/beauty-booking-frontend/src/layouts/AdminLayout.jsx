@@ -88,29 +88,28 @@ useEffect(() => {
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
         <div style={{ 
-          margin: 16, 
+          width: '100%',
+          height: '120px',
           display: 'flex', 
           alignItems: 'center', 
-          justifyContent: 'center' 
-        }}>
-          <img 
-            src="https://res.cloudinary.com/dznt3hdyj/image/upload/v1775732462/logo_web_km6kza.png"
-            alt="logo"
-            style={{ 
-              height: 32,
-              objectFit: 'contain'
-            }}
-          />
-          {!collapsed && (
-            <span style={{ 
-              color: 'white', 
-              marginLeft: 8, 
-              fontWeight: 'bold' 
-            }}>
-              Glowly
-            </span>
-          )}
-        </div>
+          justifyContent: 'center',
+          overflow: 'hidden',
+          // Nếu bạn muốn logo sát mép trên, để padding: 0. 
+          // Nếu muốn có chút khoảng cách với menu bên dưới, hãy dùng paddingBottom.
+          paddingBottom: '10px' 
+      }}>
+        <img 
+          src="https://res.cloudinary.com/dznt3hdyj/image/upload/v1775734398/logo_rajcbq.png"
+          alt="logo"
+          style={{ 
+            width: '100%',      // Ép ảnh rộng bằng đúng chiều ngang sidebar
+            height: '100%',     // Tự động tính chiều cao theo tỉ lệ ảnh
+            display: 'block',   // Loại bỏ khoảng trống thừa dưới ảnh
+            objectFit: 'cover', // Đảm bảo ảnh phủ kín không gian
+            transition: 'all 0.2s'
+          }}
+        />
+      </div>
         <Menu 
           theme="dark" 
           selectedKeys={[location.pathname]} 
