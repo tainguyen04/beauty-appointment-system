@@ -48,7 +48,7 @@ const Login = () => {
       <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: 8 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Title level={3} style={{ margin: 0 }}>Đăng Nhập</Title>
-          <p style={{ color: 'gray', marginTop: 8 }}>Hệ thống Beauty Booking</p>
+          <p style={{ color: 'gray', marginTop: 8 }}>Hệ thống EcoBeauty</p>
         </div>
 
         <Form form={form} name="login_form" onFinish={onFinish} layout="vertical" size="large">
