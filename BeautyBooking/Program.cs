@@ -143,6 +143,14 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFE",
+        policy => policy
+            .WithOrigins("http://localhost:5173") // FE của bạn
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 
 var app = builder.Build();
 
@@ -154,6 +162,7 @@ var app = builder.Build();
 //}
 
 app.UseHttpsRedirection();
+app.UseCors("AllowFE");
 app.UseAuthentication();
 
 app.UseAuthorization();

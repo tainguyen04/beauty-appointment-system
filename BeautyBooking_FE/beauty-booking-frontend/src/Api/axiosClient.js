@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Tạo một instance của axios với cấu hình mặc định
 const axiosClient = axios.create({
-  baseURL: 'https://beauty-booking-7gd4.onrender.com/api', // TẠM THỜI ĐỂ VẬY, bạn sẽ thay bằng Port thật của C# sau
+  baseURL: 'https://beauty-booking-7gd4.onrender.com', // TẠM THỜI ĐỂ VẬY, bạn sẽ thay bằng Port thật của C# sau
   headers: {
     'Content-Type': 'application/json',
   },

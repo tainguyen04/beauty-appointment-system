@@ -1,7 +1,7 @@
 import { Form, Input, Button, Card, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
-import authApi from '../../Api/AuthApi';
+import authApi from '../../api/AuthApi';
 
 const { Title } = Typography;
 
@@ -10,24 +10,37 @@ const Login = () => {
   const [form] = Form.useForm();
 
   const onFinish = async (values) => {
-  try {
-    // Gọi API cực gọn
-    const response = await authApi.login({
-      email: values.email,
-      password: values.password,
-    });
+    try {
+      // 1. Gọi API
+      const response = await authApi.login({
+        email: values.email,
+        password: values.password,
+      });
 
-    // Giả sử Backend của bạn trả về { token: "...." }
-    localStorage.setItem('token', response.token); 
-    message.success('Đăng nhập thành công!');
-    navigate('/admin');
+      // 2. Lấy dữ liệu từ Backend trả về 
+      // (Lưu ý: C# .NET 8 mặc định sẽ đổi tên biến thành viết thường chữ cái đầu camelCase)
+      const token = response.token;
+      const userInfo = response.userResponse; // Thay "userResponse" bằng đúng tên trường BE trả về nếu khác
 
-  } catch (error) {
-    // Nếu BE ném ra lỗi (sai pass, k thấy user...)
-    console.error("Lỗi đăng nhập:", error);
-    message.error(error.response?.data?.message || 'Sai tài khoản hoặc mật khẩu!');
-  }
-};
+      // 3. Lưu vào LocalStorage
+      localStorage.setItem('token', token); 
+      localStorage.setItem('user', JSON.stringify(userInfo)); // Ép Object thành String để lưu
+
+      message.success(`Đăng nhập thành công! Chào mừng ${userInfo.fullName || 'bạn'}.`);
+
+      // 4. CHUYỂN HƯỚNG THÔNG MINH DỰA VÀO QUYỀN (ROLE)
+      // Giả sử trong UserResponse của bạn có trường role (hoặc RoleName)
+      if (userInfo.role === 'Admin' || userInfo.role === 'Staff') {
+        navigate('/admin'); // Trực chỉ trang Quản trị
+      } else {
+        navigate('/'); // Khách hàng thì ra trang chủ đặt lịch
+      }
+
+    } catch (error) {
+      message.error(error.response?.data?.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin!');
+      console.log('Lỗi chi tiết:', error);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f0f2f5' }}>
