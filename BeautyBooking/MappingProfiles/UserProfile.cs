@@ -18,6 +18,7 @@ namespace BeautyBooking.MappingProfiles
                     CreateMap<CreateUserRequest, User>()
                             .IgnoreAuditFields()
                             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => UserRole.Customer)) // Default role
+                            .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
                             .ForMember(dest => dest.Ward, opt => opt.Ignore())
                             .ForMember(dest => dest.AvatarUrl, opt => opt.Ignore());
 
