@@ -1,41 +1,29 @@
-// src/api/staffApi.js
 import axiosClient from './axiosClient';
 
 const staffApi = {
-  // Lấy danh sách tất cả hồ sơ nhân viên (dùng cho StaffManager)
-  getAll: (params) => {
-    return axiosClient.get('/StaffProfile', { params });
-  },
+  getAll: (params) => axiosClient.get('/StaffProfile', { params }),
+  
+  getById: (id) => axiosClient.get(`/StaffProfile/${id}`),
 
-  // Lấy nhân viên đang rảnh (dùng cho việc gán lịch đặt chỗ)
-  getAvailable: (params) => {
-    return axiosClient.get('/StaffProfile/available', { params });
-  },
+  // Cả Create và Update đều dùng FormData
+  create: (formData) => axiosClient.post('/StaffProfile', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 
-  // Lấy chi tiết 1 nhân viên
-  getById: (id) => {
-    return axiosClient.get(`/StaffProfile/${id}`);
-  },
+  update: (id, formData) => axiosClient.put(`/StaffProfile/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 
-  // Tạo mới hồ sơ nhân viên
-  create: (data) => {
-    return axiosClient.post('/StaffProfile', data);
-  },
-
-  // Cập nhật hồ sơ (Kinh nghiệm, kỹ năng...)
-  update: (id, data) => {
-    return axiosClient.put(`/StaffProfile/${id}`, data);
-  },
-
-  // Xóa hồ sơ nhân viên
-  delete: (id) => {
-    return axiosClient.delete(`/StaffProfile/${id}`);
-  },
-
-  // Lấy danh sách nhân viên làm được dịch vụ X (dùng khi khách chọn dịch vụ)
-  getByService: (serviceId) => {
-    return axiosClient.get(`/StaffProfile/service/${serviceId}`);
-  }
+  delete: (id) => axiosClient.delete(`/StaffProfile/${id}`),
+  
+  // Các API bổ trợ
+  getAvailable: (params) => axiosClient.get('/StaffProfile/available', { params }),
+  getByService: (serviceId) => axiosClient.get(`/StaffProfile/service/${serviceId}`),
+  // Thêm hàm này vào object staffApi
+  assignServices: (id, serviceIds) => {
+  // request body thường là { serviceIds: [1, 2, 3] } dựa theo AssignServicesRequest của bạn
+  return axiosClient.post(`/StaffProfile/${id}/services`, { serviceIds });
+},
 };
 
 export default staffApi;
