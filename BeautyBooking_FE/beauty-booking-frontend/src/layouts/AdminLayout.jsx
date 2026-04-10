@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { Layout, Menu, theme, Dropdown, Avatar, Space, Typography, message } from 'antd';
 import { 
   DashboardOutlined, 
-  UserOutlined, 
+  UserOutlined,
+  TeamOutlined,
+  IdcardOutlined,
   CalendarOutlined, 
   LogoutOutlined,
   DownOutlined,
@@ -38,7 +40,23 @@ const menuItems = [
     ],
   },
   { key: '/admin/appointments', icon: <CalendarOutlined />, label: 'Quản lý Lịch hẹn' },
-  { key: '/admin/users', icon: <UserOutlined />, label: 'Quản lý Người dùng' },
+  {
+    key: 'sub-users',
+    icon: <TeamOutlined />, // Icon nhóm người
+    label: 'Quản lý Tài khoản',
+    children: [
+      { 
+        key: '/admin/customers', 
+        icon: <UserOutlined />, 
+        label: 'Khách hàng' 
+      },
+      { 
+        key: '/admin/staffs', 
+        icon: <IdcardOutlined />, 
+        label: 'Nhân viên' 
+      },
+    ],
+  },
 ];
 
 const AdminLayout = () => {

@@ -42,6 +42,15 @@ namespace BeautyBooking.Controllers
             var result = await _userService.GetUsersByRoleAsync(role, pageNumber, pageSize);
             return Ok(result);
         }
+        [HttpGet("{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<UserResponse>> GetById(int id)
+        {
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null)
+                return NotFound();
+            return Ok(user);
+        }
         [HttpPost("{id}/block")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Block(int id)
