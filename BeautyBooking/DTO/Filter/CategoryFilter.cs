@@ -2,6 +2,6 @@
 {
     public class CategoryFilter
     {
-        public string? Name { get; set; }
+        public string? Keyword { get; set; }
     }
 }

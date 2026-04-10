@@ -53,9 +53,9 @@ namespace BeautyBooking.Services
         public async Task<IEnumerable<CategoryResponse>> GetCategoriesAsync(CategoryFilter filter)
         {
             var query = _categoryRepository.Query();
-            var name = filter.Name?.Trim();
-            if (!string.IsNullOrWhiteSpace(name))
-                query = query.Where(c => c.Name.Contains(name));
+            var keyword = filter.Keyword?.Trim();
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(c => c.Name.Contains(keyword));
             return await query
                 .OrderBy(c => c.Name)
                 .ProjectTo<CategoryResponse>(_mapper.ConfigurationProvider)
