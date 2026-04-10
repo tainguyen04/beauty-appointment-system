@@ -7,7 +7,9 @@ import {
   LogoutOutlined,
   DownOutlined,
   SettingOutlined,
-  CustomerServiceOutlined 
+  CustomerServiceOutlined,
+  TagsOutlined,
+  AppstoreAddOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import authApi from '../api/AuthApi';
@@ -16,9 +18,25 @@ const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
 // --- Tách các định nghĩa tĩnh ra ngoài Component để tránh Re-render lỗi ---
-const sidebarItems = [
+const menuItems = [
   { key: '/admin', icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/admin/services', icon: <CustomerServiceOutlined />, label: 'Quản lý Dịch vụ' },
+  {
+    key: 'sub-services', // Key cho menu cha
+    icon: <CustomerServiceOutlined />,
+    label: 'Quản lý Dịch vụ',
+    children: [
+      { 
+        key: '/admin/categories',
+        icon: <TagsOutlined />,
+        label: 'Danh mục' 
+      },
+      { 
+        key: '/admin/services', 
+        icon: <AppstoreAddOutlined />,
+        label: 'Dịch vụ' 
+      },
+    ],
+  },
   { key: '/admin/appointments', icon: <CalendarOutlined />, label: 'Quản lý Lịch hẹn' },
   { key: '/admin/users', icon: <UserOutlined />, label: 'Quản lý Người dùng' },
 ];
@@ -110,12 +128,14 @@ useEffect(() => {
           }}
         />
       </div>
-        <Menu 
-          theme="dark" 
-          selectedKeys={[location.pathname]} 
-          mode="inline" 
+        {/* ĐẶT MENU Ở ĐÂY */}
+        <Menu
+          mode="inline"
+          theme="dark"
+          selectedKeys={[location.pathname]} // Dùng selectedKeys thay vì default để nó cập nhật theo URL
+          defaultOpenKeys={['sub-services']} 
           onClick={(e) => navigate(e.key)}
-          items={sidebarItems}
+          items={menuItems}
         />
       </Sider>
       <Layout>

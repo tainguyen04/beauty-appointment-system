@@ -14,7 +14,8 @@ const ServiceManager = () => {
     loading, 
     pagination, 
     runFetch, 
-    handleTableChange 
+    handleTableChange,
+    handleFilterChange
   } = usePagination(serviceApi.getAll);
 
   const [categories, setCategories] = useState([]);
@@ -111,10 +112,11 @@ const ServiceManager = () => {
     },
     { 
       title: 'Giá', 
-      dataIndex: 'price', 
-      render: (p) => <Text type="danger">{p?.toLocaleString()}đ</Text> 
+      dataIndex: 'price',
+      align: 'right',
+      render: (p) => <Text type="danger">{p?.toLocaleString('vi-VN')}đ</Text> 
     },
-    { title: 'Thời lượng', dataIndex: 'duration', render: (d) => `${d} phút` },
+    { title: 'Thời lượng', dataIndex: 'duration', align: 'center', render: (d) => `${d} phút` },
     {
       title: 'Hành động',
       width: 120,
@@ -152,6 +154,12 @@ const ServiceManager = () => {
           </Button>
         </Space>
       </div>
+      <Input.Search
+        placeholder="Tìm kiếm dịch vụ..."
+        onSearch={(value) => handleFilterChange({ Keyword: value })} // Truyền đúng key 'Keyword' cho C#
+        allowClear
+        enterButton
+      />
 
       <Table 
         dataSource={services} 

@@ -11,6 +11,6 @@ namespace BeautyBooking.Interface.Service
         Task<int> CreateAsync(CategoryRequest request);
         Task<bool> UpdateAsync(int id, CategoryRequest request);
         Task<bool> DeleteAsync(int id);
-        Task<IEnumerable<CategoryResponse>> GetCategoriesAsync(CategoryFilter filter);
+        Task<PagedResult<CategoryResponse>> GetCategoriesAsync(CategoryFilter filter);
     }
 }

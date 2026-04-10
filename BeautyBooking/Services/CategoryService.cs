@@ -4,6 +4,7 @@ using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
+using BeautyBooking.Helper;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Service;
 using Microsoft.EntityFrameworkCore;
@@ -50,7 +51,7 @@ namespace BeautyBooking.Services
             return _mapper.Map<CategoryResponse?>(category);
         }
 
-        public async Task<IEnumerable<CategoryResponse>> GetCategoriesAsync(CategoryFilter filter)
+        public async Task<PagedResult<CategoryResponse>> GetCategoriesAsync(CategoryFilter filter)
         {
             var query = _categoryRepository.Query();
             var keyword = filter.Keyword?.Trim();
@@ -59,7 +60,7 @@ namespace BeautyBooking.Services
             return await query
                 .OrderBy(c => c.Name)
                 .ProjectTo<CategoryResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+                .ToPagedResultAsync(filter.PageNumber,filter.PageSize);
         }
 
         public async Task<bool> UpdateAsync(int id, CategoryRequest request)

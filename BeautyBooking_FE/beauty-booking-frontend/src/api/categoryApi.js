@@ -2,8 +2,8 @@ import axiosClient from './axiosClient';
 
 const categoryApi = {
   // GET /api/Category
-  getAll: () => {
-    return axiosClient.get('/Category');
+  getAll: (params) => {
+    return axiosClient.get('/Category', { params });
   },
   // Các hàm khác nếu bạn muốn làm trang Quản lý Danh mục sau này
   create: (data) => axiosClient.post('/Category', data),

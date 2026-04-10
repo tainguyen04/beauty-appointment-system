@@ -30,6 +30,7 @@ function App() {
             <Route index element={<Dashboard />} />
             {/* Các trang con của Admin sau này (Quản lý User, Lịch hẹn...) sẽ nằm ở đây và tự động được bảo vệ */}
             <Route path="services" element={<ServiceManager />} />
+            <Route path="categories" element={<CategoryManager />} />
           </Route>
         </Route>
         

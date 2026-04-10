@@ -1,6 +1,6 @@
 ﻿namespace BeautyBooking.DTO.Filter
 {
-    public class CategoryFilter
+    public class CategoryFilter: BaseFilter
     {
         public string? Keyword { get; set; }
     }
