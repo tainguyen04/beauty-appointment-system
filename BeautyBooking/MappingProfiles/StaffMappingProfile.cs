@@ -13,12 +13,12 @@ namespace BeautyBooking.MappingProfiles
             CreateMap<CreateStaffProfileRequest, StaffProfile>()
                 .IgnoreAuditFields()
                 .ForMember(dest => dest.Services, opt => opt.Ignore())
-                .ForMember(dest => dest.User.AvatarUrl, opt => opt.Ignore());
+                .ForMember(dest => dest.User, opt => opt.Ignore());
             CreateMap<UpdateStaffProfileRequest, StaffProfile>()
                 .IgnoreAuditFields()
                 .ForMember(dest => dest.Services, opt => opt.Ignore())
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
-                .ForMember(dest => dest.User.AvatarUrl, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<StaffProfile, StaffProfileResponse>()
