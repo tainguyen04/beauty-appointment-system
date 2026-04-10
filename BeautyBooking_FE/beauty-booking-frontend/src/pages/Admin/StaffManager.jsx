@@ -72,11 +72,18 @@ const StaffManager = () => {
       if (!editingId) {
         formData.append('UserId', values.userId);
       }
+      // 3. ServiceIds (Dựa theo hàm Update C# của bạn có xử lý trường này)
+      if (values.serviceIds && values.serviceIds.length > 0) {
+        values.serviceIds.forEach(id => {
+          formData.append('ServiceIds', id); // C# nhận List<int> từ Form qua việc append nhiều lần cùng 1 key
+        });
+      }
 
       if (fileList.length > 0 && fileList[0].originFileObj) {
-        // 'ImageFile' phải khớp với IFormFile ImageFile trong C# DTO
-        formData.append('ImageFile', fileList[0].originFileObj);
+        // 'AvatarUrl' phải khớp với IFormFile AvatarUrl trong C# DTO
+        formData.append('AvatarUrl', fileList[0].originFileObj);
       }
+      
 
       if (editingId) {
         await staffApi.update(editingId, formData);
@@ -116,7 +123,7 @@ const StaffManager = () => {
       key: 'staffInfo',
       render: (_, record) => (
         <Space>
-          <Avatar src={record.user?.avatarUrl} icon={<UserOutlined />} />
+          <Avatar src={record.user?.avatarUrl || record.avatarUrl} icon={<UserOutlined />} />
           <div>
             <Text strong>{record.user?.fullName || 'N/A'}</Text>
             <br />
@@ -212,7 +219,11 @@ const StaffManager = () => {
         columns={columns} 
         dataSource={data} 
         loading={loading} 
-        pagination={pagination} 
+        pagination={{
+          ...pagination,
+          showSizeChanger: true,
+          pageSizeOptions: ['5', '10', '20'],
+        }} 
         onChange={handleTableChange}
         rowKey="id"
       />
