@@ -149,7 +149,9 @@ builder.Services.AddCors(options =>
         policy => policy
             .WithOrigins("http://localhost:5173") // FE của bạn
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .AllowCredentials()
+    );
 });
 
 var app = builder.Build();
