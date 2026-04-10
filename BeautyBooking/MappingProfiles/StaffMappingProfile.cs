@@ -12,7 +12,8 @@ namespace BeautyBooking.MappingProfiles
         {
             CreateMap<CreateStaffProfileRequest, StaffProfile>()
                 .IgnoreAuditFields()
-                .ForMember(dest => dest.Services, opt => opt.Ignore());
+                .ForMember(dest => dest.Services, opt => opt.Ignore())
+                .ForMember(dest => dest.User.AvatarUrl, opt => opt.Ignore());
             CreateMap<UpdateStaffProfileRequest, StaffProfile>()
                 .IgnoreAuditFields()
                 .ForMember(dest => dest.Services, opt => opt.Ignore())

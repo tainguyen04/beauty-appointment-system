@@ -44,7 +44,8 @@ namespace BeautyBooking.Services
                 throw new InvalidOperationException("User đã có profile nhân viên.");
             
             var staffProfile = _mapper.Map<StaffProfile>(request);
-            if (request.ServiceIds != null && request.ServiceIds.Any())
+            staffProfile.User = user;
+            if (request.ServiceIds != null)
             {
                 var serviceIds = request.ServiceIds.Distinct().ToList();
                 var services = await _serviceRepository.GetRangeByIdsAsync(serviceIds);
@@ -52,8 +53,24 @@ namespace BeautyBooking.Services
                     throw new KeyNotFoundException("Một hoặc nhiều dịch vụ không tồn tại.");
                 staffProfile.Services = services.ToList();
             }
-            await _staffProfileRepository.CreateAsync(staffProfile);
-            await _staffProfileRepository.SaveChangesAsync();
+            string? newPublicId = null;
+            if (request.AvatarUrl != null)
+            {
+                var photoResult = await _photoService.UploadPhotoAsync(request.AvatarUrl, true);
+                user.AvatarUrl = photoResult.Url;
+                user.AvatarPublicId = photoResult.PublicId;
+                newPublicId = photoResult.PublicId;
+            }
+            try
+            {
+                await _staffProfileRepository.CreateAsync(staffProfile);
+                await _staffProfileRepository.SaveChangesAsync();
+            }
+            catch
+            {
+                if (newPublicId != null)
+                    await _photoService.DeletePhotoAsync(newPublicId);
+            }
             return staffProfile.Id;
         }
 
@@ -139,14 +156,25 @@ namespace BeautyBooking.Services
                 staffProfile.Services = services;
             }
             string? oldAvatarPublicId = staffProfile.User.AvatarPublicId;
+            string? newPublicId = null;
             if (request.AvatarUrl != null)
             {
                 var photoResult = await _photoService.UploadPhotoAsync(request.AvatarUrl, true);
                 staffProfile.User.AvatarUrl = photoResult.Url;
                 staffProfile.User.AvatarPublicId = photoResult.PublicId;
+                newPublicId = photoResult.PublicId;
             }
 
-            await _staffProfileRepository.SaveChangesAsync();
+            try
+            {
+                await _staffProfileRepository.SaveChangesAsync();
+            }
+            catch
+            {
+                if (newPublicId != null)
+                    await _photoService.DeletePhotoAsync(newPublicId);
+                throw;
+            }
             if (request.AvatarUrl != null && !string.IsNullOrEmpty(oldAvatarPublicId))
             {
                 try

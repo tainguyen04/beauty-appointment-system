@@ -77,7 +77,7 @@ namespace BeautyBooking.Controllers
 
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<int>> Create([FromBody] CreateStaffProfileRequest request)
+        public async Task<ActionResult<int>> Create([FromForm] CreateStaffProfileRequest request)
         {
             var id = await _staffProfileService.CreateAsync(request);
             var createdStaff = await _staffProfileService.GetByIdAsync(id);
