@@ -219,7 +219,11 @@ const UserManager = () => {
         columns={columns}
         dataSource={data}
         loading={loading}
-        pagination={pagination}
+        pagination={{
+          ...pagination,
+          showSizeChanger: true,
+          pageSizeOptions: ['5', '10', '20'],
+        }}
         onChange={handleTableChange}
         rowKey="id"
         bordered
