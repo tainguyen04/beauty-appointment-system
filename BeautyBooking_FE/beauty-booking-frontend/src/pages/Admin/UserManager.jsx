@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { 
   Table, Tag, Button, Space, Modal, message, Card, 
   Input, Typography, Drawer, Descriptions, Avatar, Select,
-  Dropdown, Menu
+  Dropdown
 } from 'antd';
 import { 
   StopOutlined, CheckCircleOutlined, DeleteOutlined, 
-  UserOutlined, EyeOutlined, FilterOutlined 
+  UserOutlined, EyeOutlined, FilterOutlined, KeyOutlined, MoreOutlined
 } from '@ant-design/icons';
 import { usePagination } from '../../hooks/usePagination';
 import userApi from '../../api/userApi';
@@ -36,6 +36,7 @@ const UserManager = () => {
   const showDetail = async (id) => {
     setDetailLoading(true);
     setOpenDetail(true);
+    setSelectedUser(null); // Reset trước khi load mới
     try {
       const res = await userApi.getById(id);
       setSelectedUser(res);
@@ -124,7 +125,7 @@ const UserManager = () => {
             key: 'detail',
             label: 'Xem chi tiết',
             icon: <EyeOutlined />,
-            onClick: () => showDetail(record),
+            onClick: () => showDetail(record.id),
           },
           {
             key: 'reset-pwd',
@@ -133,7 +134,7 @@ const UserManager = () => {
             onClick: () => {
               Modal.confirm({
                 title: 'Reset mật khẩu?',
-                content: `Mật khẩu của ${record.fullName} sẽ được đưa về mặc định.`,
+                content: `Mật khẩu của ${record.fullName} sẽ được đưa về mặc định(123456).`,
                 onOk: async () => {
                   try {
                     await userApi.resetPassword(record.id);
@@ -162,7 +163,7 @@ const UserManager = () => {
             danger: true,
             onClick: () => {
               Modal.confirm({
-                title: 'Xác nhận xóa vĩnh viễn?',
+                title: 'Xác nhận xóa?',
                 content: 'Hành động này không thể hoàn tác.',
                 okText: 'Xóa',
                 okType: 'danger',
@@ -227,7 +228,7 @@ const UserManager = () => {
       {/* Drawer chi tiết hồ sơ */}
       <Drawer
         title="Hồ sơ chi tiết"
-        width={450}
+        width={500}
         onClose={() => setOpenDetail(false)}
         open={openDetail}
         destroyOnClose
@@ -246,7 +247,7 @@ const UserManager = () => {
               <Descriptions.Item label="ID">{selectedUser.id}</Descriptions.Item>
               <Descriptions.Item label="Số điện thoại">{selectedUser.phone || 'Chưa cập nhật'}</Descriptions.Item>
               <Descriptions.Item label="Địa chỉ">
-                {selectedUser.ward ? `${selectedUser.ward.name}, ${selectedUser.ward.districtName}` : 'Chưa cập nhật'}
+                {selectedUser.ward ? `${selectedUser.ward.name}, ${selectedUser.ward.fullName}` : 'Chưa cập nhật'}
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
                 <Tag color={selectedUser.isActived ? 'green' : 'red'}>

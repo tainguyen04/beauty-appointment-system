@@ -11,6 +11,10 @@ const userApi = {
   getByRole: (role, params) => {
     return axiosClient.get(`/User/role/${role}`, { params });
   },
+  // Lấy chi tiết user theo ID
+  getById: (id) => {
+    return axiosClient.get(`/User/${id}`);
+  },
 
   // Khóa/Mở khóa tài khoản
   blockUser: (id) => {

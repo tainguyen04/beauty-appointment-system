@@ -46,7 +46,7 @@ const menuItems = [
     label: 'Quản lý Tài khoản',
     children: [
       { 
-        key: '/admin/customers', 
+        key: '/admin/users', 
         icon: <UserOutlined />, 
         label: 'Khách hàng' 
       },

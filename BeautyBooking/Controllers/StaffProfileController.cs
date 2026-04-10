@@ -97,7 +97,7 @@ namespace BeautyBooking.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateStaffProfileRequest request)
+        public async Task<IActionResult> Update(int id, [FromForm] UpdateStaffProfileRequest request)
         {
             var result = await _staffProfileService.UpdateAsync(id, request);
             if (!result)

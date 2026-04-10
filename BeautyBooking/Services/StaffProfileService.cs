@@ -19,15 +19,18 @@ namespace BeautyBooking.Services
         private readonly IServiceRepository _serviceRepository;
         private readonly IUserRepository _userRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IPhotoService _photoService;
         private readonly IMapper _mapper;
         public StaffProfileService(IStaffProfileRepository staffProfileRepository,
-            IMapper mapper, IServiceRepository serviceRepository, IUserRepository userRepository,ICurrentUserService currentUserService)
+            IMapper mapper, IServiceRepository serviceRepository, IUserRepository userRepository,
+            ICurrentUserService currentUserService, IPhotoService photoService)
         {
             _staffProfileRepository = staffProfileRepository;
             _mapper = mapper;
             _serviceRepository = serviceRepository;
             _userRepository = userRepository;
             _currentUserService = currentUserService;
+            _photoService = photoService;
         }
 
         public async Task<int> CreateAsync(CreateStaffProfileRequest request)
@@ -135,8 +138,27 @@ namespace BeautyBooking.Services
                     throw new KeyNotFoundException("Một hoặc nhiều dịch vụ không tồn tại.");
                 staffProfile.Services = services;
             }
-            
+            string? oldAvatarPublicId = staffProfile.User.AvatarPublicId;
+            if (request.AvatarUrl != null)
+            {
+                var photoResult = await _photoService.UploadPhotoAsync(request.AvatarUrl, true);
+                staffProfile.User.AvatarUrl = photoResult.Url;
+                staffProfile.User.AvatarPublicId = photoResult.PublicId;
+            }
+
             await _staffProfileRepository.SaveChangesAsync();
+            if (request.AvatarUrl != null && !string.IsNullOrEmpty(oldAvatarPublicId))
+            {
+                try
+                {
+                    await _photoService.DeletePhotoAsync(oldAvatarPublicId);
+                }
+                catch (Exception ex)
+                {
+                    // Log lỗi nếu cần thiết
+                    Console.WriteLine($"Lỗi khi xóa ảnh cũ: {ex.Message}");
+                }
+            }
             return true;
         }
         public async Task<bool> AssignServicesAsync(int id, AssignServicesRequest request)

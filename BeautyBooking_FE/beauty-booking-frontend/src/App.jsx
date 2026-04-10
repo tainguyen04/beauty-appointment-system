@@ -34,7 +34,7 @@ function App() {
             {/* Các trang con của Admin sau này (Quản lý User, Lịch hẹn...) sẽ nằm ở đây và tự động được bảo vệ */}
             <Route path="services" element={<ServiceManager />} />
             <Route path="categories" element={<CategoryManager />} />
-            <Route path="customers" element={<UserManager />} />
+            <Route path="users" element={<UserManager />} />
             <Route path="staffs" element={<StaffManager />} />
           </Route>
         </Route>
