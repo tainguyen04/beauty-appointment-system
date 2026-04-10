@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Table, Tag, Button, Space, Modal, message, Card, 
-  Input, Typography, Drawer, Descriptions, Avatar, Select 
+  Input, Typography, Drawer, Descriptions, Avatar, Select,
+  Dropdown, Menu
 } from 'antd';
 import { 
   StopOutlined, CheckCircleOutlined, DeleteOutlined, 
@@ -113,38 +114,74 @@ const UserManager = () => {
     },
     {
       title: 'Thao tác',
-      width: 180,
-      render: (_, record) => (
-        <Space>
-          <Button 
-            title="Xem chi tiết"
-            icon={<EyeOutlined />} 
-            onClick={() => showDetail(record.id)} 
-          />
-          <Button 
-            title={record.isActived ? "Khóa tài khoản" : "Mở khóa"}
-            type={record.isActived ? "default" : "primary"}
-            danger={record.isActived}
-            icon={record.isActived ? <StopOutlined /> : <CheckCircleOutlined />}
-            onClick={() => handleToggleBlock(record.id, record.isActived)}
-          />
-          <Button 
-            title="Xóa vĩnh viễn"
-            icon={<DeleteOutlined />} 
-            danger 
-            onClick={() => {
+      key: 'action',
+      width: 120,
+      align: 'center',
+      render: (_, record) => {
+        // Định nghĩa các mục trong menu
+        const items = [
+          {
+            key: 'detail',
+            label: 'Xem chi tiết',
+            icon: <EyeOutlined />,
+            onClick: () => showDetail(record),
+          },
+          {
+            key: 'reset-pwd',
+            label: 'Reset mật khẩu',
+            icon: <KeyOutlined />,
+            onClick: () => {
               Modal.confirm({
-                title: 'Xóa người dùng này?',
+                title: 'Reset mật khẩu?',
+                content: `Mật khẩu của ${record.fullName} sẽ được đưa về mặc định.`,
+                onOk: async () => {
+                  try {
+                    await userApi.resetPassword(record.id);
+                    message.success("Đã reset mật khẩu thành công!");
+                  } catch {
+                    message.error("Không thể reset mật khẩu.");
+                  }
+                }
+              });
+            },
+          },
+          {
+            key: 'toggle-block',
+            label: record.isActived ? 'Khóa tài khoản' : 'Mở khóa',
+            icon: record.isActived ? <StopOutlined /> : <CheckCircleOutlined />,
+            danger: record.isActived,
+            onClick: () => handleToggleBlock(record.id, record.isActived),
+          },
+          {
+            type: 'divider',
+          },
+          {
+            key: 'delete',
+            label: 'Xóa tài khoản',
+            icon: <DeleteOutlined />,
+            danger: true,
+            onClick: () => {
+              Modal.confirm({
+                title: 'Xác nhận xóa vĩnh viễn?',
+                content: 'Hành động này không thể hoàn tác.',
+                okText: 'Xóa',
+                okType: 'danger',
                 onOk: async () => {
                   await userApi.delete(record.id);
-                  message.success("Đã xóa vĩnh viễn");
+                  message.success("Đã xóa người dùng");
                   runFetch();
                 }
-              })
-            }}
-          />
-        </Space>
-      ),
+              });
+            },
+          },
+        ];
+
+        return (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="text" icon={<MoreOutlined style={{ fontSize: '18px' }} />} />
+          </Dropdown>
+        );
+      },
     },
   ];
 
