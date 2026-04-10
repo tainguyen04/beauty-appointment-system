@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Interface.Service;
@@ -20,11 +21,18 @@ namespace BeautyBooking.Controllers
             _serviceManager = serviceManager;
         }
 
+        //[HttpGet]
+        //[AllowAnonymous]
+        //public async Task<ActionResult<PagedResult<ServiceResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        //{
+        //    var result = await _serviceManager.GetAllAsync(pageNumber, pageSize);
+        //    return Ok(result);
+        //}
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<PagedResult<ServiceResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAll([FromQuery] ServiceFilter filter)
         {
-            var result = await _serviceManager.GetAllAsync(pageNumber, pageSize);
+            var result = await _serviceManager.GetServicesAsync(filter);
             return Ok(result);
         }
 

@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Interface.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -44,11 +45,18 @@ namespace BeautyBooking.Controllers
             return NoContent();
         }
 
+        //[HttpGet]
+        //[Authorize(Policy = "AdminOnly")]
+        //public async Task<ActionResult<PagedResult<WorkScheduleResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        //{
+        //    var result = await _workScheduleService.GetAllAsync(pageNumber, pageSize);
+        //    return Ok(result);
+        //}
         [HttpGet]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<PagedResult<WorkScheduleResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        [Authorize(Policy = "AdminOnly,StaffOnly")]
+        public async Task<IActionResult> GetAll([FromQuery] WorkScheduleFilter filter)
         {
-            var result = await _workScheduleService.GetAllAsync(pageNumber, pageSize);
+            var result = await _workScheduleService.GetWorkSchedulesAsync(filter);
             return Ok(result);
         }
 

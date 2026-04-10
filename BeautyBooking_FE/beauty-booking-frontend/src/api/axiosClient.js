@@ -1,4 +1,5 @@
 import axios from 'axios';
+import queryString from 'query-string';
 
 // Tạo một instance của axios với cấu hình mặc định
 const axiosClient = axios.create({
@@ -6,6 +7,7 @@ const axiosClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  paramsSerializer: (params) => queryString.stringify(params),
 });
 
 // Interceptor cho Request: Trực chờ ở cửa, thấy ai ra là nhét Token vào tay

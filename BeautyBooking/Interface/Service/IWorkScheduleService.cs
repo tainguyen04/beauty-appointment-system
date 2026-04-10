@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 
 namespace BeautyBooking.Interface.Service
@@ -15,5 +16,6 @@ namespace BeautyBooking.Interface.Service
         Task<IEnumerable<WorkScheduleResponse>> GetByStaffIdAsync(int staffId);
         Task<IEnumerable<WorkScheduleResponse>> GetMyScheduleByDayAsync(DayOfWeek dayOfWeek);
         Task<IEnumerable<WorkScheduleResponse>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek);
+        Task<PagedResult<WorkScheduleResponse>> GetWorkSchedulesAsync(WorkScheduleFilter filter);
     }
 }

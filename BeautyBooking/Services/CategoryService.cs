@@ -1,9 +1,12 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Service;
+using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
 {
@@ -45,6 +48,18 @@ namespace BeautyBooking.Services
             if(category == null || category.IsDeleted)
                 throw new KeyNotFoundException("Danh mục không tồn tại.");
             return _mapper.Map<CategoryResponse?>(category);
+        }
+
+        public async Task<IEnumerable<CategoryResponse>> GetCategoriesAsync(CategoryFilter filter)
+        {
+            var query = _categoryRepository.Query();
+            var name = filter.Name?.Trim();
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(c => c.Name.Contains(name));
+            return await query
+                .OrderBy(c => c.Name)
+                .ProjectTo<CategoryResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<bool> UpdateAsync(int id, CategoryRequest request)

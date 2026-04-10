@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.EF;
@@ -133,6 +134,24 @@ namespace BeautyBooking.Services
             if (!userId.HasValue)
                 throw new InvalidOperationException("Người dùng chưa đăng nhập.");
             return _mapper.Map<UserResponse?>(await _userRepo.GetWithProfileByIdAsync(userId.Value));
+        }
+
+        public async Task<PagedResult<UserResponse>> GetUsersAsync(UserFilter filter)
+        {
+            var query = _userRepo.Query();
+            var currentRole = _currentUserService.Role;
+            var keyword = filter.Keyword?.Trim();
+            if(currentRole != UserRole.Admin)
+                throw new UnauthorizedAccessException("Chỉ Admin mới có quyền truy cập.");
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(u => u.FullName.Contains(keyword) ||
+                                         u.Email.Contains(keyword));
+            if (filter.Role.HasValue)
+                query = query.Where(u => u.Role == filter.Role.Value);
+            return await query
+                .OrderBy(u => u.FullName)
+                .ProjectTo<UserResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(filter.PageNumber, filter.PageSize);
         }
 
         public async Task<PagedResult<UserResponse>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)

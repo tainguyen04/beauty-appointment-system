@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
@@ -105,6 +106,28 @@ namespace BeautyBooking.Services
         public async Task<IEnumerable<StaffDayOffResponse>> GetPendingDayOffAsync()
         {
             return _mapper.Map<IEnumerable<StaffDayOffResponse>>(await _staffDayOffRepository.GetPendingDayOffAsync());
+        }
+
+        public async Task<PagedResult<StaffDayOffResponse>> GetStaffDayOffsAsync(StaffDayOffFilter filter)
+        {
+            var query = _staffDayOffRepository.Query();
+            var currentStaffId = _currentUserService.StaffId;
+            var currentRole = _currentUserService.Role;
+            var keyword = filter.Keyword?.Trim();
+            if(currentRole != UserRole.Admin)
+                query = query.Where(d => d.StaffId == currentStaffId);
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(d => d.Staff.User.FullName.Contains(keyword));
+
+            if (filter.FromDate.HasValue)
+                query = query.Where(d => d.Date >= filter.FromDate.Value);
+
+            if (filter.ToDate.HasValue)
+                query = query.Where(d => d.Date <= filter.ToDate.Value);
+            return await query
+                .OrderByDescending(d => d.Date)
+                .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(filter.PageNumber, filter.PageSize);
         }
 
         public async Task<bool> RejectAsync(int id)

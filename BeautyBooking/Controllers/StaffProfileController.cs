@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
+using BeautyBooking.Entities;
 using BeautyBooking.Interface.Service;
 using BeautyBooking.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -22,12 +24,18 @@ namespace BeautyBooking.Controllers
             _staffProfileService = staffProfileService;
         }
 
+        //[HttpGet]
+        //[AllowAnonymous]
+        //public async Task<ActionResult<PagedResult<StaffProfileResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        //{
+        //    var result = await _staffProfileService.GetAllAsync(pageNumber, pageSize);
+        //    return Ok(result);
+        //}
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<PagedResult<StaffProfileResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAll([FromQuery] StaffProfileFilter filter)
         {
-            var result = await _staffProfileService.GetAllAsync(pageNumber, pageSize);
-            return Ok(result);
+            return Ok(await _staffProfileService.GetStaffProfilesAsync(filter));
         }
 
         [HttpGet("{id}")]

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
@@ -175,6 +176,23 @@ namespace BeautyBooking.Services
             if (staffProfile == null)
                 return null;
             return _mapper.Map<StaffProfileResponse>(staffProfile);
+        }
+
+        public async Task<PagedResult<StaffProfileResponse>> GetStaffProfilesAsync(StaffProfileFilter filter)
+        {
+            var query = _staffProfileRepository.Query();
+            var keyword = filter.Keyword?.Trim();
+            var currentRole = _currentUserService.Role;
+            var currentStaffId = _currentUserService.StaffId;
+            if(currentRole == UserRole.Staff && currentStaffId.HasValue)
+                query = query.Where(s => s.Id == currentStaffId.Value);
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(s => s.User.FullName.Contains(keyword) ||
+                                         s.Services.Any(serv => serv.Name.Contains(keyword)));
+            return await query
+                .OrderBy(s => s.User.FullName)
+                .ProjectTo<StaffProfileResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(filter.PageNumber, filter.PageSize);
         }
     }
 }

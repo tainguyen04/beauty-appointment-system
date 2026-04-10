@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
@@ -29,6 +30,13 @@ namespace BeautyBooking.Controllers
             var created = await _staffDayOffService.GetByIdAsync(id);
             return CreatedAtAction(nameof(GetById), new { id }, created);
         }
+        [HttpGet]
+        [Authorize(Policy = "AdminOnly,StaffOnly")]
+        public async Task<IActionResult> GetAllWithStaff([FromQuery] StaffDayOffFilter filter)
+        {
+            var result = await _staffDayOffService.GetStaffDayOffsAsync(filter);
+            return Ok(result);
+        }
 
         [HttpGet("month")]
         [Authorize(Policy = "AdminOnly")]
@@ -38,13 +46,13 @@ namespace BeautyBooking.Controllers
             return Ok(result);
         }
 
-        [HttpGet]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<PagedResult<StaffDayOffResponse>>> GetAllWithStaff([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-        {
-            var result = await _staffDayOffService.GetAllWithStaffAsync(pageNumber, pageSize);
-            return Ok(result);
-        }
+        //[HttpGet]
+        //[Authorize(Policy = "AdminOnly")]
+        //public async Task<ActionResult<PagedResult<StaffDayOffResponse>>> GetAllWithStaff([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        //{
+        //    var result = await _staffDayOffService.GetAllWithStaffAsync(pageNumber, pageSize);
+        //    return Ok(result);
+        //}
 
         [HttpGet("{id}")]
         [Authorize]

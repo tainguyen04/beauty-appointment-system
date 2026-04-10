@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 
 namespace BeautyBooking.Interface.Service
@@ -14,6 +15,7 @@ namespace BeautyBooking.Interface.Service
         Task<bool> DeleteAsync(int id);
 
         Task<decimal> CalculateTotalAmountAsync(IEnumerable<int> serviceIds);
+        Task<PagedResult<ServiceResponse>> GetServicesAsync(ServiceFilter filter);
 
     }
 }

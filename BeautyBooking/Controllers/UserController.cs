@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 using BeautyBooking.Interface.Service;
@@ -20,12 +21,18 @@ namespace BeautyBooking.Controllers
             _userService = userService;
         }
 
+        //[HttpGet]
+        //[Authorize(Policy = "AdminOnly")]
+        //public async Task<ActionResult<PagedResult<UserResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        //{
+        //    var result = await _userService.GetAllAsync(pageNumber, pageSize);
+        //    return Ok(result);
+        //}
         [HttpGet]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<PagedResult<UserResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAll([FromQuery] UserFilter filter)
         {
-            var result = await _userService.GetAllAsync(pageNumber, pageSize);
-            return Ok(result);
+            return Ok(await _userService.GetUsersAsync(filter));
         }
 
         [HttpGet("role/{role}")]

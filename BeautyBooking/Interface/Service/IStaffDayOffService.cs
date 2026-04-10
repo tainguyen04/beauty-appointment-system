@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 
@@ -15,5 +16,6 @@ namespace BeautyBooking.Interface.Service
         Task<bool> ApproveAsync(int id);
         Task<IEnumerable<StaffDayOffResponse>> GetPendingDayOffAsync();
         Task<bool> RejectAsync(int id);
+        Task<PagedResult<StaffDayOffResponse>> GetStaffDayOffsAsync(StaffDayOffFilter filter);
     }
 }

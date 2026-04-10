@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
@@ -97,6 +98,19 @@ namespace BeautyBooking.Services
             if (!services.Any())
                 throw new KeyNotFoundException("Không tìm thấy dịch vụ nào cho nhân viên này.");
             return _mapper.Map<IEnumerable<ServiceResponse>>(services);
+        }
+
+        public async Task<PagedResult<ServiceResponse>> GetServicesAsync(ServiceFilter filter)
+        {
+            var query = _serviceRepo.Query();
+            var keyword = filter.Keyword?.Trim();
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(s => s.Name.Contains(keyword) ||
+                                         s.Category.Name.Contains(keyword));
+            return await query
+                .OrderBy(c => c.Name)
+                .ProjectTo<ServiceResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(filter.PageNumber, filter.PageSize);
         }
 
         public async Task<bool> UpdateAsync(int id, UpdateServiceRequest request)

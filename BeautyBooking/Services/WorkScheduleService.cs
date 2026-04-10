@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
@@ -124,6 +125,31 @@ namespace BeautyBooking.Services
                 .Where(ws => ws.StaffId == staffId)
                 .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+        }
+
+        public async Task<PagedResult<WorkScheduleResponse>> GetWorkSchedulesAsync(WorkScheduleFilter filter)
+        {
+            var query = _workScheduleRepository.Query();
+            var currentStaffId = _currentUserService.StaffId;
+            var userRole = _currentUserService.Role;
+            var keyword = filter.Keyword?.Trim();
+            if (userRole == UserRole.Customer)
+                throw new UnauthorizedAccessException("Bạn không có quyền truy cập vào tài nguyên này.");
+            else if (userRole == UserRole.Staff)
+            {
+                if (!currentStaffId.HasValue)
+                    throw new UnauthorizedAccessException("Bạn không có quyền truy cập vào tài nguyên này.");
+                query = query.Where(w => w.StaffId == currentStaffId.Value);
+            }
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(w => w.Staff.User.FullName.Contains(keyword));
+
+            if (filter.Date.HasValue)
+                query = query.Where(w => w.DayOfWeek == filter.Date.Value);
+            return await query
+                .OrderByDescending(w => w.DayOfWeek)
+                .ProjectTo<WorkScheduleResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(filter.PageNumber, filter.PageSize);
         }
     }
 }

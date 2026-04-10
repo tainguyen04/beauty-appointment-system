@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 
@@ -26,5 +27,6 @@ namespace BeautyBooking.Interface.Service
         Task<bool> UpdateStatusByStaffAsync(int id, AppointmentStatus status);
         //Common
         Task<AppointmentResponse?> GetByIdWithDetailsAsync(int id);
+        Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(AppointmentFilter filter);
     }
 }

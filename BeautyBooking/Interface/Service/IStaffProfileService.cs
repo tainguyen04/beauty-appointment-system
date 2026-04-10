@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 
 namespace BeautyBooking.Interface.Service
@@ -15,5 +16,6 @@ namespace BeautyBooking.Interface.Service
         Task<bool> AssignServicesAsync(int id, AssignServicesRequest request);
         Task<bool> DeleteAsync(int id);
         Task<IEnumerable<StaffProfileResponse>> GetAvailableAsync(DateOnly date, int startTime, int endTime);
+        Task<PagedResult<StaffProfileResponse>> GetStaffProfilesAsync(StaffProfileFilter filter);
     }
 }

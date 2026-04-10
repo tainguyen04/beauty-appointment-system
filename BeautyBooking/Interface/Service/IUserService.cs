@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 
@@ -15,6 +16,7 @@ namespace BeautyBooking.Interface.Service
         Task<bool> ChangeRoleAsync(ChangeRoleRequest request);
         Task<bool> ResetPasswordAsync(int id);
         Task<bool> DeleteAsync(int id);
+        Task<PagedResult<UserResponse>> GetUsersAsync(UserFilter filter);
         //User,Staff
         Task<bool> UpdateMyProfileAsync(UpdateUserRequest request);
         Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request);
@@ -22,6 +24,7 @@ namespace BeautyBooking.Interface.Service
         //Common
         Task<bool> IsEmailAvailableAsync(string email);
         Task<UserResponse?> GetMyProfileAsync();
+
 
 
     }

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Azure.Core;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
@@ -118,6 +119,41 @@ namespace BeautyBooking.Services
         {
             var pagedAppointments = await _appointmentRepository.GetPagedAsync(pageNumber, pageSize);
             return pagedAppointments.ToPagedResult<Appointment, AppointmentResponse>(_mapper);
+        }
+
+        public async Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(AppointmentFilter filter)
+        {
+            var query = _appointmentRepository.Query();
+            var userRole = _currentUserService.Role;
+            if(userRole == UserRole.Customer)
+            {
+                var userId = _currentUserService.UserId;
+                query = query.Where(a => a.UserId == userId);
+            }
+            else if (userRole == UserRole.Staff)
+            {
+                var staffId = _currentUserService.StaffId;
+                query = query.Where(a => a.StaffId == staffId);
+            }
+            var keyword = filter.Keyword?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(a => a.User.FullName.Contains(keyword) ||
+                                         a.Staff.User.FullName.Contains(keyword));
+
+            if (filter.FromDate.HasValue)
+                query = query.Where(a => a.AppointmentDate >= filter.FromDate.Value);
+
+            if (filter.ToDate.HasValue)
+                query = query.Where(a => a.AppointmentDate <= filter.ToDate.Value);
+
+            if (filter.Status.HasValue)
+                query = query.Where(a => a.AppointmentStatus == filter.Status.Value);
+
+            return await query
+                .OrderByDescending(a => a.AppointmentDate)
+                .ProjectTo<AppointmentResponse>(_mapper.ConfigurationProvider)
+                .ToPagedResultAsync(filter.PageNumber, filter.PageSize);
         }
 
         public async Task<AppointmentResponse?> GetByIdWithDetailsAsync(int id)

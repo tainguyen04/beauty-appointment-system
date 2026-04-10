@@ -2,8 +2,8 @@ import axiosClient from './axiosClient';
 
 const serviceApi = {
   // GET /api/BeautyService
-  getAll: () => {
-    return axiosClient.get('/BeautyService');
+  getAll: (params) => {
+    return axiosClient.get('/BeautyService', { params });
   },
 
   // POST /api/BeautyService
