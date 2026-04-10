@@ -10,7 +10,7 @@ import {
   CustomerServiceOutlined 
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import authApi from '../Api/AuthApi';
+import authApi from '../api/AuthApi';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;

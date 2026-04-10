@@ -5,6 +5,7 @@ import Home from './pages/Client/Home';
 import Dashboard from './pages/Admin/Dashboard';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import ServiceManager from './pages/Admin/ServiceManager';
 
 // 1. Import ProtectedRoute vừa tạo
 import ProtectedRoute from './components/ProtectedRoute';
@@ -28,8 +29,10 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             {/* Các trang con của Admin sau này (Quản lý User, Lịch hẹn...) sẽ nằm ở đây và tự động được bảo vệ */}
+            <Route path="services" element={<ServiceManager />} />
           </Route>
         </Route>
+        
         
       </Routes>
     </BrowserRouter>
