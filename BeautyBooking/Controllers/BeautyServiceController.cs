@@ -56,7 +56,7 @@ namespace BeautyBooking.Controllers
 
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<int>> Create([FromBody] CreateServiceRequest request)
+        public async Task<ActionResult<int>> Create([FromForm] CreateServiceRequest request)
         {
             var id = await _serviceManager.CreateAsync(request);
             var createdService = await _serviceManager.GetByIdAsync(id);
@@ -65,7 +65,7 @@ namespace BeautyBooking.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateServiceRequest request)
+        public async Task<IActionResult> Update(int id, [FromForm] UpdateServiceRequest request)
         {
             var result = await _serviceManager.UpdateAsync(id, request);
             if(!result)

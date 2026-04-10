@@ -93,7 +93,7 @@ namespace BeautyBooking.Controllers
 
 
         [HttpPut("me/profile")]
-        public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateUserRequest request)
+        public async Task<IActionResult> UpdateMyProfile([FromForm] UpdateUserRequest request)
         {
             var result = await _userService.UpdateMyProfileAsync(request);
             if (!result)
