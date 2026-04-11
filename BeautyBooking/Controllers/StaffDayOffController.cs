@@ -23,7 +23,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "StaffOnly,AdminOnly")]
+        [Authorize(Policy = "StaffOrAdmin")]
         public async Task<ActionResult<int>> Create([FromBody] StaffDayOffRequest request)
         {
             var id = await _staffDayOffService.CreateAsync(request);
@@ -31,7 +31,7 @@ namespace BeautyBooking.Controllers
             return CreatedAtAction(nameof(GetById), new { id }, created);
         }
         [HttpGet]
-        [Authorize(Policy = "AdminOnly,StaffOnly")]
+        [Authorize(Policy = "StaffOrAdmin")]
         public async Task<IActionResult> GetAllWithStaff([FromQuery] StaffDayOffFilter filter)
         {
             var result = await _staffDayOffService.GetStaffDayOffsAsync(filter);

@@ -53,7 +53,7 @@ namespace BeautyBooking.Controllers
         //    return Ok(result);
         //}
         [HttpGet]
-        [Authorize(Policy = "AdminOnly,StaffOnly")]
+        [Authorize(Policy = "StaffOrAdmin")]
         public async Task<IActionResult> GetAll([FromQuery] WorkScheduleFilter filter)
         {
             var result = await _workScheduleService.GetWorkSchedulesAsync(filter);

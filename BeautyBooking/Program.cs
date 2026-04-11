@@ -96,6 +96,7 @@ builder.Services.AddAuthorization(option =>
     option.AddPolicy("AdminOnly", policy => policy.RequireRole(nameof(UserRole.Admin)));
     option.AddPolicy("StaffOnly", policy => policy.RequireRole(nameof(UserRole.Staff)));
     option.AddPolicy("CustomerOnly", policy => policy.RequireRole(nameof(UserRole.Customer)));
+    option.AddPolicy("StaffOrAdmin", policy => policy.RequireRole(nameof(UserRole.Staff), nameof(UserRole.Admin)));
 });
 builder.Services.AddSingleton(sp =>
 {
