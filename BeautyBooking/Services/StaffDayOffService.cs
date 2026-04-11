@@ -83,7 +83,7 @@ namespace BeautyBooking.Services
             return entity.Id;
         }
 
-        public async Task<IEnumerable<StaffDayOffResponse>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus status)
+        public async Task<IEnumerable<StaffDayOffResponse>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus? status)
         {
             return _mapper.Map<IEnumerable<StaffDayOffResponse>>(await _staffDayOffRepository.GetAllByMonthAsync(month, year, status));
         }
@@ -101,7 +101,7 @@ namespace BeautyBooking.Services
             return _mapper.Map<StaffDayOffResponse?>(await _staffDayOffRepository.GetByIdWithStaffAsync(id));
         }
 
-        public async Task<IEnumerable<StaffDayOffResponse>> GetMyHistoryAsync(StaffDayOffStatus status)
+        public async Task<IEnumerable<StaffDayOffResponse>> GetMyHistoryAsync(StaffDayOffStatus? status)
         {
             var currentStaffId = _currentUserService.StaffId;
             if (!currentStaffId.HasValue)

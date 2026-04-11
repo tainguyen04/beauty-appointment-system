@@ -14,7 +14,7 @@ namespace BeautyBooking.Repository
         {
         }
 
-        public async Task<IEnumerable<StaffDayOff>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus status)
+        public async Task<IEnumerable<StaffDayOff>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus? status)
         {
             return await _entities
                 .Where(s => s.Date.Month == month && 
@@ -40,7 +40,7 @@ namespace BeautyBooking.Repository
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
         }
 
-        public async Task<IEnumerable<StaffDayOff>> GetByStaffIdAsync(int staffId, StaffDayOffStatus status)
+        public async Task<IEnumerable<StaffDayOff>> GetByStaffIdAsync(int staffId, StaffDayOffStatus? status)
         {
             return await _entities
                 .Include(s => s.Staff)
