@@ -6,7 +6,7 @@ namespace BeautyBooking.Interface.Service
     public interface IAuthService
     {
         Task<LoginResponse?> LoginAsync(LoginRequest request);
-        Task<UserResponse> RegisterAsync(CreateUserRequest request);
+        Task<UserResponse> RegisterAsync(RegisterRequest request);
         Task<bool> LogoutAsync(string token);
     }
 }

@@ -17,6 +17,8 @@ namespace BeautyBooking.Interface.Service
         Task<bool> ResetPasswordAsync(int id);
         Task<bool> DeleteAsync(int id);
         Task<PagedResult<UserResponse>> GetUsersAsync(UserFilter filter);
+        Task<int> CreateUserAsync(CreateUserRequest request);
+        Task<bool> UpdateProfileByAdminAsync(int id,UpdateUserRequest request);
         //User,Staff
         Task<bool> UpdateMyProfileAsync(UpdateUserRequest request);
         Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request);

@@ -29,7 +29,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<UserResponse>> Register([FromBody] CreateUserRequest request)
+        public async Task<ActionResult<UserResponse>> Register([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
             return Created(string.Empty,result);

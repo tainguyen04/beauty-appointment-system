@@ -51,6 +51,14 @@ namespace BeautyBooking.Controllers
                 return NotFound();
             return Ok(user);
         }
+        [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult<UserResponse>> Create([FromBody] CreateUserRequest request)
+        {
+            var result = await _userService.CreateUserAsync(request);
+            var createdUser = await _userService.GetByIdAsync(result);
+            return CreatedAtAction(nameof(GetById), new { id = result }, createdUser);
+        }
         [HttpPost("{id}/block")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Block(int id)

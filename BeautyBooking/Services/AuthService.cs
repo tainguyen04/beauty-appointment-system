@@ -55,7 +55,7 @@ namespace BeautyBooking.Services
             };
         }
 
-        public async Task<UserResponse> RegisterAsync(CreateUserRequest request)
+        public async Task<UserResponse> RegisterAsync(RegisterRequest request)
         {
             // 1. Check if email is unique
             if (!await _userRepo.IsEmailUniqueAsync(request.Email))

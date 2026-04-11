@@ -105,6 +105,41 @@ namespace BeautyBooking.Services
             }
         }
 
+        public async Task<int> CreateUserAsync(CreateUserRequest request)
+        {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var existingUser = await _userRepo.GetByEmailAsync(request.Email);
+                if (existingUser != null && !existingUser.IsDeleted)
+                    throw new InvalidOperationException("Email đã được sử dụng.");
+                if (request.Role == UserRole.Admin)
+                    throw new InvalidOperationException("Không thể tạo tài khoản Admin.");
+
+                var user = _mapper.Map<User>(request);
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                await _userRepo.CreateAsync(user);
+                await _userRepo.SaveChangesAsync();
+                if (request.Role == UserRole.Staff)
+                {
+                    await _staffProfileService.CreateAsync(new CreateStaffProfileRequest
+                    {
+                        UserId = user.Id,
+                        Bio = "Nhân viên mới",
+                        ServiceIds = new List<int>()
+                    });
+                }
+                await transaction.CommitAsync();
+                return user.Id;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Đã có lỗi xảy ra khi tạo tài khoản: " + ex.ToString());
+            }
+            
+        }
+
         public async Task<bool> DeleteAsync(int id)
         {
             var user = await _userRepo.GetByIdAsync(id);
@@ -207,6 +242,42 @@ namespace BeautyBooking.Services
                 {
                     // Log lỗi nếu cần thiết
                     Console.WriteLine($"Lỗi khi xóa ảnh cũ: {ex.Message}");
+                }
+            }
+            return true;
+        }
+
+        public async Task<bool> UpdateProfileByAdminAsync(int id,UpdateUserRequest request)
+        {
+            var user = await _userRepo.GetWithProfileByIdAsync(id);
+            if(user == null || user.IsDeleted)
+                throw new KeyNotFoundException("Tài khoản không tồn tại.");
+            _mapper.Map(request, user);
+            string? oldAvatarPublicId = user.AvatarPublicId;
+            string? newAvatarPublicId = null;
+            if (request.AvatarUrl != null)
+            {
+                var photoResult = await _photoService.UploadPhotoAsync(request.AvatarUrl, true);
+                user.AvatarUrl = photoResult.Url;
+                user.AvatarPublicId = photoResult.PublicId;
+                newAvatarPublicId = photoResult.PublicId;
+            }
+            try
+            {
+                await _userRepo.SaveChangesAsync();
+            }
+            catch
+            {
+                if (newAvatarPublicId != null)
+                {
+                    try
+                    {
+                        await _photoService.DeletePhotoAsync(newAvatarPublicId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi khi xóa ảnh mới do lỗi khác: {ex.Message}");
+                    }
                 }
             }
             return true;
