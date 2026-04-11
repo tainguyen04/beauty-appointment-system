@@ -94,6 +94,15 @@ namespace BeautyBooking.Controllers
             await _userService.UpdateStatusAsync(id, isActive);
             return NoContent();
         }
+        [HttpPut("{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> UpdateProfileByAdmin(int id, [FromForm] UpdateUserRequest request)
+        {
+            var result = await _userService.UpdateProfileByAdminAsync(id, request);
+            if (!result)
+                return NotFound();
+            return NoContent();
+        }
 
         [HttpPut("role")]
         [Authorize(Policy = "AdminOnly")]

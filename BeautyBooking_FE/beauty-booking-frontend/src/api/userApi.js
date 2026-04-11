@@ -15,6 +15,11 @@ const userApi = {
   getById: (id) => {
     return axiosClient.get(`/User/${id}`);
   },
+  // Tạo mới user (Admin tạo cho khách hàng hoặc nhân viên)
+  create: (data) => {
+    return axiosClient.post('/User', data);
+  },
+
 
   // Khóa/Mở khóa tài khoản
   blockUser: (id) => {
