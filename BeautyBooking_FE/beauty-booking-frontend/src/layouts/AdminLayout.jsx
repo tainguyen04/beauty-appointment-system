@@ -183,7 +183,12 @@ const AdminLayout = () => {
               />
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
                 <Text strong>{user?.fullName || 'Admin'}</Text>
-                <Text type="secondary" style={{ fontSize: '10px' }}>Quản trị viên</Text>
+                <Text type="secondary" style={{ fontSize: '10px' }}>
+                  {{
+                    Admin: 'Quản trị viên',
+                    Staff: 'Nhân viên'
+                  }[user?.role] || 'Không xác định'}
+                </Text>
               </div>
               <DownOutlined style={{ fontSize: '10px', color: '#8c8c8c' }} />
             </Space>

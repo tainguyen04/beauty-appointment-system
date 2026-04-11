@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  Table, Tag, Button, Space, Card, Typography, Modal, 
+  Table, Tag, Button, Space, Card, Typography, Modal, Form,
   message, Avatar, Dropdown, Segmented, Input, DatePicker, Tooltip, Calendar, Badge 
 } from 'antd';
 import { 
@@ -19,7 +19,6 @@ const { RangePicker } = DatePicker;
 const StaffDayOffManager = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isAdmin = user.role === 'Admin';
-
   // Chế độ xem: table hoặc calendar
   const [viewMode, setViewMode] = useState('table');
   const [filterStatus, setFilterStatus] = useState('All');
@@ -28,9 +27,25 @@ const StaffDayOffManager = () => {
     staffDayOffApi.getAllWithStaff // Cả Admin và Staff dùng chung, BE tự phân quyền qua Token
   );
 
+    // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm(); // Nếu bạn dùng Form của Ant Design
+
   useEffect(() => {
     runFetch();
   }, [runFetch]);
+
+
+
+  // FIX: Khi chuyển sang Calendar, tự động tăng pageSize để hiển thị đủ đơn trong tháng
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    if (mode === 'calendar') {
+      handleFilterChange({ pageSize: 100, pageNumber: 1 }); // Lấy "tất tần tật" để hiện lên lịch
+    } else {
+      handleFilterChange({ pageSize: 10, pageNumber: 1 }); // Quay lại phân trang chuẩn
+    }
+  };
 
   // --- Logic Thao tác ---
   const handleAction = useCallback(async (id, action) => {
@@ -168,7 +183,7 @@ const StaffDayOffManager = () => {
           {/* Nút chuyển đổi View Mode */}
           <Segmented
             value={viewMode}
-            onChange={setViewMode}
+            onChange={handleViewModeChange}
             options={[
               { value: 'table', icon: <TableOutlined /> },
               { value: 'calendar', icon: <CalendarOutlined /> },
@@ -212,7 +227,12 @@ const StaffDayOffManager = () => {
           />
 
           {!isAdmin && (
-            <Button type="primary" size="small" icon={<PlusOutlined />}>
+            <Button 
+              type="primary" 
+              size="small" 
+              icon={<PlusOutlined />}
+              onClick={() => setIsModalOpen(true)} // Thêm dòng này
+            >
               Đăng ký nghỉ
             </Button>
           )}
@@ -242,6 +262,51 @@ const StaffDayOffManager = () => {
           />
         </div>
       )}
+      <Modal
+        title="Đăng ký nghỉ phép"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => form.submit()} // Gửi form khi nhấn OK
+        confirmLoading={loading}
+        destroyOnClose // Xóa dữ liệu cũ khi đóng modal
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={async (values) => {
+            try {
+              // Format lại ngày tháng trước khi gửi lên API
+              const submitData = {
+                ...values,
+                date: values.date.format('YYYY-MM-DD')
+              };
+              await staffDayOffApi.create(submitData);
+              message.success("Gửi yêu cầu thành công!");
+              setIsModalOpen(false);
+              form.resetFields();
+              runFetch(); // Load lại bảng để thấy đơn mới
+            } catch (error) {
+              message.error("Không thể gửi yêu cầu", error);
+            }
+          }}
+        >
+          <Form.Item 
+            name="date" 
+            label="Chọn ngày nghỉ" 
+            rules={[{ required: true, message: 'Vui lòng chọn ngày!' }]}
+          >
+            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+          </Form.Item>
+
+          <Form.Item 
+            name="reason" 
+            label="Lý do nghỉ" 
+            rules={[{ required: true, message: 'Vui lòng nhập lý do!' }]}
+          >
+            <Input.TextArea rows={4} placeholder="Ví dụ: Nghỉ việc gia đình, khám bệnh..." />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Card>
   );
 };

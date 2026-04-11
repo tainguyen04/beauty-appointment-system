@@ -7,7 +7,7 @@ namespace BeautyBooking.Interface.Service
 {
     public interface IStaffDayOffService
     {
-        Task<int> CreateAsync(StaffDayOffRequest staffDayOff);
+        Task<int> CreateAsync(StaffDayOffRequest request);
         Task<StaffDayOffResponse?> GetByIdAsync(int id);
         Task<bool> CancelAsync(int id);
         Task<bool> ApproveAsync(int id);

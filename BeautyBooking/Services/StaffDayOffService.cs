@@ -47,34 +47,38 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<int> CreateAsync(StaffDayOffRequest staffDayOff)
+        public async Task<int> CreateAsync(StaffDayOffRequest request)
         {
             var currentStaffId = _currentUserService.StaffId;
             var currentRole = _currentUserService.Role;
-            if (currentRole != UserRole.Admin && staffDayOff.StaffId != currentStaffId)
+            if (currentRole != UserRole.Admin)
             {
                 throw new UnauthorizedAccessException("Bạn không có quyền xin nghỉ cho nhân viên khác");
             }
+            else if (request.StaffId <= 0)
+            {
+                throw new Exception("Vui lòng chọn nhân viên cần đăng ký nghỉ");
+            }
 
-
-            if (staffDayOff.Date < DateOnly.FromDateTime(DateTime.UtcNow))
+            if (request.Date < DateOnly.FromDateTime(DateTime.UtcNow))
             {
                 throw new Exception("Không thể xin nghỉ cho ngày đã qua");
             }
             // Check if the staff is already off on the requested date
-            bool isAlreadyOff = await _staffDayOffRepository.IsAlreadyOffAsync(staffDayOff.StaffId, staffDayOff.Date);
+            bool isAlreadyOff = await _staffDayOffRepository.IsAlreadyOffAsync(request.StaffId, request.Date);
             if (isAlreadyOff)
             {
                 throw new Exception("Bạn đã xin nghỉ cho ngày này rồi");
             }
             //Goi sang BookingRepo de check xem có lịch hẹn nào đã được đặt vào ngày này chưa, nếu có thì không cho xin nghỉ
-            bool hasAppointments = await _appointmentRepository.HasAnyAppointmentsAsync(staffDayOff.StaffId, staffDayOff.Date);
+            bool hasAppointments = await _appointmentRepository.HasAnyAppointmentsAsync(request.StaffId, request.Date);
             if (hasAppointments)
             {
                 throw new Exception("Bạn đã có lịch hẹn vào ngày này, không thể xin nghỉ");
             }
             
-            var entity = _mapper.Map<StaffDayOff>(staffDayOff);
+            var entity = _mapper.Map<StaffDayOff>(request);
+            entity.StaffId = request.StaffId;
             entity.Status = StaffDayOffStatus.Pending;
 
             await _staffDayOffRepository.CreateAsync(entity);
