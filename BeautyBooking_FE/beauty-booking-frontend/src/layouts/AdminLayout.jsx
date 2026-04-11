@@ -3,7 +3,7 @@ import { Layout, Menu, theme, Dropdown, Avatar, Space, Typography, message } fro
 import { 
   DashboardOutlined, UserOutlined, TeamOutlined, IdcardOutlined,
   CalendarOutlined, LogoutOutlined, DownOutlined, SettingOutlined,
-  CustomerServiceOutlined, TagsOutlined, AppstoreAddOutlined
+  CustomerServiceOutlined, TagsOutlined, AppstoreAddOutlined,ScheduleOutlined, CoffeeOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import authApi from '../api/AuthApi';
@@ -30,6 +30,23 @@ const menuItems = [
     children: [
       { key: '/admin/users', icon: <UserOutlined />, label: 'Khách hàng' },
       { key: '/admin/staffs', icon: <IdcardOutlined />, label: 'Nhân viên' },
+    ],
+  },
+  {
+    key: 'sub-scheduling',
+    icon: <CalendarOutlined />,
+    label: 'Quản lý Lịch trình',
+    children: [
+      { 
+        key: '/admin/work-schedules', 
+        icon: <ScheduleOutlined />, // Thêm icon cho đồng bộ
+        label: 'Lịch làm việc' 
+      },
+      { 
+        key: '/admin/day-offs', 
+        icon: <CoffeeOutlined />, // Icon mang tính chất nghỉ ngơi/thư giãn
+        label: 'Nghỉ phép' 
+      },
     ],
   },
 ];
@@ -138,7 +155,7 @@ const AdminLayout = () => {
           theme="dark"
           selectedKeys={[location.pathname]}
           // Tự động mở menu cha chứa đường dẫn hiện tại
-          defaultOpenKeys={['sub-services', 'sub-users']} 
+          defaultOpenKeys={['sub-services', 'sub-users', 'sub-scheduling']} 
           onClick={(e) => navigate(e.key)}
           items={menuItems}
         />

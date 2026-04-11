@@ -23,7 +23,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "StaffOnly")]
+        [Authorize(Policy = "StaffOnly,AdminOnly")]
         public async Task<ActionResult<int>> Create([FromBody] StaffDayOffRequest request)
         {
             var id = await _staffDayOffService.CreateAsync(request);

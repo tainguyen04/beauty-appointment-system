@@ -131,8 +131,20 @@ const UserManager = () => {
       title: 'Vai trò',
       dataIndex: 'role',
       render: (role) => {
-        const colors = { Admin: 'volcano', Staff: 'blue', Customer: 'green' };
-        return <Tag color={colors[role] || 'default'}>{role?.toUpperCase()}</Tag>;
+        // Định nghĩa map cho cả màu sắc và tên hiển thị
+        const roleConfig = {
+          Admin: { color: 'volcano', text: 'Quản trị viên' },
+          Staff: { color: 'blue', text: 'Nhân viên' },
+          Customer: { color: 'green', text: 'Khách hàng' }
+        };
+
+        const config = roleConfig[role] || { color: 'default', text: role };
+
+        return (
+          <Tag color={config.color} style={{ fontWeight: '500' }}>
+            {config.text.toUpperCase()}
+          </Tag>
+        );
       }
     },
     {
@@ -215,7 +227,11 @@ const UserManager = () => {
         columns={columns}
         dataSource={data}
         loading={loading}
-        pagination={pagination}
+        pagination={{
+          ...pagination,
+          showSizeChanger: true,
+          pageSizeOptions: ['5', '10', '20'],
+        }} 
         onChange={handleTableChange}
         rowKey="id"
         bordered

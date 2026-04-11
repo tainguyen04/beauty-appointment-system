@@ -10,7 +10,7 @@ import CategoryManager from './pages/Admin/CategoryManager';
 import UserManager from './pages/Admin/UserManager';
 import StaffManager from './pages/Admin/StaffManager';
 import Profile from './pages/Admin/Profile';
-
+import StaffDayOffManager from './pages/Admin/StaffDayOffManager';
 // 1. Import ProtectedRoute vừa tạo
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -38,6 +38,7 @@ function App() {
             <Route path="users" element={<UserManager />} />
             <Route path="staffs" element={<StaffManager />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="day-offs" element={<StaffDayOffManager />} />
           </Route>
         </Route>
         

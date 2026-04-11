@@ -49,7 +49,15 @@ namespace BeautyBooking.Services
 
         public async Task<int> CreateAsync(StaffDayOffRequest staffDayOff)
         {
-            if(staffDayOff.Date < DateOnly.FromDateTime(DateTime.UtcNow))
+            var currentStaffId = _currentUserService.StaffId;
+            var currentRole = _currentUserService.Role;
+            if (currentRole != UserRole.Admin && staffDayOff.StaffId != currentStaffId)
+            {
+                throw new UnauthorizedAccessException("Bạn không có quyền xin nghỉ cho nhân viên khác");
+            }
+
+
+            if (staffDayOff.Date < DateOnly.FromDateTime(DateTime.UtcNow))
             {
                 throw new Exception("Không thể xin nghỉ cho ngày đã qua");
             }
@@ -65,6 +73,7 @@ namespace BeautyBooking.Services
             {
                 throw new Exception("Bạn đã có lịch hẹn vào ngày này, không thể xin nghỉ");
             }
+            
             var entity = _mapper.Map<StaffDayOff>(staffDayOff);
             entity.Status = StaffDayOffStatus.Pending;
 
