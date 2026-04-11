@@ -8,25 +8,6 @@ const staffDayOffApi = {
     return axiosClient.get('/StaffDayOff', { params: cleanParams(params) });
   },
 
-  // Lấy danh sách các đơn đang chờ duyệt (Dành cho thông báo hoặc tab chờ xử lý)
-  getPending: () => {
-    return axiosClient.get('/StaffDayOff/pending');
-  },
-
-  // Lấy danh sách theo tháng (Dùng cho giao diện Calendar)
-  getByMonth: (month, year, status) => {
-    return axiosClient.get('/StaffDayOff/month', {
-      params: cleanParams({ month, year, status })
-    });
-  },
-
-  // Lấy lịch sử nghỉ phép của chính mình (Dành cho Staff)
-  getMyHistory: (params) => {
-    return axiosClient.get('/StaffDayOff/my-history', {
-      params: cleanParams(params)
-    });
-  },
-
   // Tạo đơn xin nghỉ mới (Staff Only)
   create: (data) => {
     return axiosClient.post('/StaffDayOff', data);
