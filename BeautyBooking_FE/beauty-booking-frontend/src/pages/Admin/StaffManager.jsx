@@ -123,11 +123,9 @@ const StaffManager = () => {
       key: 'staffInfo',
       render: (_, record) => (
         <Space>
-          <Avatar src={record.user?.avatarUrl || record.avatarUrl} icon={<UserOutlined />} />
+          <Avatar src={record.avatarUrl || record.avatarUrl} icon={<UserOutlined />} />
           <div>
-            <Text strong>{record.user?.fullName || 'N/A'}</Text>
-            <br />
-            <Text type="secondary" style={{ fontSize: '12px' }}>{record.user?.email}</Text>
+            <Text strong>{record.fullName || 'N/A'}</Text>
           </div>
         </Space>
       ),
@@ -137,6 +135,20 @@ const StaffManager = () => {
       dataIndex: 'bio',
       ellipsis: true,
       render: (bio) => <Tooltip title={bio}>{bio || <Text type="secondary" italic>Trống</Text>}</Tooltip>,
+    },
+    {
+      title: 'Dịch vụ đảm nhận',
+      dataIndex: 'serviceNames',
+      key: 'serviceNames',
+      render: (services) => (
+        <>
+          {services?.map((name) => (
+            <Tag color="cyan" key={name} style={{ marginBottom: '4px' }}>
+              {name}
+            </Tag>
+          ))}
+        </>
+      ),
     },
     {
       title: 'Thao tác',

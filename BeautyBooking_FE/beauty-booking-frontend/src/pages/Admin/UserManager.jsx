@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   Table, Tag, Button, Space, Modal, message, Card, 
   Input, Typography, Drawer, Descriptions, Avatar, Select,
-  Dropdown, Form
+  Dropdown, Form, Row, Col, Upload
 } from 'antd';
 import { 
-  StopOutlined, CheckCircleOutlined, DeleteOutlined, 
   UserOutlined, EyeOutlined, FilterOutlined, KeyOutlined, 
-  MoreOutlined, UserSwitchOutlined 
+  MoreOutlined, PlusOutlined, EditOutlined, UploadOutlined,
+  DeleteOutlined, StopOutlined, CheckCircleOutlined 
 } from '@ant-design/icons';
 import { usePagination } from '../../hooks/usePagination';
 import userApi from '../../api/userApi';
@@ -16,23 +16,91 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const UserManager = () => {
-  const [openDetail, setOpenDetail] = useState(false);
+  // --- States ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-
-  // State cho đổi Role
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [roleForm] = Form.useForm();
+  
+  const [openDetail, setOpenDetail] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  
+  const [form] = Form.useForm();
 
+  // --- Pagination Hook ---
   const { 
     data, loading, pagination, runFetch, handleTableChange, handleFilterChange 
   } = usePagination(userApi.getAll);
 
-  useEffect(() => {
+  // --- Sử dụng useCallback để ổn định hàm fetch dữ liệu (Tránh Warning) ---
+  const fetchData = useCallback(() => {
     runFetch();
   }, [runFetch]);
 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // --- Handlers cho Create/Update ---
+  const handleAddNew = () => {
+    setIsEdit(false);
+    setSelectedUser(null);
+    form.resetFields();
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (record) => {
+    setIsEdit(true);
+    setSelectedUser(record);
+    // Map dữ liệu từ record vào form (Lưu ý: record thường có fullName từ API getAll)
+    form.setFieldsValue({
+      name: record.fullName,
+      phone: record.phone,
+      role: record.role
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (values) => {
+    try {
+      setSubmitLoading(true);
+      
+      if (isEdit) {
+        // 1. CẤU TRÚC CHO UPDATE (FormData theo UpdateUserRequest)
+        const formData = new FormData();
+        if (values.name) formData.append('Name', values.name);
+        if (values.phone) formData.append('Phone', values.phone);
+        
+        // Xử lý file Avatar
+        if (values.avatar?.fileList?.length > 0) {
+          formData.append('AvatarUrl', values.avatar.fileList[0].originFileObj);
+        }
+
+        await userApi.update(selectedUser.id, formData);
+        message.success("Cập nhật người dùng thành công!");
+      } else {
+        // 2. CẤU TRÚC CHO CREATE (JSON theo CreateUserRequest)
+        const createData = {
+          fullName: values.name,
+          email: values.email,
+          password: values.password,
+          role: values.role, // Backend nhận Enum int hoặc string tùy bạn set ở Option
+          wardId: values.wardId ? parseInt(values.wardId) : null
+        };
+        await userApi.createUser(createData);
+        message.success("Tạo tài khoản mới thành công!");
+      }
+
+      setIsModalOpen(false);
+      fetchData(); // Load lại bảng
+    } catch (error) {
+      message.error(error.response?.data?.message || "Thao tác thất bại!");
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  // --- Các hàm hỗ trợ khác (Detail, Block) ---
   const showDetail = async (id) => {
     setDetailLoading(true);
     setOpenDetail(true);
@@ -40,51 +108,16 @@ const UserManager = () => {
       const res = await userApi.getById(id);
       setSelectedUser(res);
     } catch (error) {
-      message.error("Không thể lấy thông tin chi tiết!", error.message);
+      message.error("Lỗi lấy chi tiết", error);
       setOpenDetail(false);
-    } finally {
-      setDetailLoading(false);
-    }
+    } finally { setDetailLoading(false); }
   };
 
-  // Xử lý Thay đổi Role
-  const handleChangeRole = async (values) => {
-    try {
-      setSubmitLoading(true);
-      // Gửi request body khớp với ChangeRoleRequest { userId, newRole }
-      await userApi.changeRole(selectedUser.id, values.newRole);
-      message.success(`Đã cập nhật vai trò cho ${selectedUser.fullName}`);
-      setIsRoleModalOpen(false);
-      runFetch();
-    } catch (error) {
-      message.error("Thay đổi vai trò thất bại!", error.message);
-    } finally {
-      setSubmitLoading(false);
-    }
-  };
-
-  const handleToggleBlock = async (id, currentStatus) => {
-    const isBlocking = currentStatus === true;
-    Modal.confirm({
-      title: isBlocking ? 'Xác nhận khóa tài khoản?' : 'Xác nhận mở khóa?',
-      content: isBlocking ? 'Người dùng này sẽ không thể đăng nhập.' : 'Người dùng có thể tiếp tục sử dụng dịch vụ.',
-      onOk: async () => {
-        try {
-          await userApi.blockUser(id);
-          message.success(isBlocking ? "Đã khóa tài khoản!" : "Đã mở khóa thành công!");
-          runFetch();
-        } catch (error) {
-          message.error("Thao tác thất bại!", error.message);
-        }
-      }
-    });
-  };
-
+  // --- Columns Definition ---
   const columns = [
     {
       title: 'Họ tên',
       dataIndex: 'fullName',
-      key: 'fullName',
       render: (text, record) => (
         <Space>
           <Avatar src={record.avatarUrl} icon={<UserOutlined />} />
@@ -92,32 +125,15 @@ const UserManager = () => {
         </Space>
       ),
     },
-    { title: 'Email', dataIndex: 'email'},
-    {title: 'Số điện thoại', dataIndex: 'phone'},
+    { title: 'Email', dataIndex: 'email' },
+    { title: 'Số điện thoại', dataIndex: 'phone' },
     {
       title: 'Vai trò',
       dataIndex: 'role',
-      key: 'role',
       render: (role) => {
-        const roleKey = role ? String(role).toLowerCase() : '';
-        const roleConfig = {
-          'customer': { color: 'green', label: 'KHÁCH HÀNG' },
-          'admin': { color: 'volcano', label: 'ADMIN' },
-          'staff': { color: 'blue', label: 'NHÂN VIÊN' }
-        };
-        const config = roleConfig[roleKey] || { color: 'default', label: role || 'UNKNOWN' };
-        return <Tag color={config.color}>{config.label}</Tag>;
-      },
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'isActived',
-      key: 'isActived',
-      render: (isActived) => (
-        <Tag color={isActived ? 'green' : 'red'}>
-          {isActived ? 'Hoạt động' : 'Bị khóa'}
-        </Tag>
-      ),
+        const colors = { Admin: 'volcano', Staff: 'blue', Customer: 'green' };
+        return <Tag color={colors[role] || 'default'}>{role?.toUpperCase()}</Tag>;
+      }
     },
     {
       title: 'Thao tác',
@@ -126,98 +142,70 @@ const UserManager = () => {
       align: 'center',
       render: (_, record) => {
         const items = [
-          {
-            key: 'detail',
-            label: 'Xem chi tiết',
-            icon: <EyeOutlined />,
-            onClick: () => showDetail(record.id),
-          },
-          {
-            key: 'change-role',
-            label: 'Đổi vai trò',
-            icon: <UserSwitchOutlined />,
-            onClick: () => {
-              setSelectedUser(record);
-              roleForm.setFieldsValue({ newRole: record.role });
-              setIsRoleModalOpen(true);
-            }
-          },
-          {
-            key: 'reset-pwd',
-            label: 'Reset mật khẩu',
-            icon: <KeyOutlined />,
-            onClick: () => {
-              Modal.confirm({
+          { key: 'detail', label: 'Xem chi tiết', icon: <EyeOutlined />, onClick: () => showDetail(record.id) },
+          { key: 'edit', label: 'Chỉnh sửa', icon: <EditOutlined />, onClick: () => handleEdit(record) },
+          { 
+            key: 'reset', 
+            label: 'Reset mật khẩu', 
+            icon: <KeyOutlined />, 
+            onClick: () => Modal.confirm({
                 title: 'Reset mật khẩu?',
-                content: `Mật khẩu của ${record.fullName} sẽ về mặc định(123456).`,
-                onOk: async () => {
-                  try {
-                    await userApi.resetPassword(record.id);
-                    message.success("Đã reset mật khẩu thành công!");
-                  } catch {
-                    message.error("Không thể reset mật khẩu.");
-                  }
-                }
-              });
-            },
-          },
-          {
-            key: 'toggle-block',
-            label: record.isActived ? 'Khóa tài khoản' : 'Mở khóa',
-            icon: record.isActived ? <StopOutlined /> : <CheckCircleOutlined />,
-            danger: record.isActived,
-            onClick: () => handleToggleBlock(record.id, record.isActived),
+                onOk: () => userApi.resetPassword(record.id).then(() => message.success("Đã reset!"))
+            }) 
           },
           { type: 'divider' },
-          {
-            key: 'delete',
-            label: 'Xóa tài khoản',
-            icon: <DeleteOutlined />,
+          { 
+            key: 'delete', 
+            label: 'Xóa', 
+            icon: <DeleteOutlined />, 
             danger: true,
-            onClick: () => {
-              Modal.confirm({
-                title: 'Xác nhận xóa?',
-                content: 'Hành động này không thể hoàn tác.',
-                okType: 'danger',
-                onOk: async () => {
-                  await userApi.delete(record.id);
-                  message.success("Đã xóa người dùng");
-                  runFetch();
-                }
-              });
-            },
+            onClick: () => Modal.confirm({
+              title: 'Xóa tài khoản này?',
+              okType: 'danger',
+              onOk: async () => {
+                await userApi.delete(record.id);
+                message.success("Đã xóa");
+                fetchData();
+              }
+            })
           },
         ];
-
         return (
           <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
             <Button type="text" icon={<MoreOutlined style={{ fontSize: '18px' }} />} />
           </Dropdown>
         );
-      },
-    },
+      }
+    }
   ];
 
   return (
     <Card bordered={false}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: '16px' }}>
-        <Title level={3} style={{ margin: 0 }}>Quản lý tài khoản</Title>
+      {/* Header Quản lý */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+        <Title level={3} style={{ margin: 0 }}>Quản lý người dùng</Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddNew}>
+          Thêm người dùng
+        </Button>
+      </div>
+
+      {/* Filter & Search */}
+      <div style={{ marginBottom: 16 }}>
         <Space size="middle">
           <Select
             placeholder="Lọc vai trò"
             style={{ width: 160 }}
             allowClear
             onChange={(val) => handleFilterChange({ Role: val })}
-            suffixIcon={<FilterOutlined />}
           >
-            <Option value={0}>Khách hàng</Option>
-            <Option value={1}>Admin</Option>
-            <Option value={2}>Nhân viên</Option>
+            <Option value="Customer">Khách hàng</Option>
+            <Option value="Staff">Nhân viên</Option>
+            <Option value="Admin">Quản trị viên</Option>
           </Select>
           <Input.Search 
-            placeholder="Tìm tên, email..." 
-            onSearch={(value) => handleFilterChange({ Keyword: value })}
-            style={{ width: 280 }}
+            placeholder="Tìm kiếm..." 
+            onSearch={(val) => handleFilterChange({ Keyword: val })}
+            style={{ width: 250 }}
             allowClear
           />
         </Space>
@@ -227,70 +215,100 @@ const UserManager = () => {
         columns={columns}
         dataSource={data}
         loading={loading}
-        pagination={{ ...pagination, showSizeChanger: true }}
+        pagination={pagination}
         onChange={handleTableChange}
         rowKey="id"
         bordered
       />
 
-      {/* Modal Thay đổi Role */}
+      {/* MODAL CREATE / UPDATE */}
       <Modal
-        title="Thay đổi vai trò người dùng"
-        open={isRoleModalOpen}
-        onOk={() => roleForm.submit()}
-        onCancel={() => setIsRoleModalOpen(false)}
+        title={isEdit ? "Chỉnh sửa tài khoản" : "Tạo tài khoản mới"}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => form.submit()}
         confirmLoading={submitLoading}
+        width={600}
         destroyOnClose
       >
-        <div style={{ marginBottom: 16 }}>
-            <Text>Người dùng: </Text>
-            <Text strong>{selectedUser?.fullName}</Text>
-        </div>
-        <Form form={roleForm} layout="vertical" onFinish={handleChangeRole}>
-          <Form.Item 
-            name="newRole" 
-            label="Chọn vai trò mới" 
-            rules={[{ required: true, message: 'Vui lòng chọn vai trò!' }]}
-          >
-            <Select placeholder="Chọn vai trò">
-              <Option value="Customer">Khách hàng (Customer)</Option>
-              <Option value="Staff">Nhân viên (Staff)</Option>
-              <Option value="Admin">Quản trị viên (Admin)</Option>
-            </Select>
-          </Form.Item>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="name" label="Họ tên" rules={[{ required: true, message: 'Nhập họ tên' }]}>
+                <Input placeholder="Nguyễn Văn A" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="phone" label="Số điện thoại">
+                <Input placeholder="090..." />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {!isEdit && (
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
+                  <Input placeholder="email@gmail.com" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="password" label="Mật khẩu" rules={[{ required: true }]}>
+                  <Input.Password placeholder="******" />
+                </Form.Item>
+              </Col>
+            </Row>
+          )}
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}>
+                <Select placeholder="Chọn vai trò">
+                  <Option value="Customer">Khách hàng</Option>
+                  <Option value="Staff">Nhân viên</Option>
+                  <Option value="Admin">Quản trị viên</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            {!isEdit && (
+              <Col span={12}>
+                <Form.Item name="wardId" label="Mã vùng (WardId)">
+                  <Input type="number" />
+                </Form.Item>
+              </Col>
+            )}
+          </Row>
+
+          {isEdit && (
+            <Form.Item name="avatar" label="Thay đổi ảnh đại diện">
+              <Upload maxCount={1} beforeUpload={() => false} listType="picture">
+                <Button icon={<UploadOutlined />}>Chọn file ảnh</Button>
+              </Upload>
+            </Form.Item>
+          )}
         </Form>
       </Modal>
 
-      {/* Drawer chi tiết hồ sơ */}
+      {/* DRAWER CHI TIẾT */}
       <Drawer
-        title="Hồ sơ chi tiết"
-        width={500}
+        title="Thông tin chi tiết"
+        width={450}
         onClose={() => setOpenDetail(false)}
         open={openDetail}
       >
-        {detailLoading ? <Text>Đang tải...</Text> : selectedUser && (
-          <div style={{ paddingBottom: 20 }}>
-            <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <Avatar size={80} src={selectedUser.avatarUrl} icon={<UserOutlined />} />
-              <Title level={4} style={{ marginTop: 12 }}>{selectedUser.fullName}</Title>
-              <Text type="secondary">{selectedUser.email}</Text>
-            </div>
-            <Descriptions column={1} bordered size="middle">
-              <Descriptions.Item label="ID">{selectedUser.id}</Descriptions.Item>
-              <Descriptions.Item label="Số điện thoại">{selectedUser.phone || 'N/A'}</Descriptions.Item>
-              <Descriptions.Item label="Vai trò">
-                <Tag color="blue">{selectedUser.role?.toUpperCase()}</Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái">
-                <Tag color={selectedUser.isActived ? 'green' : 'red'}>
-                  {selectedUser.isActived ? 'Hoạt động' : 'Bị khóa'}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Ngày tham gia">
-                {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
-              </Descriptions.Item>
-            </Descriptions>
-          </div>
+        {detailLoading ? <p>Đang tải...</p> : (
+          <Descriptions column={1} bordered>
+            <Descriptions.Item label="Avatar">
+              <Avatar size={64} src={selectedUser?.avatarUrl} />
+            </Descriptions.Item>
+            <Descriptions.Item label="Họ tên">{selectedUser?.fullName}</Descriptions.Item>
+            <Descriptions.Item label="Email">{selectedUser?.email}</Descriptions.Item>
+            <Descriptions.Item label="SĐT">{selectedUser?.phone}</Descriptions.Item>
+            <Descriptions.Item label="Vai trò">{selectedUser?.role}</Descriptions.Item>
+            <Descriptions.Item label="Ngày tạo">
+              {new Date(selectedUser?.createdAt).toLocaleDateString('vi-VN')}
+            </Descriptions.Item>
+          </Descriptions>
         )}
       </Drawer>
     </Card>

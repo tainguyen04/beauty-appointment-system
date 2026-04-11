@@ -25,7 +25,10 @@ const userApi = {
   blockUser: (id) => {
     return axiosClient.post(`/User/${id}/block`);
   },
-
+  //Cap nhật thông tin user (Admin cập nhật cho khách hàng hoặc nhân viên)
+  update: (id, data) => {
+    return axiosClient.put(`/User/${id}`, data);
+  },
   // Cập nhật trạng thái (Active/Inactive)
  updateStatus: (id, isActive) => {
     return axiosClient.put(`/User/${id}/status`, null, {
