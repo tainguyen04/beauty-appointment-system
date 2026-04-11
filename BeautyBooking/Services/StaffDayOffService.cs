@@ -53,7 +53,7 @@ namespace BeautyBooking.Services
             var currentRole = _currentUserService.Role;
             if (currentRole != UserRole.Admin)
             {
-                throw new UnauthorizedAccessException("Bạn không có quyền xin nghỉ cho nhân viên khác");
+                request.StaffId = currentStaffId ?? throw new Exception("Không tìm thấy thông tin nhân viên hiện tại.");
             }
             else if (request.StaffId <= 0)
             {
