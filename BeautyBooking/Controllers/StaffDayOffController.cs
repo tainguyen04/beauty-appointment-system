@@ -79,5 +79,14 @@ namespace BeautyBooking.Controllers
                 return NotFound();
             return NoContent();
         }
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var result = await _staffDayOffService.DeleteAsync(id);
+            if (!result)
+                return NotFound();
+            return NoContent();
+        }
     }
 }

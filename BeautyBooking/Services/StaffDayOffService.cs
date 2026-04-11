@@ -42,7 +42,7 @@ namespace BeautyBooking.Services
             var dayOff = await _staffDayOffRepository.GetByIdAsync(id);
             if (dayOff == null || dayOff.Status != StaffDayOffStatus.Pending || dayOff.StaffId != currentStaffId)
                 throw new KeyNotFoundException("Không tìm thấy đơn xin nghỉ nào hoặc bạn không có quyền hủy đơn này.");
-            dayOff.Status = StaffDayOffStatus.Canceled;
+            dayOff.Status = StaffDayOffStatus.Cancelled;
             await _staffDayOffRepository.SaveChangesAsync();
             return true;
         }
@@ -81,6 +81,19 @@ namespace BeautyBooking.Services
             await _staffDayOffRepository.SaveChangesAsync();
 
             return entity.Id;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var currentRole = _currentUserService.Role;
+            if (currentRole != UserRole.Admin)
+                throw new UnauthorizedAccessException("Bạn không có quyền xóa đơn xin nghỉ này.");
+            var dayOff = await _staffDayOffRepository.GetByIdAsync(id);
+            if (dayOff == null)
+                throw new KeyNotFoundException("Không tìm thấy đơn xin nghỉ nào.");
+            dayOff.IsDeleted = true;
+            await _staffDayOffRepository.SaveChangesAsync();
+            return true;
         }
 
         public async Task<StaffDayOffResponse?> GetByIdAsync(int id)

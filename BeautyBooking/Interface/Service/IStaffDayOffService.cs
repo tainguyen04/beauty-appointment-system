@@ -12,6 +12,7 @@ namespace BeautyBooking.Interface.Service
         Task<bool> CancelAsync(int id);
         Task<bool> ApproveAsync(int id);
         Task<bool> RejectAsync(int id);
+        Task<bool> DeleteAsync(int id);
         Task<PagedResult<StaffDayOffResponse>> GetStaffDayOffsAsync(StaffDayOffFilter filter);
     }
 }
