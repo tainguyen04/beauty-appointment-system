@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Table, Tag, Button, Space, Card, Typography, Modal, 
-  message, Avatar, Dropdown, Segmented, Input, DatePicker 
+  message, Avatar, Dropdown, Segmented, Input, DatePicker, Tooltip 
 } from 'antd';
 import { 
   CheckCircleOutlined, CloseCircleOutlined, 
   MoreOutlined, ClockCircleOutlined, 
-  UserOutlined, SearchOutlined 
+  UserOutlined, SearchOutlined, PlusOutlined, DeleteOutlined 
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { usePagination } from '../../hooks/usePagination';
@@ -16,8 +16,14 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const StaffDayOffManager = () => {
-  // 1. Pagination Hook - Đồng bộ Params với API mới
-  const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(staffDayOffApi.getAllWithStaff);
+  // Giả định lấy thông tin user từ localStorage/Context
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = user.role === 'Admin';
+
+  // 1. Pagination Hook - Tự động đổi API dựa trên Role
+  const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(
+    isAdmin ? staffDayOffApi.getAllWithStaff : staffDayOffApi.getMyHistory
+  );
 
   const [filterStatus, setFilterStatus] = useState('All');
 
@@ -25,135 +31,143 @@ const StaffDayOffManager = () => {
     runFetch();
   }, [runFetch]);
 
-  // 2. Xử lý Phê duyệt / Từ chối (Dùng useCallback để ổn định tham chiếu)
+  // 2. Xử lý Phê duyệt / Từ chối (Cho Admin)
   const handleAction = useCallback(async (id, action) => {
     try {
       if (action === 'approve') await staffDayOffApi.approve(id);
       else if (action === 'reject') await staffDayOffApi.reject(id);
+      else if (action === 'cancel') await staffDayOffApi.cancel(id);
       
-      message.success(`Đã ${action === 'approve' ? 'phê duyệt' : 'từ chối'} đơn nghỉ`);
+      message.success(`Thao tác thành công!`);
       runFetch();
     } catch (error) {
       message.error("Thao tác thất bại", error);
     }
   }, [runFetch]);
 
-  // 3. Xử lý lọc ngày (FromDate - ToDate)
+  // 3. Xử lý lọc ngày
   const onRangeChange = (dates) => {
-    if (dates) {
-      handleFilterChange({
-        FromDate: dates[0].format('YYYY-MM-DD'),
-        ToDate: dates[1].format('YYYY-MM-DD'),
-      });
-    } else {
-      handleFilterChange({ FromDate: undefined, ToDate: undefined });
-    }
+    handleFilterChange({
+      FromDate: dates ? dates[0].format('YYYY-MM-DD') : undefined,
+      ToDate: dates ? dates[1].format('YYYY-MM-DD') : undefined,
+    });
   };
 
-  const columns = [
-    {
-      title: 'Nhân viên',
-      key: 'staff',
-      render: (_, record) => (
-        <Space>
-          <Avatar size="small" src={record.avatarUrl} icon={<UserOutlined />} />
-          <div>
-            <Text strong style={{ fontSize: '13px', display: 'block' }}>{record.fullName}</Text>
-            <Text type="secondary" style={{ fontSize: '11px' }}>{record.email}</Text>
-          </div>
-        </Space>
-      ),
-    },
-    {
-      title: 'Ngày nghỉ',
-      dataIndex: 'date',
-      render: (date) => (
-        <Space direction="vertical" size={0}>
-          <Text style={{ fontSize: '13px' }}>{dayjs(date).format('DD/MM/YYYY')}</Text>
-          <Text type="secondary" style={{ fontSize: '11px' }}>{dayjs(date).format('dddd')}</Text>
-        </Space>
-      ),
-    },
-    {
-      title: 'Lý do',
-      dataIndex: 'reason',
-      ellipsis: true,
-      render: (reason) => <Text type="secondary" style={{ fontSize: '12px' }}>{reason || '...'}</Text>,
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      align: 'center',
-      render: (status) => {
-        const statusConfig = {
-          Pending: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Chờ duyệt' },
-          Approved: { color: 'success', icon: <CheckCircleOutlined />, text: 'Đã duyệt' },
-          Rejected: { color: 'error', icon: <CloseCircleOutlined />, text: 'Từ chối' },
-          Canceled: { color: 'default', icon: <CloseCircleOutlined />, text: 'Đã hủy' },
-        };
-        const config = statusConfig[status] || statusConfig.Pending;
-        return <Tag icon={config.icon} color={config.color} style={{ fontSize: '11px' }}>{config.text}</Tag>;
+  // 4. Định nghĩa Columns bằng useMemo để phân quyền
+  const columns = useMemo(() => {
+    const cols = [
+      {
+        title: 'Ngày nghỉ',
+        dataIndex: 'date',
+        width: 150,
+        render: (date) => (
+          <Space direction="vertical" size={0}>
+            <Text style={{ fontSize: '13px' }}>{dayjs(date).format('DD/MM/YYYY')}</Text>
+            <Text type="secondary" style={{ fontSize: '11px' }}>{dayjs(date).format('dddd')}</Text>
+          </Space>
+        ),
       },
-    },
-    {
-      title: 'Thao tác',
-      key: 'action',
-      width: 60,
-      align: 'center',
-      render: (_, record) => {
-        if (record.status !== 'Pending') return null;
+      {
+        title: 'Lý do',
+        dataIndex: 'reason',
+        ellipsis: true,
+        render: (reason) => <Text type="secondary" style={{ fontSize: '12px' }}>{reason || '...'}</Text>,
+      },
+      {
+        title: 'Trạng thái',
+        dataIndex: 'status',
+        align: 'center',
+        width: 120,
+        render: (status) => {
+          const statusConfig = {
+            Pending: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Chờ duyệt' },
+            Approved: { color: 'success', icon: <CheckCircleOutlined />, text: 'Đã duyệt' },
+            Rejected: { color: 'error', icon: <CloseCircleOutlined />, text: 'Từ chối' },
+            Canceled: { color: 'default', icon: <CloseCircleOutlined />, text: 'Đã hủy' },
+          };
+          const config = statusConfig[status] || statusConfig.Pending;
+          return <Tag icon={config.icon} color={config.color} style={{ fontSize: '11px' }}>{config.text}</Tag>;
+        },
+      },
+      {
+        title: 'Thao tác',
+        key: 'action',
+        width: 80,
+        align: 'center',
+        render: (_, record) => {
+          if (record.status !== 'Pending') return null;
 
-        const items = [
-          { 
-            key: 'approve', 
-            label: 'Phê duyệt', 
-            icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />, 
-            onClick: () => handleAction(record.id, 'approve')
-          },
-          { 
-            key: 'reject', 
-            label: 'Từ chối', 
-            icon: <CloseCircleOutlined style={{ color: '#ff4d4f' }} />, 
-            onClick: () => handleAction(record.id, 'reject')
+          // Menu cho Admin (Duyệt/Từ chối)
+          if (isAdmin) {
+            const items = [
+              { key: 'approve', label: 'Phê duyệt', icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />, onClick: () => handleAction(record.id, 'approve') },
+              { key: 'reject', label: 'Từ chối', icon: <CloseCircleOutlined style={{ color: '#ff4d4f' }} />, onClick: () => handleAction(record.id, 'reject') }
+            ];
+            return (
+              <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+                <Button type="text" size="small" icon={<MoreOutlined />} />
+              </Dropdown>
+            );
           }
-        ];
 
-        return (
-          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
-            <Button type="text" size="small" icon={<MoreOutlined />} />
-          </Dropdown>
-        );
+          // Nút cho Staff (Hủy đơn)
+          return (
+            <Tooltip title="Hủy yêu cầu">
+              <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => handleAction(record.id, 'cancel')} />
+            </Tooltip>
+          );
+        },
       },
-    },
-  ];
+    ];
+
+    // Chỉ Admin mới thấy cột nhân viên
+    if (isAdmin) {
+      cols.unshift({
+        title: 'Nhân viên',
+        key: 'staff',
+        width: 200,
+        render: (_, record) => (
+          <Space>
+            <Avatar size="small" src={record.avatarUrl} icon={<UserOutlined />} />
+            <div>
+              <Text strong style={{ fontSize: '13px', display: 'block' }}>{record.fullName}</Text>
+              <Text type="secondary" style={{ fontSize: '11px' }}>{record.email}</Text>
+            </div>
+          </Space>
+        ),
+      });
+    }
+
+    return cols;
+  }, [isAdmin, handleAction]);
 
   return (
     <Card bordered={false} size="small">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
         <div>
-          <Title level={4} style={{ margin: 0 }}>Yêu cầu nghỉ phép</Title>
-          <Text type="secondary" style={{ fontSize: '12px' }}>Quản lý và phê duyệt đơn nghỉ</Text>
+          <Title level={4} style={{ margin: 0 }}>
+            {isAdmin ? "Quản lý nghỉ phép" : "Lịch sử nghỉ phép của tôi"}
+          </Title>
         </div>
         
         <Space wrap>
-          {/* 1. Tìm kiếm theo Keyword */}
-          <Input.Search 
-            placeholder="Tìm nhân viên..." 
-            size="small" 
-            style={{ width: 180 }}
-            onSearch={(v) => handleFilterChange({ Keyword: v })}
-            allowClear
-          />
+          {/* Admin mới có quyền tìm kiếm theo tên nhân viên */}
+          {isAdmin && (
+            <Input.Search 
+              placeholder="Tìm nhân viên..." 
+              size="small" 
+              style={{ width: 180 }}
+              onSearch={(v) => handleFilterChange({ Keyword: v })}
+              allowClear
+            />
+          )}
 
-          {/* 2. Lọc theo khoảng ngày */}
           <RangePicker 
             size="small" 
             style={{ width: 230 }} 
-            placeholder={['Từ ngày', 'Đến ngày']}
             onChange={onRangeChange}
           />
 
-          {/* 3. Lọc theo trạng thái */}
           <Segmented 
             value={filterStatus}
             size="small"
@@ -167,6 +181,13 @@ const StaffDayOffManager = () => {
               handleFilterChange({ Status: value === 'All' ? undefined : value });
             }}
           />
+
+          {/* Staff mới thấy nút đăng ký nghỉ */}
+          {!isAdmin && (
+            <Button type="primary" size="small" icon={<PlusOutlined />}>
+              Đăng ký nghỉ
+            </Button>
+          )}
         </Space>
       </div>
 
