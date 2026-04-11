@@ -2,6 +2,7 @@
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
+using Microsoft.EntityFrameworkCore.Design;
 namespace BeautyBooking.MappingProfiles
 {
             public class UserProfile : Profile
@@ -25,7 +26,9 @@ namespace BeautyBooking.MappingProfiles
                     // Map from UpdateUserRequest to User entity
                     CreateMap<UpdateUserRequest, User>()
                         .IgnoreAuditFields()
-                        .ForMember(dest => dest.Role, opt => opt.Ignore());
+                        .ForMember(dest => dest.Role, opt => opt.Ignore())
+                        .ForMember(dest => dest.Ward, opt => opt.Ignore())
+                        .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
                 }
             }
     }

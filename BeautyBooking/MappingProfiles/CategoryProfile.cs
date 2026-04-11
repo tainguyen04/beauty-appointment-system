@@ -13,6 +13,11 @@ namespace BeautyBooking.MappingProfiles
             CreateMap<CategoryRequest, Category>()
                 .IgnoreAuditFields()
                 .ForMember(dest => dest.Services, opt => opt.Ignore());
+
+            CreateMap<CategoryRequest, Category>()
+                .IgnoreAuditFields()
+                .ForMember(dest => dest.Services, opt => opt.Ignore())
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }

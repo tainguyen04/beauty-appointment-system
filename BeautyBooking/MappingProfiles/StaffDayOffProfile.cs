@@ -11,9 +11,11 @@ namespace BeautyBooking.MappingProfiles
         {
             CreateMap<StaffDayOff, StaffDayOffResponse>()
                 .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff.User.FullName));
+
             CreateMap<StaffDayOffRequest, StaffDayOff>()
                 .IgnoreAuditFields()
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
+            
         }
     }
 }

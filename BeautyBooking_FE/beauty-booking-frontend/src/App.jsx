@@ -9,6 +9,7 @@ import ServiceManager from './pages/Admin/ServiceManager';
 import CategoryManager from './pages/Admin/CategoryManager';
 import UserManager from './pages/Admin/UserManager';
 import StaffManager from './pages/Admin/StaffManager';
+import Profile from './pages/Admin/Profile';
 
 // 1. Import ProtectedRoute vừa tạo
 import ProtectedRoute from './components/ProtectedRoute';
@@ -36,6 +37,7 @@ function App() {
             <Route path="categories" element={<CategoryManager />} />
             <Route path="users" element={<UserManager />} />
             <Route path="staffs" element={<StaffManager />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
         </Route>
         
