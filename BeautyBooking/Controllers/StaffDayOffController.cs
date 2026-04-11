@@ -38,22 +38,6 @@ namespace BeautyBooking.Controllers
             return Ok(result);
         }
 
-        [HttpGet("month")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<IEnumerable<StaffDayOffResponse>>> GetAllByMonth([FromQuery] int month, [FromQuery] int year, [FromQuery] StaffDayOffStatus status)
-        {
-            var result = await _staffDayOffService.GetAllByMonthAsync(month, year, status);
-            return Ok(result);
-        }
-
-        //[HttpGet]
-        //[Authorize(Policy = "AdminOnly")]
-        //public async Task<ActionResult<PagedResult<StaffDayOffResponse>>> GetAllWithStaff([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-        //{
-        //    var result = await _staffDayOffService.GetAllWithStaffAsync(pageNumber, pageSize);
-        //    return Ok(result);
-        //}
-
         [HttpGet("{id}")]
         [Authorize]
         public async Task<ActionResult<StaffDayOffResponse>> GetById(int id)
@@ -64,13 +48,6 @@ namespace BeautyBooking.Controllers
             return Ok(dayOff);
         }
 
-        [HttpGet("my-history")]
-        [Authorize(Policy = "StaffOnly")]
-        public async Task<ActionResult<IEnumerable<StaffDayOffResponse>>> GetMyHistory([FromQuery] StaffDayOffStatus status)
-        {
-            var result = await _staffDayOffService.GetMyHistoryAsync(status);
-            return Ok(result);
-        }
 
         [HttpPost("{id}/cancel")]
         [Authorize(Policy = "StaffOnly")]
@@ -92,13 +69,6 @@ namespace BeautyBooking.Controllers
             return NoContent();
         }
 
-        [HttpGet("pending")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<IEnumerable<StaffDayOffResponse>>> GetPendingDayOff()
-        {
-            var result = await _staffDayOffService.GetPendingDayOffAsync();
-            return Ok(result);
-        }
 
         [HttpPost("{id}/reject")]
         [Authorize(Policy = "AdminOnly")]

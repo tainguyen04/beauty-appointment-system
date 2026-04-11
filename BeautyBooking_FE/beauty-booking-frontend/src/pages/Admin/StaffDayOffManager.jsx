@@ -190,10 +190,10 @@ const StaffDayOffManager = () => {
         columns={columns} 
         dataSource={data} // usePagination phải trả về res.items vào đây
         loading={loading} 
-        pagination={{ 
-          ...pagination, 
-          size: 'small',
-          showSizeChanger: false 
+        pagination={{
+          ...pagination,
+          showSizeChanger: true,
+          pageSizeOptions: ['5', '10', '20'],
         }} 
         onChange={handleTableChange}
         rowKey="id"

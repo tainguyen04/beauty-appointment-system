@@ -1,7 +1,8 @@
 import axiosClient from './axiosClient';
+import { cleanParams } from '../utils/apiHelper';
 
 const staffApi = {
-  getAll: (params) => axiosClient.get('/StaffProfile', { params }),
+  getAll: (params) => axiosClient.get('/StaffProfile', { params: cleanParams(params) }),
   
   getById: (id) => axiosClient.get(`/StaffProfile/${id}`),
 
@@ -17,7 +18,7 @@ const staffApi = {
   delete: (id) => axiosClient.delete(`/StaffProfile/${id}`),
   
   // Các API bổ trợ
-  getAvailable: (params) => axiosClient.get('/StaffProfile/available', { params }),
+  getAvailable: (params) => axiosClient.get('/StaffProfile/available', { params: cleanParams(params) }),
   getByService: (serviceId) => axiosClient.get(`/StaffProfile/service/${serviceId}`),
   // Thêm hàm này vào object staffApi
   assignServices: (id, serviceIds) => {

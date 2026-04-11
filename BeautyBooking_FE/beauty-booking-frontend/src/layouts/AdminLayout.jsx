@@ -129,23 +129,27 @@ const AdminLayout = () => {
         breakpoint="lg"
       >
         <div style={{ 
-          height: '64px', // Thu hẹp chiều cao logo cho cân đối
-          margin: '16px',
+          height: '80px', // Thu hẹp chiều cao logo cho cân đối
+          width: '100%',
+          margin: '0 0 8px 0', // Thêm margin dưới logo để tách biệt với menu
+          padding: '0',
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
           overflow: 'hidden',
           background: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '8px'
+          borderRadius: '0'
         }}>
           <img 
             src="https://res.cloudinary.com/dznt3hdyj/image/upload/v1775734398/logo_rajcbq.png"
             alt="logo"
             style={{ 
-              height: '80%', // Thu nhỏ lại một chút để không chạm viền
-              maxWidth: '100%',
-              objectFit: 'contain', // Giữ tỉ lệ logo
-              transition: 'all 0.2s'
+              height: 'auto', // Thu nhỏ lại một chút để không chạm viền
+              width: '100%',
+              objectFit: 'cover', // Giữ tỉ lệ logo
+              transition: 'all 0.2s',
+              margin: '0',
+              padding: '0' // Thêm padding để logo không bị dính sát vào viền
             }}
           />
         </div>

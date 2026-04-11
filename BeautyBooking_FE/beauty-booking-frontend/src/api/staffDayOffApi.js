@@ -1,10 +1,11 @@
 import axiosClient from './axiosClient';
+import { cleanParams } from '../utils/apiHelper';
 
 const staffDayOffApi = {
   // Lấy tất cả danh sách (Admin dùng để xem toàn bộ, Staff dùng xem lịch chung)
   // Có thể truyền params: { pageNumber, pageSize, status, Keyword... }
   getAllWithStaff: (params) => {
-    return axiosClient.get('/StaffDayOff', { params });
+    return axiosClient.get('/StaffDayOff', { params: cleanParams(params) });
   },
 
   // Lấy danh sách các đơn đang chờ duyệt (Dành cho thông báo hoặc tab chờ xử lý)
@@ -15,14 +16,14 @@ const staffDayOffApi = {
   // Lấy danh sách theo tháng (Dùng cho giao diện Calendar)
   getByMonth: (month, year, status) => {
     return axiosClient.get('/StaffDayOff/month', {
-      params: { month, year, status }
+      params: cleanParams({ month, year, status })
     });
   },
 
   // Lấy lịch sử nghỉ phép của chính mình (Dành cho Staff)
-  getMyHistory: (status) => {
+  getMyHistory: (params) => {
     return axiosClient.get('/StaffDayOff/my-history', {
-      params: { status }
+      params: cleanParams(params)
     });
   },
 

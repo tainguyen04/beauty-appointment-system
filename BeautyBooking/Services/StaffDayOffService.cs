@@ -42,7 +42,7 @@ namespace BeautyBooking.Services
             var dayOff = await _staffDayOffRepository.GetByIdAsync(id);
             if (dayOff == null || dayOff.Status != StaffDayOffStatus.Pending || dayOff.StaffId != currentStaffId)
                 throw new KeyNotFoundException("Không tìm thấy đơn xin nghỉ nào hoặc bạn không có quyền hủy đơn này.");
-            dayOff.IsDeleted = true;
+            dayOff.Status = StaffDayOffStatus.Canceled;
             await _staffDayOffRepository.SaveChangesAsync();
             return true;
         }
@@ -83,40 +83,12 @@ namespace BeautyBooking.Services
             return entity.Id;
         }
 
-        public async Task<IEnumerable<StaffDayOffResponse>> GetAllByMonthAsync(int month, int year, StaffDayOffStatus? status)
-        {
-            return _mapper.Map<IEnumerable<StaffDayOffResponse>>(await _staffDayOffRepository.GetAllByMonthAsync(month, year, status));
-        }
-
-        public async Task<PagedResult<StaffDayOffResponse>> GetAllWithStaffAsync(int pageNumber, int pageSize)
-        {
-            var dayOffs = await _staffDayOffRepository.GetPagedWithStaffAsync(pageNumber, pageSize);
-            return dayOffs.ToPagedResult<StaffDayOff, StaffDayOffResponse>(_mapper);
-        }
-
         public async Task<StaffDayOffResponse?> GetByIdAsync(int id)
         {
             if(id <= 0)
                 throw new KeyNotFoundException("Id không tồn tại.");
             return _mapper.Map<StaffDayOffResponse?>(await _staffDayOffRepository.GetByIdWithStaffAsync(id));
         }
-
-        public async Task<IEnumerable<StaffDayOffResponse>> GetMyHistoryAsync(StaffDayOffStatus? status)
-        {
-            var currentStaffId = _currentUserService.StaffId;
-            if (!currentStaffId.HasValue)
-                throw new UnauthorizedAccessException("Bạn không có quyền truy cập vào tài nguyên này.");
-            var dayOffs = await _staffDayOffRepository.GetByStaffIdAsync(currentStaffId.Value, status);
-            if(dayOffs == null || !dayOffs.Any())
-                throw new KeyNotFoundException("Không tìm thấy lịch sử xin nghỉ nào.");
-            return _mapper.Map<IEnumerable<StaffDayOffResponse>>(dayOffs);
-        }
-
-        public async Task<IEnumerable<StaffDayOffResponse>> GetPendingDayOffAsync()
-        {
-            return _mapper.Map<IEnumerable<StaffDayOffResponse>>(await _staffDayOffRepository.GetPendingDayOffAsync());
-        }
-
         public async Task<PagedResult<StaffDayOffResponse>> GetStaffDayOffsAsync(StaffDayOffFilter filter)
         {
             var query = _staffDayOffRepository.Query();

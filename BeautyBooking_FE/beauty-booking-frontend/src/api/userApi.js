@@ -1,15 +1,16 @@
 // src/api/userApi.js
 import axiosClient from './axiosClient';
+import { cleanParams } from '../utils/apiHelper';
 
 const userApi = {
   // Lấy tất cả user
   getAll: (params) => {
-    return axiosClient.get('/User', { params });
+    return axiosClient.get('/User', { params: cleanParams(params) });
   },
 
   // Lấy danh sách theo Role (Ví dụ: 'Customer' hoặc 'Admin')
   getByRole: (role, params) => {
-    return axiosClient.get(`/User/role/${role}`, { params });
+    return axiosClient.get(`/User/role/${role}`, { params: cleanParams(params) });
   },
   // Lấy chi tiết user theo ID
   getById: (id) => {

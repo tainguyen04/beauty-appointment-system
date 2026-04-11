@@ -1,9 +1,10 @@
 import axiosClient from './axiosClient';
+import { cleanParams } from '../utils/apiHelper';
 
 const serviceApi = {
   // GET /api/BeautyService
   getAll: (params) => {
-    return axiosClient.get('/BeautyService', { params });
+    return axiosClient.get('/BeautyService', { params: cleanParams(params) });
   },
 
   // POST /api/BeautyService

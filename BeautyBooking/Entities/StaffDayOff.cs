@@ -12,6 +12,7 @@
     {
         Pending,
         Approved,
-        Rejected
+        Rejected,
+        Canceled
     }
 }
