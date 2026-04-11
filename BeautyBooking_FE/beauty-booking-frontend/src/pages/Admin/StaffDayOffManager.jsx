@@ -16,11 +16,11 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const StaffDayOffManager = () => {
-  // Giả định lấy thông tin user từ localStorage/Context
+  // Lấy role từ local để phân quyền
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isAdmin = user.role === 'Admin';
 
-  // 1. Pagination Hook - Tự động đổi API dựa trên Role
+  // 1. Pagination Hook - API sẽ trả về { items, totalCount, ... }
   const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(
     isAdmin ? staffDayOffApi.getAllWithStaff : staffDayOffApi.getMyHistory
   );
@@ -31,7 +31,6 @@ const StaffDayOffManager = () => {
     runFetch();
   }, [runFetch]);
 
-  // 2. Xử lý Phê duyệt / Từ chối (Cho Admin)
   const handleAction = useCallback(async (id, action) => {
     try {
       if (action === 'approve') await staffDayOffApi.approve(id);
@@ -45,7 +44,6 @@ const StaffDayOffManager = () => {
     }
   }, [runFetch]);
 
-  // 3. Xử lý lọc ngày
   const onRangeChange = (dates) => {
     handleFilterChange({
       FromDate: dates ? dates[0].format('YYYY-MM-DD') : undefined,
@@ -53,13 +51,13 @@ const StaffDayOffManager = () => {
     });
   };
 
-  // 4. Định nghĩa Columns bằng useMemo để phân quyền
+  // 4. Cấu hình cột - ĐÃ FIX THEO RESPONSE JSON
   const columns = useMemo(() => {
     const cols = [
       {
         title: 'Ngày nghỉ',
         dataIndex: 'date',
-        width: 150,
+        width: 140,
         render: (date) => (
           <Space direction="vertical" size={0}>
             <Text style={{ fontSize: '13px' }}>{dayjs(date).format('DD/MM/YYYY')}</Text>
@@ -97,7 +95,6 @@ const StaffDayOffManager = () => {
         render: (_, record) => {
           if (record.status !== 'Pending') return null;
 
-          // Menu cho Admin (Duyệt/Từ chối)
           if (isAdmin) {
             const items = [
               { key: 'approve', label: 'Phê duyệt', icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />, onClick: () => handleAction(record.id, 'approve') },
@@ -110,7 +107,6 @@ const StaffDayOffManager = () => {
             );
           }
 
-          // Nút cho Staff (Hủy đơn)
           return (
             <Tooltip title="Hủy yêu cầu">
               <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => handleAction(record.id, 'cancel')} />
@@ -120,18 +116,18 @@ const StaffDayOffManager = () => {
       },
     ];
 
-    // Chỉ Admin mới thấy cột nhân viên
     if (isAdmin) {
       cols.unshift({
         title: 'Nhân viên',
         key: 'staff',
-        width: 200,
+        width: 180,
         render: (_, record) => (
           <Space>
-            <Avatar size="small" src={record.avatarUrl} icon={<UserOutlined />} />
+            <Avatar size="small" icon={<UserOutlined />} src={record.avatarUrl} />
             <div>
-              <Text strong style={{ fontSize: '13px', display: 'block' }}>{record.fullName}</Text>
-              <Text type="secondary" style={{ fontSize: '11px' }}>{record.email}</Text>
+              {/* FIX: Sử dụng staffName theo Response của bạn */}
+              <Text strong style={{ fontSize: '13px', display: 'block' }}>{record.staffName}</Text>
+              <Text type="secondary" style={{ fontSize: '11px' }}>ID: {record.staffId}</Text>
             </div>
           </Space>
         ),
@@ -151,12 +147,11 @@ const StaffDayOffManager = () => {
         </div>
         
         <Space wrap>
-          {/* Admin mới có quyền tìm kiếm theo tên nhân viên */}
           {isAdmin && (
             <Input.Search 
               placeholder="Tìm nhân viên..." 
               size="small" 
-              style={{ width: 180 }}
+              style={{ width: 160 }}
               onSearch={(v) => handleFilterChange({ Keyword: v })}
               allowClear
             />
@@ -166,6 +161,7 @@ const StaffDayOffManager = () => {
             size="small" 
             style={{ width: 230 }} 
             onChange={onRangeChange}
+            placeholder={['Từ ngày', 'Đến ngày']}
           />
 
           <Segmented 
@@ -182,7 +178,6 @@ const StaffDayOffManager = () => {
             }}
           />
 
-          {/* Staff mới thấy nút đăng ký nghỉ */}
           {!isAdmin && (
             <Button type="primary" size="small" icon={<PlusOutlined />}>
               Đăng ký nghỉ
@@ -193,9 +188,13 @@ const StaffDayOffManager = () => {
 
       <Table 
         columns={columns} 
-        dataSource={data} 
+        dataSource={data} // usePagination phải trả về res.items vào đây
         loading={loading} 
-        pagination={{ ...pagination, size: 'small' }} 
+        pagination={{ 
+          ...pagination, 
+          size: 'small',
+          showSizeChanger: false 
+        }} 
         onChange={handleTableChange}
         rowKey="id"
         size="middle"

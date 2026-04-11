@@ -133,6 +133,8 @@ namespace BeautyBooking.Services
 
             if (filter.ToDate.HasValue)
                 query = query.Where(d => d.Date <= filter.ToDate.Value);
+            if(filter.Status.HasValue)
+                query = query.Where(d => d.Status == filter.Status.Value);
             return await query
                 .OrderByDescending(d => d.Date)
                 .ProjectTo<StaffDayOffResponse>(_mapper.ConfigurationProvider)
