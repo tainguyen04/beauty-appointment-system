@@ -27,7 +27,9 @@ namespace BeautyBooking.Repository
 
         public async Task<User?> GetByEmailAsync(string email)
         {
-            return await _entities.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
+            return await _entities
+                .Include(u => u.StaffProfile)
+                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
         }
 
         public async Task<PagedResult<User>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)

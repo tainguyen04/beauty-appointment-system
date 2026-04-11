@@ -12,7 +12,7 @@ namespace BeautyBooking.DTO.Response
         public string? AvatarUrl { get; set; }
         public WardResponse? Ward { get; set; }
         public bool IsActived { get; set; }
-        public int? StaffProfileId { get; set; }
+        public int? StaffId { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }
