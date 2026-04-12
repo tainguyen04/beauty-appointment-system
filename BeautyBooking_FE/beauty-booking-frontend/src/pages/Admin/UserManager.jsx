@@ -7,10 +7,10 @@ import {
 import { 
   UserOutlined, EyeOutlined, FilterOutlined, KeyOutlined, 
   MoreOutlined, PlusOutlined, EditOutlined, UploadOutlined,
-  DeleteOutlined, StopOutlined, CheckCircleOutlined 
+  DeleteOutlined, StopOutlined, CheckCircleOutlined, UserSwitchOutlined // ĐÃ FIX: Thêm UserSwitchOutlined
 } from '@ant-design/icons';
 import { usePagination } from '../../hooks/usePagination';
-import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
+import { useApiAction } from '../../hooks/useApiAction'; 
 import userApi from '../../api/userApi';
 
 const { Title, Text } = Typography;
@@ -21,19 +21,18 @@ const UserManager = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  
-  // LƯU Ý: Đã xóa state submitLoading thủ công vì dùng actionLoading của useApiAction
-  
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+
   const [openDetail, setOpenDetail] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   
   const [form] = Form.useForm();
+  const [roleForm] = Form.useForm();
 
   // --- Custom Hooks ---
   const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(userApi.getAll);
-  const { actionLoading, execute } = useApiAction(); // MỚI: Khởi tạo useApiAction
+  const { actionLoading, execute } = useApiAction(); 
 
-  // --- Sử dụng useCallback để ổn định hàm fetch dữ liệu (Tránh Warning) ---
   const fetchData = useCallback(() => {
     runFetch();
   }, [runFetch]);
@@ -56,18 +55,15 @@ const UserManager = () => {
     form.setFieldsValue({
       name: record.fullName,
       phone: record.phone,
-      role: record.role
     });
     setIsModalOpen(true);
   };
 
-  // MỚI: Cấu trúc lại handleSubmit gọn gàng bằng execute
   const handleSubmit = async (values) => {
     let apiCall;
     let msg = "";
 
     if (isEdit) {
-      // 1. CẤU TRÚC CHO UPDATE
       const formData = new FormData();
       if (values.name) formData.append('Name', values.name);
       if (values.phone) formData.append('Phone', values.phone);
@@ -78,7 +74,6 @@ const UserManager = () => {
       apiCall = () => userApi.update(selectedUser.id, formData);
       msg = "Cập nhật người dùng thành công!";
     } else {
-      // 2. CẤU TRÚC CHO CREATE
       const createData = {
         fullName: values.name,
         email: values.email,
@@ -91,12 +86,30 @@ const UserManager = () => {
       msg = "Tạo tài khoản mới thành công!";
     }
 
-    // Thực thi API thông qua hook
     const { success } = await execute(apiCall, msg);
 
     if (success) {
       setIsModalOpen(false);
-      fetchData(); // Load lại bảng sau khi thành công
+      fetchData(); 
+    }
+  };
+
+  // --- Handler cho Change Role ---
+  const handleOpenChangeRole = (record) => {
+    setSelectedUser(record);
+    roleForm.setFieldsValue({ role: record.role });
+    setIsRoleModalOpen(true);
+  };
+
+  const handleChangeRoleSubmit = async (values) => {
+    const { success } = await execute(
+      () => userApi.changeRole(selectedUser.id, values.role), 
+      "Đổi vai trò thành công!"
+    );
+
+    if (success) {
+      setIsRoleModalOpen(false);
+      fetchData(); 
     }
   };
 
@@ -132,18 +145,22 @@ const UserManager = () => {
     {
       title: 'Vai trò',
       dataIndex: 'role',
+      // ĐÃ FIX: Chống sập Cell bằng Null Check
       render: (role) => {
+        if (!role) return <Tag color="default">KHÔNG RÕ</Tag>;
+
+        const safeRole = String(role);
         const roleConfig = {
           Admin: { color: 'volcano', text: 'Quản trị viên' },
           Staff: { color: 'blue', text: 'Nhân viên' },
           Customer: { color: 'green', text: 'Khách hàng' }
         };
 
-        const config = roleConfig[role] || { color: 'default', text: role };
+        const config = roleConfig[safeRole] || { color: 'default', text: safeRole };
 
         return (
           <Tag color={config.color} style={{ fontWeight: '500' }}>
-            {config.text.toUpperCase()}
+            {String(config.text).toUpperCase()}
           </Tag>
         );
       }
@@ -158,10 +175,15 @@ const UserManager = () => {
           { key: 'detail', label: 'Xem chi tiết', icon: <EyeOutlined />, onClick: () => showDetail(record.id) },
           { key: 'edit', label: 'Chỉnh sửa', icon: <EditOutlined />, onClick: () => handleEdit(record) },
           { 
+            key: 'changeRole', 
+            label: 'Phân quyền', 
+            icon: <UserSwitchOutlined />, 
+            onClick: () => handleOpenChangeRole(record) 
+          },
+          { 
             key: 'reset', 
             label: 'Reset mật khẩu', 
             icon: <KeyOutlined />, 
-            // MỚI: Bọc Reset Password trong execute
             onClick: () => Modal.confirm({
                 title: 'Reset mật khẩu?',
                 content: 'Bạn có chắc chắn muốn đặt lại mật khẩu cho tài khoản này?',
@@ -176,7 +198,6 @@ const UserManager = () => {
             label: 'Xóa', 
             icon: <DeleteOutlined />, 
             danger: true,
-            // MỚI: Bọc thao tác Xóa trong execute
             onClick: () => Modal.confirm({
               title: 'Xóa tài khoản này?',
               content: 'Hành động này không thể hoàn tác.',
@@ -249,7 +270,7 @@ const UserManager = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
-        confirmLoading={actionLoading} // MỚI: Đồng bộ nút tải với actionLoading
+        confirmLoading={actionLoading} 
         width={600}
         destroyOnClose
       >
@@ -308,6 +329,31 @@ const UserManager = () => {
               </Upload>
             </Form.Item>
           )}
+        </Form>
+      </Modal>
+
+      {/* MODAL PHÂN QUYỀN (CHANGE ROLE) */}
+      <Modal
+        title={`Phân quyền cho: ${selectedUser?.fullName}`}
+        open={isRoleModalOpen}
+        onCancel={() => setIsRoleModalOpen(false)}
+        onOk={() => roleForm.submit()}
+        confirmLoading={actionLoading}
+        width={400}
+        destroyOnClose
+      >
+        <Form form={roleForm} layout="vertical" onFinish={handleChangeRoleSubmit}>
+          <Form.Item 
+            name="role" 
+            label="Chọn vai trò mới" 
+            rules={[{ required: true, message: 'Vui lòng chọn vai trò!' }]}
+          >
+            <Select placeholder="Chọn vai trò">
+              <Option value="Customer">Khách hàng</Option>
+              <Option value="Staff">Nhân viên</Option>
+              <Option value="Admin">Quản trị viên</Option>
+            </Select>
+          </Form.Item>
         </Form>
       </Modal>
 

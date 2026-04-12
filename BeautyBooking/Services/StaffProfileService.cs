@@ -83,6 +83,15 @@ namespace BeautyBooking.Services
             await _staffProfileRepository.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> UpdateStatusAsync(int userId, bool status)
+        {
+            var staffProfile = await _staffProfileRepository.GetByUserIdAsync(userId);
+            if (staffProfile == null)
+                throw new KeyNotFoundException("Staff không tồn tại");
+            staffProfile.IsDeleted = status;
+            await _staffProfileRepository.SaveChangesAsync();
+            return true;
+        }
         public async Task<PagedResult<StaffProfileResponse>> GetAllAsync(int pageNumber, int pageSize)
         {
             var pagedStaffProfiles = await _staffProfileRepository.GetPagedWithUserAndServicesAsync(pageNumber, pageSize);

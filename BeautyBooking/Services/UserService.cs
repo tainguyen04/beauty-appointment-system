@@ -78,8 +78,12 @@ namespace BeautyBooking.Services
                 var user = await _userRepo.GetByIdAsync(request.UserId);
                 if (user == null || user.IsDeleted)
                     return false;
+                
+
                 user.Role = request.NewRole;
                 await _userRepo.SaveChangesAsync();
+                if (request.NewRole == UserRole.Admin)
+                    throw new InvalidOperationException("Không thể gán vai trò Admin.");
 
                 if (request.NewRole == UserRole.Staff)
                 {
@@ -93,6 +97,18 @@ namespace BeautyBooking.Services
                             ServiceIds = new List<int>()
                         });
                     }
+                    else
+                    {
+                        // Nếu đã có profile nhân viên, đảm bảo nó được kích hoạt
+                        // isDeleted = false để profile có thể hiển thị lại nếu trước đó đã bị xóa mềm
+                        await _staffProfileService.UpdateStatusAsync(request.UserId, false);
+                    }
+                }
+                if(user.Role == UserRole.Staff && request.NewRole != UserRole.Staff)
+                {
+                    // Nếu chuyển từ Staff sang vai trò khác, đảm bảo profile nhân viên bị vô hiệu hóa
+                    //isDeleted = true để profile không hiển thị nữa nhưng vẫn giữ lại dữ liệu nếu sau này muốn chuyển lại thành Staff
+                    await _staffProfileService.UpdateStatusAsync(request.UserId, true);
                 }
 
                 await transaction.CommitAsync(); 
