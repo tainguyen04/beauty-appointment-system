@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Table, Tag, Button, Space, Card, Typography, Modal, Form, Select,
-  message, Avatar, Dropdown, Segmented, Input, DatePicker, Tooltip, Calendar, Badge 
+  Avatar, Dropdown, Segmented, Input, DatePicker, Tooltip, Calendar, Badge, Popover, Spin // MỚI: Thêm Spin
 } from 'antd';
 import { 
   CheckCircleOutlined, CloseCircleOutlined, 
@@ -12,6 +12,8 @@ import {
 import dayjs from 'dayjs';
 import { usePagination } from '../../hooks/usePagination';
 import staffDayOffApi from '../../api/staffDayOffApi';
+import staffApi from '../../api/staffApi';
+import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -30,24 +32,25 @@ const StaffDayOffManager = () => {
     staffDayOffApi.getAllWithStaff 
   );
 
+  // MỚI: Khởi tạo custom hook xử lý gọi API
+  const { actionLoading, execute } = useApiAction();
+
   useEffect(() => {
     runFetch();
   }, [runFetch]);
 
-  // Lấy danh sách nhân viên cho Admin dùng Select
   useEffect(() => {
-    if (isAdmin) {
-      const fetchStaffList = async () => {
-        try {
-          // Giả sử API này trả về mảng [{id, fullName}]
-          const response = await staffDayOffApi.getAllStaffs();
-          setStaffList(response);
-        } catch (error) {
-          console.error('Failed to fetch staff list:', error);
-        }
-      };
-      fetchStaffList();
-    }
+    if (!isAdmin) return;
+    const fetchStaffList = async () => {
+      try {
+        const response = await staffApi.getAll({ pageSize: 100, pageNumber: 1 });
+        const actualData = response?.items || response?.data || [];
+        setStaffList(actualData);
+      } catch (error) {
+        console.error('Failed to fetch staff list:', error);
+      }
+    };
+    fetchStaffList();
   }, [isAdmin]);
 
   const handleViewModeChange = (mode) => {
@@ -59,39 +62,44 @@ const StaffDayOffManager = () => {
     }
   };
 
+  // MỚI: Dùng execute để bọc các API thao tác (Duyệt, Từ chối, Hủy, Xóa)
   const handleAction = useCallback(async (id, action) => {
-    try {
-      if (action === 'approve') await staffDayOffApi.approve(id);
-      else if (action === 'reject') await staffDayOffApi.reject(id);
-      else if (action === 'cancel') await staffDayOffApi.cancel(id);
-      
-      message.success(`Thao tác thành công!`);
-      runFetch();
-    } catch (error) {
-      message.error(error.response?.data?.message || "Thao tác thất bại");
+    let apiCall;
+    let msg = "Thao tác thành công!";
+    
+    if (action === 'approve') apiCall = () => staffDayOffApi.approve(id);
+    else if (action === 'reject') apiCall = () => staffDayOffApi.reject(id);
+    else if (action === 'cancel') apiCall = () => staffDayOffApi.cancel(id);
+    else if (action === 'delete') {
+      apiCall = () => staffDayOffApi.delete(id);
+      msg = 'Đã xóa đơn nghỉ thành công!';
     }
-  }, [runFetch]);
 
+    if (apiCall) {
+      const { success } = await execute(apiCall, msg);
+      if (success) runFetch();
+    }
+  }, [runFetch, execute]);
+
+  // MỚI: Dùng execute để bọc API tạo mới
   const handleFinish = useCallback(async (values) => {
-    try {
-      const payload = {
-        // Nếu admin đăng ký hộ thì gửi staffId lên, staff tự đăng ký thì để undefined (BE tự lấy token)
-        staffId: isAdmin ? values.staffId : undefined, 
-        date: values.date.format('YYYY-MM-DD'),
-        reason: values.reason,
-      };
-      
-      await staffDayOffApi.create(payload);
-      message.success(isAdmin ? 'Đã đăng ký nghỉ hộ thành công!' : 'Đăng ký nghỉ thành công!');
+    const payload = {
+      staffId: isAdmin ? values.staffId : undefined, 
+      date: values.date.format('YYYY-MM-DD'),
+      reason: values.reason,
+    };
+    
+    const msg = isAdmin ? 'Đã đăng ký nghỉ hộ thành công!' : 'Đăng ký nghỉ thành công!';
+    const { success } = await execute(() => staffDayOffApi.create(payload), msg);
+    
+    if (success) {
       form.resetFields();
       setIsModalOpen(false);
       runFetch();
-    } catch (error) {
-      // Hiển thị lỗi chi tiết từ Backend (ví dụ: "Đã có lịch hẹn")
-      message.error(error.response?.data?.message || 'Đăng ký nghỉ thất bại');
     }
-  }, [isAdmin, form, runFetch]);
+  }, [isAdmin, form, runFetch, execute]);
 
+  // Render ô lịch 
   const dateCellRender = (value) => {
     const stringValue = value.format('YYYY-MM-DD');
     const listData = data.filter(item => dayjs(item.date).format('YYYY-MM-DD') === stringValue);
@@ -107,13 +115,35 @@ const StaffDayOffManager = () => {
           }[item.status] || { color: 'default', text: '?' };
 
           return (
-            <li key={item.id}>
-              <Badge 
-                status={config.color} 
-                text={isAdmin ? `${item.staffName?.split(' ').pop()}: ${config.text}` : config.text} 
-                style={{ fontSize: '10px' }}
-              />
-            </li>
+            <Popover 
+              key={item.id}
+              content={
+                <div style={{ maxWidth: 200 }}>
+                  <p><b>Lý do:</b> {item.reason || 'Không có'}</p>
+                  {item.status === 'Pending' && isAdmin && (
+                    <Space>
+                      <Button size="small" type="primary" loading={actionLoading} onClick={(e) => {
+                        e.stopPropagation(); 
+                        handleAction(item.id, 'approve');
+                      }}>Duyệt</Button>
+                      <Button size="small" danger loading={actionLoading} onClick={(e) => {
+                        e.stopPropagation();
+                        handleAction(item.id, 'reject');
+                      }}>Từ chối</Button>
+                    </Space>
+                  )}
+                </div>
+              }
+              title={`Đơn của ${item.staffName}`}
+            >
+              <li style={{ marginBottom: '2px' }}>
+                <Badge 
+                  status={config.color} 
+                  text={isAdmin ? `${item.staffName?.split(' ').pop()}: ${config.text}` : config.text} 
+                  style={{ fontSize: '10px' }}
+                />
+              </li>
+            </Popover>
           );
         })}
       </ul>
@@ -160,23 +190,62 @@ const StaffDayOffManager = () => {
         width: 80,
         align: 'center',
         render: (_, record) => {
-          if (record.status !== 'Pending') return null;
-          if (isAdmin) {
-            const items = [
-              { key: 'approve', label: 'Phê duyệt', icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />, onClick: () => handleAction(record.id, 'approve') },
-              { key: 'reject', label: 'Từ chối', icon: <CloseCircleOutlined style={{ color: '#ff4d4f' }} />, onClick: () => handleAction(record.id, 'reject') }
-            ];
+          const items = [];
+
+            if (isAdmin && record.status === 'Pending') {
+              items.push(
+                { 
+                  key: 'approve', 
+                  label: 'Phê duyệt', 
+                  icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />, 
+                  onClick: () => handleAction(record.id, 'approve') 
+                },
+                { 
+                  key: 'reject', 
+                  label: 'Từ chối', 
+                  icon: <CloseCircleOutlined style={{ color: '#ff4d4f' }} />, 
+                  onClick: () => handleAction(record.id, 'reject') 
+                },
+                { type: 'divider' } 
+              );
+            }
+
+            if (!isAdmin && record.status === 'Pending') {
+              items.push({
+                key: 'cancel',
+                label: 'Hủy yêu cầu',
+                icon: <DeleteOutlined />,
+                onClick: () => handleAction(record.id, 'cancel')
+              });
+            }
+
+            if (isAdmin || record.status !== 'Approved') {
+              items.push({
+                key: 'delete',
+                label: 'Xóa đơn',
+                danger: true,
+                icon: <DeleteOutlined />,
+                onClick: () => {
+                  Modal.confirm({
+                    title: 'Xác nhận xóa đơn nghỉ',
+                    content: 'Hành động này sẽ ẩn đơn nghỉ khỏi hệ thống. Bạn chắc chắn chứ?',
+                    okText: 'Xóa',
+                    okType: 'danger',
+                    cancelText: 'Hủy',
+                    // MỚI: Cập nhật hàm gọi khi confirm
+                    onOk: () => handleAction(record.id, 'delete'),
+                  });
+                }
+              });
+            }
+
+            if (items.length === 0) return null;
+
             return (
               <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
                 <Button type="text" size="small" icon={<MoreOutlined />} />
               </Dropdown>
             );
-          }
-          return (
-            <Tooltip title="Hủy yêu cầu">
-              <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => handleAction(record.id, 'cancel')} />
-            </Tooltip>
-          );
         },
       },
     ];
@@ -260,15 +329,28 @@ const StaffDayOffManager = () => {
         <Table 
           columns={columns} dataSource={data} loading={loading} 
           pagination={{
-          ...pagination,
-          showSizeChanger: true,
-          pageSizeOptions: ['5', '10', '20'],
-          }}  
+            ...pagination,
+            showSizeChanger: true,
+            pageSizeOptions: ['5', '10', '20'],
+          }}   
           onChange={handleTableChange} rowKey="id" size="middle"
         />
       ) : (
         <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #f0f0f0' }}>
-          <Calendar fullscreen={true} cellRender={dateCellRender} onPanelChange={() => runFetch()} />
+          {/* MỚI: Bọc Spin xung quanh Calendar để hiển thị Loading đồng bộ */}
+          <Spin spinning={loading} tip="Đang tải lịch...">
+            <Calendar 
+              fullscreen={true} 
+              cellRender={dateCellRender} 
+              onPanelChange={() => runFetch()} 
+              onSelect={(date, {source}) => {
+                if(source === 'date'){
+                  form.setFieldsValue({ date });
+                  setIsModalOpen(true);
+                }
+              }} 
+            />
+          </Spin>
         </div>
       )}
 
@@ -280,6 +362,7 @@ const StaffDayOffManager = () => {
         okText="Gửi yêu cầu"
         cancelText="Hủy bỏ"
         destroyOnClose
+        confirmLoading={actionLoading} // MỚI: Truyền state loading của hook vào Modal
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
           {isAdmin && (
@@ -287,9 +370,15 @@ const StaffDayOffManager = () => {
               name="staffId" label="Nhân viên" 
               rules={[{ required: true, message: 'Vui lòng chọn nhân viên!' }]}
             >
-              <Select placeholder="Chọn nhân viên cần đăng ký nghỉ" showSearch optionFilterProp="children">
-                {staffList.map(s => <Select.Option key={s.id} value={s.id}>{s.fullName}</Select.Option>)}
-              </Select>
+              <Select 
+                placeholder="Chọn nhân viên cần đăng ký nghỉ" 
+                showSearch 
+                optionFilterProp="label"
+                options={staffList.map(s => ({
+                  value: s.id || s.Id,
+                  label: s.fullName || s.FullName 
+                }))}
+              />
             </Form.Item>
           )}
 

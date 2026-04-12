@@ -1,28 +1,33 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Space, Typography, message, Modal, Form, Input, InputNumber, Card, Tag, Select, Upload } from 'antd';
+import { Table, Button, Space, Typography, Modal, Form, Input, InputNumber, Card, Tag, Select, Upload } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons';
 import { usePagination } from '../../hooks/usePagination';
+import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import serviceApi from '../../api/serviceApi';
 import categoryApi from '../../api/categoryApi';
 
 const { Title, Text } = Typography;
 
 const ServiceManager = () => {
-  // Sử dụng Hook để quản lý toàn bộ logic phân trang
+  // --- Custom Hooks ---
   const { 
-    data: services, // Đổi tên data thành services để dùng cho Table
+    data: services,
     loading, 
     pagination, 
     runFetch, 
     handleTableChange,
     handleFilterChange
   } = usePagination(serviceApi.getAll);
+  
+  const { actionLoading, execute } = useApiAction(); // MỚI: Khởi tạo hook quản lý action
 
+  // --- States ---
   const [categories, setCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [form] = Form.useForm();
-  const [actionLoading, setActionLoading] = useState(false); // Loading riêng cho Thêm/Xóa
+  
+  // LƯU Ý: Đã xóa state actionLoading thủ công
 
   // 1. Load danh mục (Chỉ gọi 1 lần khi mount)
   const fetchCategories = async () => {
@@ -36,43 +41,42 @@ const ServiceManager = () => {
   };
 
   useEffect(() => {
-    fetchCategories();
-    runFetch(); // Load trang 1 khi vào trang
+    const initData = async () => {
+      await fetchCategories(); // Load danh mục
+    }
+    runFetch(); // Load dịch vụ
+    initData();
   }, [runFetch]);
 
-  // 2. Xử lý Thêm/Sửa
+  // 2. MỚI: Cấu trúc lại xử lý Thêm/Sửa bằng execute
   const handleFinish = async (values) => {
-    try {
-      setActionLoading(true);
-      const formData = new FormData();
-      formData.append('Name', values.name);
-      formData.append('Price', values.price);
-      formData.append('Duration', values.duration);
-      formData.append('CategoryId', values.categoryId);
+    const formData = new FormData();
+    formData.append('Name', values.name);
+    formData.append('Price', values.price);
+    formData.append('Duration', values.duration);
+    formData.append('CategoryId', values.categoryId);
 
-      if (values.imageFile && values.imageFile[0]?.originFileObj) {
-        formData.append('ImageUrl', values.imageFile[0].originFileObj);
-      }
+    if (values.imageFile && values.imageFile[0]?.originFileObj) {
+      formData.append('ImageUrl', values.imageFile[0].originFileObj);
+    }
 
-      if (editingService) {
-        await serviceApi.update(editingService.id, formData);
-        message.success("Cập nhật dịch vụ thành công!");
-      } else {
-        await serviceApi.create(formData);
-        message.success("Thêm dịch vụ mới thành công!");
-      }
+    const apiCall = editingService
+      ? () => serviceApi.update(editingService.id, formData)
+      : () => serviceApi.create(formData);
+      
+    const msg = editingService ? "Cập nhật dịch vụ thành công!" : "Thêm dịch vụ mới thành công!";
 
+    // Thực thi API thông qua hook
+    const { success } = await execute(apiCall, msg);
+
+    if (success) {
       setIsModalOpen(false);
       // Gọi lại trang hiện tại sau khi thao tác xong
       runFetch(pagination.current, pagination.pageSize);
-    } catch (err) {
-      message.error("Thao tác thất bại!", err.message);
-    } finally {
-      setActionLoading(false);
     }
   };
 
-  // 3. Xử lý Xóa
+  // 3. MỚI: Cấu trúc lại xử lý Xóa bằng execute
   const handleDelete = (id) => {
     Modal.confirm({
       title: 'Xóa dịch vụ này?',
@@ -80,12 +84,9 @@ const ServiceManager = () => {
       okText: 'Xóa',
       okType: 'danger',
       onOk: async () => {
-        try {
-          await serviceApi.delete(id);
-          message.success("Đã xóa!");
+        const { success } = await execute(() => serviceApi.delete(id), "Đã xóa dịch vụ thành công!");
+        if (success) {
           runFetch(pagination.current, pagination.pageSize);
-        } catch (error) {
-          message.error("Xóa không thành công!", error.message);
         }
       }
     });
@@ -154,11 +155,13 @@ const ServiceManager = () => {
           </Button>
         </Space>
       </div>
+      
       <Input.Search
         placeholder="Tìm kiếm dịch vụ..."
-        onSearch={(value) => handleFilterChange({ Keyword: value })} // Truyền đúng key 'Keyword' cho C#
+        onSearch={(value) => handleFilterChange({ Keyword: value })}
         allowClear
         enterButton
+        style={{ marginBottom: 16 }}
       />
 
       <Table 
@@ -180,7 +183,7 @@ const ServiceManager = () => {
         onOk={() => form.submit()}
         onCancel={() => setIsModalOpen(false)}
         destroyOnClose
-        confirmLoading={actionLoading}
+        confirmLoading={actionLoading} // MỚI: Đồng bộ với hook
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
           <Form.Item 

@@ -1,17 +1,34 @@
-import { Form, Input, Button, Card, Typography, message } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
+import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import custom hook
+import authApi from '../../api/AuthApi'; // MỚI: Import api
 
 const { Title } = Typography;
 
 const Register = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  
+  // MỚI: Khởi tạo hook quản lý action
+  const { actionLoading, execute } = useApiAction();
 
   const onFinish = async (values) => {
-    console.log('Dữ liệu đăng ký gửi lên BE:', values);
-    message.success('Đăng ký thành công (Test)! Vui lòng đăng nhập.');
-    navigate('/login');
+    // 1. Thực thi API qua hook (gửi fullName, email, password)
+    // Lưu ý: confirmPassword chỉ dùng để validate ở frontend, không cần gửi lên BE
+    const { success } = await execute(
+      () => authApi.register({
+        fullName: values.fullName,
+        email: values.email,
+        password: values.password
+      }),
+      'Đăng ký thành công! Vui lòng đăng nhập.'
+    );
+
+    // 2. Chuyển hướng nếu đăng ký thành công
+    if (success) {
+      navigate('/login');
+    }
   };
 
   return (
@@ -68,7 +85,8 @@ const Register = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" block>
+            {/* MỚI: Gắn trạng thái loading vào nút submit */}
+            <Button type="primary" htmlType="submit" block loading={actionLoading}>
               Đăng ký
             </Button>
           </Form.Item>

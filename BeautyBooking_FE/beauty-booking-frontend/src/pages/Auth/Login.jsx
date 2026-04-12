@@ -1,6 +1,7 @@
-import { Form, Input, Button, Card, Typography, message } from 'antd';
+import { Form, Input, Button, Card, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
+import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import authApi from '../../api/AuthApi';
 
 const { Title } = Typography;
@@ -8,38 +9,35 @@ const { Title } = Typography;
 const Login = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  
+  // MỚI: Khởi tạo hook quản lý action
+  const { actionLoading, execute } = useApiAction();
 
   const onFinish = async (values) => {
-    try {
-      // 1. Gọi API
-      const response = await authApi.login({
+    // 1. Thực thi API qua hook. Lấy về trạng thái success và dữ liệu response
+    const { success, data: response } = await execute(
+      () => authApi.login({
         email: values.email,
         password: values.password,
-      });
+      }),
+      "Đăng nhập thành công!"
+    );
 
-      // 2. Lấy dữ liệu từ Backend trả về 
-      // (Lưu ý: C# .NET 8 mặc định sẽ đổi tên biến thành viết thường chữ cái đầu camelCase)
-      console.log("Dữ liệu từ BE:", response);
+    // 2. Nếu thành công, tiến hành lưu token và điều hướng
+    if (success && response) {
       const token = response.token;
-      const userInfo = response.user; // Thay "userResponse" bằng đúng tên trường BE trả về nếu khác
+      const userInfo = response.user; // Thay bằng đúng tên trường BE trả về nếu khác
 
-      // 3. Lưu vào LocalStorage
+      // Lưu vào LocalStorage
       localStorage.setItem('token', token); 
-      localStorage.setItem('user', JSON.stringify(userInfo)); // Ép Object thành String để lưu
+      localStorage.setItem('user', JSON.stringify(userInfo));
 
-      message.success(`Đăng nhập thành công! Chào mừng ${userInfo.fullName || 'bạn'}.`);
-
-      // 4. CHUYỂN HƯỚNG THÔNG MINH DỰA VÀO QUYỀN (ROLE)
-      // Giả sử trong UserResponse của bạn có trường role (hoặc RoleName)
+      // 3. CHUYỂN HƯỚNG THÔNG MINH DỰA VÀO QUYỀN (ROLE)
       if (userInfo.role === 'Admin' || userInfo.role === 'Staff') {
         navigate('/admin'); // Trực chỉ trang Quản trị
       } else {
         navigate('/'); // Khách hàng thì ra trang chủ đặt lịch
       }
-
-    } catch (error) {
-      message.error(error.response?.data?.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin!');
-      console.log('Lỗi chi tiết:', error);
     }
   };
 
@@ -70,7 +68,7 @@ const Login = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" block>
+            <Button type="primary" htmlType="submit" block loading={actionLoading}>
               Đăng nhập
             </Button>
           </Form.Item>

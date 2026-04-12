@@ -10,6 +10,7 @@ import {
   DeleteOutlined, StopOutlined, CheckCircleOutlined 
 } from '@ant-design/icons';
 import { usePagination } from '../../hooks/usePagination';
+import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import userApi from '../../api/userApi';
 
 const { Title, Text } = Typography;
@@ -20,17 +21,17 @@ const UserManager = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [submitLoading, setSubmitLoading] = useState(false);
+  
+  // LƯU Ý: Đã xóa state submitLoading thủ công vì dùng actionLoading của useApiAction
   
   const [openDetail, setOpenDetail] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   
   const [form] = Form.useForm();
 
-  // --- Pagination Hook ---
-  const { 
-    data, loading, pagination, runFetch, handleTableChange, handleFilterChange 
-  } = usePagination(userApi.getAll);
+  // --- Custom Hooks ---
+  const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(userApi.getAll);
+  const { actionLoading, execute } = useApiAction(); // MỚI: Khởi tạo useApiAction
 
   // --- Sử dụng useCallback để ổn định hàm fetch dữ liệu (Tránh Warning) ---
   const fetchData = useCallback(() => {
@@ -52,7 +53,6 @@ const UserManager = () => {
   const handleEdit = (record) => {
     setIsEdit(true);
     setSelectedUser(record);
-    // Map dữ liệu từ record vào form (Lưu ý: record thường có fullName từ API getAll)
     form.setFieldsValue({
       name: record.fullName,
       phone: record.phone,
@@ -61,46 +61,46 @@ const UserManager = () => {
     setIsModalOpen(true);
   };
 
+  // MỚI: Cấu trúc lại handleSubmit gọn gàng bằng execute
   const handleSubmit = async (values) => {
-    try {
-      setSubmitLoading(true);
-      
-      if (isEdit) {
-        // 1. CẤU TRÚC CHO UPDATE (FormData theo UpdateUserRequest)
-        const formData = new FormData();
-        if (values.name) formData.append('Name', values.name);
-        if (values.phone) formData.append('Phone', values.phone);
-        
-        // Xử lý file Avatar
-        if (values.avatar?.fileList?.length > 0) {
-          formData.append('AvatarUrl', values.avatar.fileList[0].originFileObj);
-        }
+    let apiCall;
+    let msg = "";
 
-        await userApi.update(selectedUser.id, formData);
-        message.success("Cập nhật người dùng thành công!");
-      } else {
-        // 2. CẤU TRÚC CHO CREATE (JSON theo CreateUserRequest)
-        const createData = {
-          fullName: values.name,
-          email: values.email,
-          password: values.password,
-          role: values.role, // Backend nhận Enum int hoặc string tùy bạn set ở Option
-          wardId: values.wardId ? parseInt(values.wardId) : null
-        };
-        await userApi.createUser(createData);
-        message.success("Tạo tài khoản mới thành công!");
+    if (isEdit) {
+      // 1. CẤU TRÚC CHO UPDATE
+      const formData = new FormData();
+      if (values.name) formData.append('Name', values.name);
+      if (values.phone) formData.append('Phone', values.phone);
+      if (values.avatar?.fileList?.length > 0) {
+        formData.append('AvatarUrl', values.avatar.fileList[0].originFileObj);
       }
+      
+      apiCall = () => userApi.update(selectedUser.id, formData);
+      msg = "Cập nhật người dùng thành công!";
+    } else {
+      // 2. CẤU TRÚC CHO CREATE
+      const createData = {
+        fullName: values.name,
+        email: values.email,
+        password: values.password,
+        role: values.role,
+        wardId: values.wardId ? parseInt(values.wardId) : null
+      };
 
+      apiCall = () => userApi.createUser(createData);
+      msg = "Tạo tài khoản mới thành công!";
+    }
+
+    // Thực thi API thông qua hook
+    const { success } = await execute(apiCall, msg);
+
+    if (success) {
       setIsModalOpen(false);
-      fetchData(); // Load lại bảng
-    } catch (error) {
-      message.error(error.response?.data?.message || "Thao tác thất bại!");
-    } finally {
-      setSubmitLoading(false);
+      fetchData(); // Load lại bảng sau khi thành công
     }
   };
 
-  // --- Các hàm hỗ trợ khác (Detail, Block) ---
+  // --- Các hàm hỗ trợ khác (Detail) ---
   const showDetail = async (id) => {
     setDetailLoading(true);
     setOpenDetail(true);
@@ -110,7 +110,9 @@ const UserManager = () => {
     } catch (error) {
       message.error("Lỗi lấy chi tiết", error);
       setOpenDetail(false);
-    } finally { setDetailLoading(false); }
+    } finally { 
+      setDetailLoading(false); 
+    }
   };
 
   // --- Columns Definition ---
@@ -131,7 +133,6 @@ const UserManager = () => {
       title: 'Vai trò',
       dataIndex: 'role',
       render: (role) => {
-        // Định nghĩa map cho cả màu sắc và tên hiển thị
         const roleConfig = {
           Admin: { color: 'volcano', text: 'Quản trị viên' },
           Staff: { color: 'blue', text: 'Nhân viên' },
@@ -160,9 +161,13 @@ const UserManager = () => {
             key: 'reset', 
             label: 'Reset mật khẩu', 
             icon: <KeyOutlined />, 
+            // MỚI: Bọc Reset Password trong execute
             onClick: () => Modal.confirm({
                 title: 'Reset mật khẩu?',
-                onOk: () => userApi.resetPassword(record.id).then(() => message.success("Đã reset!"))
+                content: 'Bạn có chắc chắn muốn đặt lại mật khẩu cho tài khoản này?',
+                onOk: async () => {
+                  await execute(() => userApi.resetPassword(record.id), "Đã reset mật khẩu thành công!");
+                }
             }) 
           },
           { type: 'divider' },
@@ -171,13 +176,14 @@ const UserManager = () => {
             label: 'Xóa', 
             icon: <DeleteOutlined />, 
             danger: true,
+            // MỚI: Bọc thao tác Xóa trong execute
             onClick: () => Modal.confirm({
               title: 'Xóa tài khoản này?',
+              content: 'Hành động này không thể hoàn tác.',
               okType: 'danger',
               onOk: async () => {
-                await userApi.delete(record.id);
-                message.success("Đã xóa");
-                fetchData();
+                const { success } = await execute(() => userApi.delete(record.id), "Đã xóa tài khoản!");
+                if (success) fetchData();
               }
             })
           },
@@ -243,7 +249,7 @@ const UserManager = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
-        confirmLoading={submitLoading}
+        confirmLoading={actionLoading} // MỚI: Đồng bộ nút tải với actionLoading
         width={600}
         destroyOnClose
       >
@@ -315,14 +321,14 @@ const UserManager = () => {
         {detailLoading ? <p>Đang tải...</p> : (
           <Descriptions column={1} bordered>
             <Descriptions.Item label="Avatar">
-              <Avatar size={64} src={selectedUser?.avatarUrl} />
+              <Avatar size={64} src={selectedUser?.avatarUrl} icon={<UserOutlined />} />
             </Descriptions.Item>
             <Descriptions.Item label="Họ tên">{selectedUser?.fullName}</Descriptions.Item>
             <Descriptions.Item label="Email">{selectedUser?.email}</Descriptions.Item>
             <Descriptions.Item label="SĐT">{selectedUser?.phone}</Descriptions.Item>
             <Descriptions.Item label="Vai trò">{selectedUser?.role}</Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
-              {new Date(selectedUser?.createdAt).toLocaleDateString('vi-VN')}
+              {selectedUser?.createdAt && new Date(selectedUser.createdAt).toLocaleDateString('vi-VN')}
             </Descriptions.Item>
           </Descriptions>
         )}

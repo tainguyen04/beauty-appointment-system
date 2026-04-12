@@ -32,3 +32,36 @@ export const cleanParams = (params) => {
       )
   );
 };
+
+/**
+ * Chuyển đổi từ tổng số phút (int) sang chuỗi "HH:mm"
+ * Ví dụ: 540 -> "09:00"
+ */
+export const convertMinutesToTimeStr = (totalMinutes) => {
+  if (totalMinutes === null || totalMinutes === undefined) return '';
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
+/**
+ * Chuyển đổi từ Dayjs object sang tổng số phút
+ * Ví dụ: 09:15 -> 555
+ */
+export const convertDayjsToMinutes = (dayjsObj) => {
+  if (!dayjsObj) return 0;
+  return dayjsObj.hour() * 60 + dayjsObj.minute();
+};
+
+/**
+ * Danh sách các ngày trong tuần khớp với Enum của Backend
+ */
+export const DAYS_OF_WEEK = [
+  { value: 'Monday', label: 'Thứ Hai', color: 'blue' },
+  { value: 'Tuesday', label: 'Thứ Ba', color: 'cyan' },
+  { value: 'Wednesday', label: 'Thứ Tư', color: 'geekblue' },
+  { value: 'Thursday', label: 'Thứ Năm', color: 'purple' },
+  { value: 'Friday', label: 'Thứ Sáu', color: 'magenta' },
+  { value: 'Saturday', label: 'Thứ Bảy', color: 'orange' },
+  { value: 'Sunday', label: 'Chủ Nhật', color: 'volcano' },
+];

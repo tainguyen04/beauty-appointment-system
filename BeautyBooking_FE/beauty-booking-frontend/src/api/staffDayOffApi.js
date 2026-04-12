@@ -31,7 +31,11 @@ const staffDayOffApi = {
   // Lấy chi tiết một đơn nghỉ
   getById: (id) => {
     return axiosClient.get(`/StaffDayOff/${id}`);
-  }
+  },
+  //Xóa đơn nghỉ (Chỉ Admin mới có quyền xóa)
+  delete: (id) => {
+    return axiosClient.delete(`/StaffDayOff/${id}`);
+  },
 };
 
 export default staffDayOffApi;

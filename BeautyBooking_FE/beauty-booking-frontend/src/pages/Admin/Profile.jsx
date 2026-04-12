@@ -1,12 +1,13 @@
-import React, {useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { 
-  Card, Tabs, Descriptions, Avatar, Button, Upload, 
+  Card, Tabs, Avatar, Button, Upload, 
   Form, Input, message, Tag, Row, Col, Typography, Divider 
 } from 'antd';
 import { 
   UserOutlined, UploadOutlined, LockOutlined, 
   MailOutlined, PhoneOutlined, SafetyCertificateOutlined 
 } from '@ant-design/icons';
+import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import userApi from '../../api/userApi';
 
 const { Title, Text } = Typography;
@@ -14,7 +15,10 @@ const { Title, Text } = Typography;
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [submitLoading, setSubmitLoading] = useState(false);
+  
+  // MỚI: Khởi tạo hook quản lý action
+  const { actionLoading, execute } = useApiAction(); 
+  
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
 
@@ -26,10 +30,11 @@ const Profile = () => {
       setUser(res);
       form.setFieldsValue({
         fullName: res.fullName,
-        phone: res.phone, // Linh hoạt theo tên field Backend
+        phone: res.phone,
       });
     } catch (error) {
-      message.error("Không thể tải thông tin hồ sơ", error);
+      console.log(error);
+      message.error("Không thể tải thông tin hồ sơ");
     } finally {
       setLoading(false);
     }
@@ -39,45 +44,39 @@ const Profile = () => {
     fetchProfile();
   }, [fetchProfile]);
 
-  // 2. Xử lý cập nhật Profile (Họ tên, SĐT, Ảnh)
+  // 2. MỚI: Xử lý cập nhật Profile bằng execute
   const onUpdateProfile = async (values) => {
-    try {
-      setSubmitLoading(true);
-      const formData = new FormData();
-      formData.append('FullName', values.fullName);
-      formData.append('Phone', values.phone);
+    const formData = new FormData();
+    formData.append('FullName', values.fullName);
+    formData.append('Phone', values.phone);
 
-      // Xử lý file từ Ant Design Upload
-      if (values.avatarUrl && values.avatarUrl.fileList && values.avatarUrl.fileList.length > 0) {
-        formData.append('AvatarUrl', values.avatarUrl.fileList[0].originFileObj);
-      }
+    // Xử lý file từ Ant Design Upload
+    if (values.avatarUrl && values.avatarUrl.fileList && values.avatarUrl.fileList.length > 0) {
+      formData.append('AvatarUrl', values.avatarUrl.fileList[0].originFileObj);
+    }
 
-      await userApi.updateMyProfile(formData);
-      message.success("Cập nhật hồ sơ Admin thành công!");
-      
-      // Load lại dữ liệu và cập nhật luôn Header (nếu dùng Context/Reload)
-      await fetchProfile(); 
-    } catch (error) {
-      message.error("Cập nhật thất bại: " + (error.response?.data?.message || "Lỗi hệ thống"));
-    } finally {
-      setSubmitLoading(false);
+    const { success } = await execute(
+      () => userApi.updateMyProfile(formData),
+      "Cập nhật hồ sơ thành công!"
+    );
+
+    if (success) {
+      await fetchProfile(); // Load lại dữ liệu để cập nhật UI
     }
   };
 
-  // 3. Xử lý đổi mật khẩu
+  // 3. MỚI: Xử lý đổi mật khẩu bằng execute
   const onChangePassword = async (values) => {
-    try {
-      setSubmitLoading(true);
-      await userApi.changeMyPassword({
+    const { success } = await execute(
+      () => userApi.changeMyPassword({
         currentPassword: values.currentPassword,
         newPassword: values.newPassword
-      });
-      message.success("Đổi mật khẩu thành công!");
+      }),
+      "Đổi mật khẩu thành công!"
+    );
+
+    if (success) {
       passwordForm.resetFields();
-    } catch (error) {
-      message.error(error.response?.data || "Mật khẩu hiện tại không đúng");
-    } finally {
-      setSubmitLoading(false);
     }
   };
 
@@ -153,7 +152,7 @@ const Profile = () => {
                     </Upload>
                   </Form.Item>
 
-                  <Button type="primary" htmlType="submit" loading={submitLoading}>
+                  <Button type="primary" htmlType="submit" loading={actionLoading}>
                     Lưu thay đổi
                   </Button>
                 </Form>
@@ -203,7 +202,7 @@ const Profile = () => {
                     <Input.Password prefix={<LockOutlined />} />
                   </Form.Item>
 
-                  <Button type="primary" danger htmlType="submit" loading={submitLoading}>
+                  <Button type="primary" danger htmlType="submit" loading={actionLoading}>
                     Đổi mật khẩu
                   </Button>
                 </Form>

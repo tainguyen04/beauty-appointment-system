@@ -67,8 +67,6 @@ namespace BeautyBooking.Services
             string safeName = Uri.EscapeDataString(user.FullName);
             user.AvatarUrl = string.Format(avatarUrl,safeName);
             user.AvatarPublicId = null;
-            if(request.Password != request.ComfirmPassword)
-                throw new InvalidOperationException("Mật khẩu và xác nhận mật khẩu không khớp.");
             // 3. Hash password
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 

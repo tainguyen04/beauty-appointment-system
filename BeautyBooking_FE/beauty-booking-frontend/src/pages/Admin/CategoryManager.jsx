@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Typography, Card, Input, Modal, Form, message } from 'antd';
+import { Table, Button, Space, Typography, Card, Input, Modal, Form } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { usePagination } from '../../hooks/usePagination';
+import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import categoryApi from '../../api/categoryApi';
 
 const { Title } = Typography;
@@ -12,37 +13,37 @@ const CategoryManager = () => {
     data, loading, pagination, runFetch, handleTableChange, handleFilterChange 
   } = usePagination(categoryApi.getAll);
 
+  // MỚI: Khởi tạo hook quản lý action
+  const { actionLoading, execute } = useApiAction(); 
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [form] = Form.useForm();
-  const [submitLoading, setSubmitLoading] = useState(false);
+
+  // LƯU Ý: Đã xóa state submitLoading thủ công
 
   useEffect(() => {
     runFetch();
   }, [runFetch]);
 
-  // 2. Xử lý Thêm/Sửa
+  // 2. MỚI: Xử lý Thêm/Sửa bằng execute
   const handleFinish = async (values) => {
-    try {
-      setSubmitLoading(true);
-      if (editingCategory) {
-        await categoryApi.update(editingCategory.id, values);
-        message.success("Cập nhật thành công!");
-      } else {
-        await categoryApi.create(values);
-        message.success("Thêm mới thành công!");
-      }
+    const apiCall = editingCategory
+      ? () => categoryApi.update(editingCategory.id, values)
+      : () => categoryApi.create(values);
+      
+    const msg = editingCategory ? "Cập nhật thành công!" : "Thêm mới thành công!";
+
+    const { success } = await execute(apiCall, msg);
+
+    if (success) {
       setIsModalOpen(false);
       form.resetFields();
       runFetch(pagination.current, pagination.pageSize);
-    } catch (error) {
-      message.error("Có lỗi xảy ra, vui lòng thử lại!", error.message);
-    } finally {
-      setSubmitLoading(false);
     }
   };
 
-  // 3. Xử lý Xóa
+  // 3. MỚI: Xử lý Xóa bằng execute
   const handleDelete = (id) => {
     Modal.confirm({
       title: 'Xác nhận xóa?',
@@ -50,12 +51,9 @@ const CategoryManager = () => {
       okText: 'Xóa',
       okType: 'danger',
       onOk: async () => {
-        try {
-          await categoryApi.delete(id);
-          message.success("Đã xóa danh mục!");
+        const { success } = await execute(() => categoryApi.delete(id), "Đã xóa danh mục!");
+        if (success) {
           runFetch(pagination.current, pagination.pageSize);
-        } catch (error) {
-          message.error("Không thể xóa vì danh mục đang chứa dịch vụ!", error.message);
         }
       }
     });
@@ -124,7 +122,7 @@ const CategoryManager = () => {
         open={isModalOpen}
         onOk={() => form.submit()}
         onCancel={() => setIsModalOpen(false)}
-        confirmLoading={submitLoading}
+        confirmLoading={actionLoading} // MỚI: Đồng bộ với hook
         destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>

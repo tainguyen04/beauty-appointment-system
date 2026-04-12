@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Table, Tag,Tooltip, Button, Space, Card, Input, Typography, Modal, 
-  Form, Select, message, Avatar, Upload, Dropdown 
+  Table, Tag, Tooltip, Button, Space, Card, Input, Typography, Modal, 
+  Form, Select, Avatar, Upload, Dropdown 
 } from 'antd';
 import { 
   EditOutlined, DeleteOutlined, UserAddOutlined, 
@@ -9,6 +9,7 @@ import {
   UserOutlined 
 } from '@ant-design/icons';
 import { usePagination } from '../../hooks/usePagination';
+import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import staffApi from '../../api/staffApi';
 import userApi from '../../api/userApi';
 import serviceApi from '../../api/serviceApi';
@@ -16,8 +17,11 @@ import serviceApi from '../../api/serviceApi';
 const { Title, Text } = Typography;
 
 const StaffManager = () => {
+  // --- Custom Hooks ---
   const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(staffApi.getAll);
+  const { actionLoading, execute } = useApiAction(); // MỚI: Khởi tạo hook
 
+  // --- States ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -26,7 +30,8 @@ const StaffManager = () => {
   const [customers, setCustomers] = useState([]); 
   const [allServices, setAllServices] = useState([]); 
   const [fileList, setFileList] = useState([]);
-  const [submitLoading, setSubmitLoading] = useState(false);
+  
+  // LƯU Ý: Đã xóa bỏ submitLoading thủ công
 
   const [form] = Form.useForm();
   const [serviceForm] = Form.useForm();
@@ -45,8 +50,11 @@ const StaffManager = () => {
   }, []);
 
   useEffect(() => {
+    const initData = async () => {
+      await loadInitialData();
+    }
     runFetch();
-    loadInitialData();
+    initData();
   }, [runFetch, loadInitialData]);
 
   const handleCloseModal = () => {
@@ -56,31 +64,28 @@ const StaffManager = () => {
     form.resetFields();
   };
 
+  // MỚI: Cấu trúc lại bằng execute cho Thêm/Sửa nhân viên
   const handleFinish = async (values) => {
-    try {
-      setSubmitLoading(true);
-      const formData = new FormData();
-      formData.append('Bio', values.bio || '');
-      if (!editingId) formData.append('UserId', values.userId);
+    const formData = new FormData();
+    formData.append('Bio', values.bio || '');
+    if (!editingId) formData.append('UserId', values.userId);
 
-      if (fileList.length > 0 && fileList[0].originFileObj) {
-        formData.append('AvatarUrl', fileList[0].originFileObj);
-      }
+    if (fileList.length > 0 && fileList[0].originFileObj) {
+      formData.append('AvatarUrl', fileList[0].originFileObj);
+    }
 
-      if (editingId) {
-        await staffApi.update(editingId, formData);
-        message.success("Cập nhật thành công!");
-      } else {
-        await staffApi.create(formData);
-        message.success("Thêm nhân viên thành công!");
-        loadInitialData(); 
-      }
+    const apiCall = editingId 
+      ? () => staffApi.update(editingId, formData)
+      : () => staffApi.create(formData);
+      
+    const msg = editingId ? "Cập nhật thành công!" : "Thêm nhân viên thành công!";
+
+    const { success } = await execute(apiCall, msg);
+
+    if (success) {
+      if (!editingId) loadInitialData(); 
       handleCloseModal();
       runFetch();
-    } catch (error) {
-      message.error("Thao tác thất bại", error);
-    } finally {
-      setSubmitLoading(false);
     }
   };
 
@@ -138,7 +143,7 @@ const StaffManager = () => {
             icon: <EditOutlined />, 
             onClick: () => {
               setEditingId(record.id);
-              setSelectedStaff(record); // Lưu record để lấy thông tin hiển thị
+              setSelectedStaff(record);
               form.setFieldsValue({ 
                 userId: record.userId, 
                 bio: record.bio 
@@ -152,8 +157,6 @@ const StaffManager = () => {
             icon: <SettingOutlined />, 
             onClick: () => {
               setSelectedStaff(record);
-              // Lấy serviceIds hiện tại của Staff từ dữ liệu record
-              // Đảm bảo dữ liệu API của bạn trả về một mảng object dịch vụ trong record.services
               const currentServiceIds = record.services?.map(s => s.id) || [];
               serviceForm.setFieldsValue({ serviceIds: currentServiceIds });
               setIsServiceModalOpen(true);
@@ -165,16 +168,18 @@ const StaffManager = () => {
             label: 'Xóa nhân viên', 
             icon: <DeleteOutlined />, 
             danger: true, 
+            // MỚI: Bọc chức năng xóa bằng execute
             onClick: () => {
               Modal.confirm({
                 title: 'Xác nhận xóa?',
                 content: `Bạn có chắc muốn xóa nhân viên ${record.fullName}?`,
                 okType: 'danger',
                 onOk: async () => {
-                  await staffApi.delete(record.id);
-                  message.success("Đã xóa nhân viên");
-                  runFetch();
-                  loadInitialData();
+                  const { success } = await execute(() => staffApi.delete(record.id), "Đã xóa nhân viên!");
+                  if (success) {
+                    runFetch();
+                    loadInitialData();
+                  }
                 }
               });
             }
@@ -220,25 +225,24 @@ const StaffManager = () => {
         size="middle"
       />
 
+      {/* MODAL THÊM / SỬA NHÂN VIÊN */}
       <Modal
         title={editingId ? "Sửa nhân viên" : "Thêm nhân viên"}
         open={isModalOpen}
         onOk={() => form.submit()}
         onCancel={handleCloseModal}
-        confirmLoading={submitLoading}
+        confirmLoading={actionLoading} // MỚI: Đồng bộ loading
         width={500}
         destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleFinish} style={{ marginTop: 10 }}>
           <Form.Item label="Tài khoản nhân viên" required>
             {editingId ? (
-              // Khi sửa: Chỉ hiện Tên - Email dạng Text cho sạch
               <div style={{ padding: '8px 12px', background: '#f5f5f5', borderRadius: '4px', border: '1px solid #d9d9d9' }}>
                 <Text strong>{selectedStaff?.fullName}</Text>
                 {selectedStaff?.email && <Text type="secondary"> — {selectedStaff.email}</Text>}
               </div>
             ) : (
-              // Khi thêm mới: Hiện Select chọn Customer (Tên - Email)
               <Form.Item name="userId" noStyle rules={[{ required: true, message: 'Vui lòng chọn tài khoản!' }]}>
                 <Select
                   showSearch
@@ -277,7 +281,7 @@ const StaffManager = () => {
         open={isServiceModalOpen}
         onOk={() => serviceForm.submit()}
         onCancel={() => setIsServiceModalOpen(false)}
-        confirmLoading={submitLoading}
+        confirmLoading={actionLoading} // MỚI: Đồng bộ loading
         destroyOnClose
         width={500}
       >
@@ -286,7 +290,6 @@ const StaffManager = () => {
           <Text strong>{selectedStaff?.fullName}</Text>
         </div>
 
-        {/* Hiển thị danh sách đang làm để đối chiếu */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ marginBottom: 8 }}>
             <Text italic style={{ fontSize: '13px', color: '#8c8c8c' }}>Danh sách dịch vụ đang đảm nhận:</Text>
@@ -307,16 +310,16 @@ const StaffManager = () => {
         <Form 
           form={serviceForm} 
           layout="vertical" 
-          onFinish={(values) => {
-            setSubmitLoading(true);
-            staffApi.assignServices(selectedStaff.id, values.serviceIds)
-              .then(() => { 
-                message.success("Cập nhật dịch vụ thành công!"); 
-                setIsServiceModalOpen(false); 
-                runFetch(); 
-              })
-              .catch(() => message.error("Lỗi khi gán dịch vụ"))
-              .finally(() => setSubmitLoading(false));
+          // MỚI: Xử lý submit gán dịch vụ bằng execute
+          onFinish={async (values) => {
+            const { success } = await execute(
+              () => staffApi.assignServices(selectedStaff.id, values.serviceIds),
+              "Cập nhật dịch vụ thành công!"
+            );
+            if (success) {
+              setIsServiceModalOpen(false);
+              runFetch();
+            }
           }}
         >
           <Form.Item 
