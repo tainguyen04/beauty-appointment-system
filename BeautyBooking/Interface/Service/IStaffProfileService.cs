@@ -15,7 +15,7 @@ namespace BeautyBooking.Interface.Service
         Task<bool> AssignServicesAsync(int id, AssignServicesRequest request);
         Task<bool> DeleteAsync(int id);
         Task<bool> UpdateStatusAsync(int userId, bool status);
-        Task<IEnumerable<StaffProfileResponse>> GetAvailableAsync(DateOnly date, int startTime, int endTime);
+        Task<IEnumerable<StaffProfileResponse>> GetAvailableAsync(DateOnly date, int startTime, List<int> serviceIds);
         Task<PagedResult<StaffProfileResponse>> GetStaffProfilesAsync(StaffProfileFilter filter);
     }
 }

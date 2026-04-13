@@ -16,7 +16,7 @@ namespace BeautyBooking.Interface.Repository
         Task<IEnumerable<int>> GetServiceIdsByIdAsync(int id);
         Task<IEnumerable<StaffProfile>> GetWorkingByDateAsync(DateOnly date);
         Task<IEnumerable<StaffProfile>> GetActiveAsync();
-        Task<IEnumerable<StaffProfile>> GetAvailableByTimeSlotAsync(DateOnly date, int? startTime = null, int? endTime = null);
+        Task<IEnumerable<StaffProfile>> GetAvailableByTimeSlotAsync(DateOnly date, int startTime, int endTime, List<int> serviceIds);
 
     }
 }

@@ -1,150 +1,246 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { 
   Table, Tag, Button, Space, Modal, Card, Typography, Drawer, 
-  Descriptions, Select, Dropdown, Form, Row, Col, DatePicker, Input, List
+  Descriptions, Select, Dropdown, Form, Row, Col, DatePicker, List, TimePicker, Spin, message
 } from 'antd';
 import { 
   EyeOutlined, EditOutlined, DeleteOutlined, 
   MoreOutlined, PlusOutlined, CheckCircleOutlined 
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+
+// --- Imports Hooks & APIs ---
 import { usePagination } from '../../hooks/usePagination';
 import { useApiAction } from '../../hooks/useApiAction';
 import appointmentApi from '../../api/appointmentApi';
+import staffApi from '../../api/staffApi'; 
+import userApi from '../../api/userApi'; 
+import serviceApi from '../../api/serviceApi'; // <-- THÊM API lấy danh sách Dịch vụ chung
+
+// --- Imports Helpers ---
+import { convertMinutesToTimeStr, convertDayjsToMinutes } from '../../utils/apiHelper'; 
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AppointmentManager = () => {
-  // --- States ---
+  // --- States Modal & Drawer ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [openDetail, setOpenDetail] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false); 
   
+  // --- States Lists ---
+  const [customerList, setCustomerList] = useState([]); 
+  const [serviceList, setServiceList] = useState([]); // State lưu toàn bộ dịch vụ
+  const [availableStaffs, setAvailableStaffs] = useState([]); // State lưu nhân viên rảnh
+  
+  const [loadingStaffData, setLoadingStaffData] = useState(false);
+
   const [form] = Form.useForm();
   const [statusForm] = Form.useForm();
 
   // --- Custom Hooks ---
-  const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(appointmentApi.getAll);
+  const { 
+    data, 
+    loading, 
+    pagination = { current: 1, pageSize: 10, total: 0 }, 
+    runFetch, 
+    handleTableChange, 
+    handleFilterChange 
+  } = usePagination(appointmentApi.getAll);
+  
   const { actionLoading, execute } = useApiAction();
 
-  const fetchData = useCallback(() => {
-    runFetch();
-  }, [runFetch]);
-
-  useEffect(() => {
-    fetchData();
+  const fetchData = useCallback(() => { runFetch(); }, [runFetch]);
+  
+  // Load dữ liệu bảng và các Dropdown khi mở trang
+  useEffect(() => { 
+    fetchData(); 
+    fetchInitialData(); 
   }, [fetchData]);
 
-  // --- Handlers cho Create/Update ---
+  // --- Hàm lấy danh sách Customer & Services ---
+  const fetchInitialData = async () => {
+    try {
+      const [userRes, serviceRes] = await Promise.all([
+        userApi.getAll(),
+        serviceApi.getAll() // Lấy toàn bộ dịch vụ của hệ thống
+      ]);
+      
+      const allUsers = userRes?.items || userRes || [];
+      const customers = allUsers.filter(u => u.role === 'Customer' || u.roleName === 'Customer'); 
+      setCustomerList(customers);
+
+      setServiceList(serviceRes?.items || serviceRes || []);
+    } catch (error) {
+      console.error("Lỗi lấy dữ liệu ban đầu:", error);
+    }
+  };
+
+  // --- Lắng nghe thay đổi Ngày/Giờ để gọi API getAvailable ---
+  const handleValuesChange = async (changedValues, allValues) => {
+    // Nếu có sự thay đổi ở Ngày, Giờ bắt đầu hoặc Giờ kết thúc
+    if (changedValues.appointmentDate || changedValues.startTime || changedValues.endTime) {
+      const { appointmentDate, startTime, endTime } = allValues;
+
+      // Xóa nhân viên đang chọn vì thời gian đã đổi
+      form.setFieldsValue({ staffId: null });
+
+      // Chỉ gọi API khi đã điền đủ 3 field thời gian
+      if (appointmentDate && startTime && endTime) {
+        const dateStr = appointmentDate.format('YYYY-MM-DD');
+        const startMin = convertDayjsToMinutes(startTime);
+        const endMin = convertDayjsToMinutes(endTime);
+
+        if (startMin >= endMin) {
+          message.warning("Giờ kết thúc phải lớn hơn giờ bắt đầu!");
+          setAvailableStaffs([]);
+          return;
+        }
+
+        setLoadingStaffData(true);
+        try {
+          // Gọi API getAvailable theo cấu trúc bạn cung cấp
+          const res = await staffApi.getAvailable(dateStr, startMin, endMin);
+          const staffs = res?.items || res || [];
+          setAvailableStaffs(staffs);
+
+          if (staffs.length === 0) {
+            message.info("Không có nhân viên nào rảnh trong khung giờ này.");
+          }
+        } catch (error) {
+          console.error("Lỗi tìm nhân viên:", error);
+          message.error("Lỗi khi tìm kiếm nhân viên rảnh.");
+          setAvailableStaffs([]);
+        } finally {
+          setLoadingStaffData(false);
+        }
+      } else {
+        // Nếu chưa điền đủ thì xóa list nhân viên
+        setAvailableStaffs([]);
+      }
+    }
+  };
+
+  // --- Handlers: Thêm mới & Cập nhật ---
   const handleAddNew = () => {
     setIsEdit(false);
     setSelectedAppointment(null);
     form.resetFields();
+    setAvailableStaffs([]);
     setIsModalOpen(true);
   };
 
   const handleEdit = (record) => {
     setIsEdit(true);
     setSelectedAppointment(record);
+    
+    const startTimeStr = convertMinutesToTimeStr(record.startTime); 
+    const startTimeObj = startTimeStr ? dayjs().startOf('day').add(record.startTime, 'minute') : null;
+
+    // Giả sử record.endTime có tồn tại, nếu BE chỉ trả về duration thì bạn tự cộng thêm nhé
+    const endTimeStr = record.endTime ? convertMinutesToTimeStr(record.endTime) : null;
+    const endTimeObj = endTimeStr ? dayjs().startOf('day').add(record.endTime, 'minute') : null;
+
     form.setFieldsValue({
       userId: record.userId,
-      staffId: record.staffId,
-      // Lưu ý: BE của bạn trả về DateOnly, FE dùng dayjs để map lên Form
       appointmentDate: record.appointmentDate ? dayjs(record.appointmentDate) : null,
+      startTime: startTimeObj,
+      endTime: endTimeObj,
+      serviceIds: record.appointmentServices?.map(s => s.serviceId) || [] 
     });
+
+    // Mẹo: Khi mở Edit, bạn có thể gọi luôn getAvailable để load danh sách có chứa staff hiện tại
+    if (record.appointmentDate && record.startTime && record.endTime) {
+       // Code gọi nhanh API ở đây (hoặc kích hoạt qua onValuesChange)
+       staffApi.getAvailable(
+         dayjs(record.appointmentDate).format('YYYY-MM-DD'), 
+         record.startTime, 
+         record.endTime
+       ).then(res => {
+         setAvailableStaffs(res?.items || res || []);
+         // Set staff sau khi đã load xong danh sách
+         form.setFieldsValue({ staffId: record.staffId });
+       });
+    } else {
+       // Fallback nếu thiếu thời gian kết thúc
+       form.setFieldsValue({ staffId: record.staffId });
+    }
+    
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (values) => {
-    let apiCall;
-    let msg = "";
-
     const payload = {
-      ...values,
-      appointmentDate: values.appointmentDate ? values.appointmentDate.format('YYYY-MM-DD') : null
+      userId: values.userId ? Number(values.userId) : null,
+      staffId: Number(values.staffId),
+      appointmentDate: values.appointmentDate ? values.appointmentDate.format('YYYY-MM-DD') : null,
+      startTime: convertDayjsToMinutes(values.startTime), 
+      // Gửi kèm endTime nếu backend cần (bạn có thể xóa dòng dưới nếu BE C# không nhận biến này)
+      endTime: convertDayjsToMinutes(values.endTime), 
+      serviceIds: values.serviceIds || []
     };
 
-    if (isEdit) {
-      apiCall = () => appointmentApi.update(selectedAppointment.id, payload);
-      msg = "Cập nhật lịch hẹn thành công!";
-    } else {
-      apiCall = () => appointmentApi.createByAdmin(payload);
-      msg = "Tạo lịch hẹn mới thành công!";
-    }
+    let apiCall = isEdit 
+      ? () => appointmentApi.update(selectedAppointment.id, payload)
+      : () => appointmentApi.createByAdmin(payload);
+    
+    let msg = isEdit ? "Cập nhật lịch hẹn thành công!" : "Tạo lịch hẹn mới thành công!";
 
     const { success } = await execute(apiCall, msg);
-
     if (success) {
       setIsModalOpen(false);
       fetchData();
     }
   };
 
-  // --- Handler cho Cập nhật trạng thái ---
+  // --- Handlers: Trạng thái & Chi tiết (Giữ nguyên) ---
   const handleOpenUpdateStatus = (record) => {
     setSelectedAppointment(record);
-    // Gán status dạng chữ (vd: "Pending", "Confirmed")
     statusForm.setFieldsValue({ status: record.appointmentStatus });
     setIsStatusModalOpen(true);
   };
 
   const handleStatusSubmit = async (values) => {
-    // Vì BE dùng [FromBody] nên ở file api phải gửi giá trị dạng chuỗi JSON: '"Pending"'
-    // File appointmentApi.js của bạn đã setup headers 'Content-Type': 'application/json'
-    // Nên mình chỉ cần bọc values.status trong nháy kép để nó thành JSON string hợp lệ
     const jsonStringStatus = `"${values.status}"`; 
-
     const { success } = await execute(
       () => appointmentApi.updateStatus(selectedAppointment.id, jsonStringStatus), 
       "Cập nhật trạng thái thành công!"
     );
-
     if (success) {
       setIsStatusModalOpen(false);
       fetchData();
     }
   };
 
-  // --- Handlers khác ---
   const showDetail = async (id) => {
-    setDetailLoading(true);
+    setDetailLoading(true); 
     setOpenDetail(true);
     try {
       const res = await appointmentApi.getById(id);
       setSelectedAppointment(res);
     } catch (error) {
-      console.error("Lỗi chi tiết:", error);
+      console.log("Lỗi lấy chi tiết lịch hẹn:", error);
       setOpenDetail(false);
     } finally { 
       setDetailLoading(false); 
     }
   };
 
-  // --- Columns Definition ---
+  // --- Columns Definition (Giữ nguyên) ---
   const columns = [
-    {
-      title: 'Mã LH',
-      dataIndex: 'id',
-      width: 80,
-    },
-    { 
-      title: 'Khách hàng', 
-      dataIndex: 'userName', // Map đúng DTO mới
-      render: (text) => <Text strong>{text || 'N/A'}</Text>
-    },
+    { title: 'Mã LH', dataIndex: 'id', width: 80 },
+    { title: 'Khách hàng', dataIndex: 'userName', render: (text) => <Text strong>{text || 'N/A'}</Text> },
     { 
       title: 'Dịch vụ', 
       key: 'services',
-      // Dịch vụ là 1 list trong DTO mới, mình sẽ map và nối chuỗi tên DV lại
       render: (_, record) => {
         const services = record.appointmentServices;
         if (!services || services.length === 0) return <Text type="secondary">Chưa chọn DV</Text>;
-        
         return (
           <Space direction="vertical" size={0}>
             {services.map(s => <Tag key={s.serviceId} color="blue">{s.serviceName}</Tag>)}
@@ -155,10 +251,9 @@ const AppointmentManager = () => {
     { 
       title: 'Thời gian hẹn', 
       key: 'time',
-      // Kết hợp DateOnly và TimeRange từ C#
       render: (_, record) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{record.timeRange || 'N/A'}</Text>
+          <Text strong>{record.timeRange || convertMinutesToTimeStr(record.startTime) || 'N/A'}</Text>
           <Text type="secondary">{record.appointmentDate}</Text>
         </Space>
       )
@@ -174,25 +269,17 @@ const AppointmentManager = () => {
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'appointmentStatus', // Dùng đúng tên biến từ C#
+      dataIndex: 'appointmentStatus',
       render: (status) => {
         if (!status) return <Tag color="default">TRỐNG</Tag>;
-
-        // BE trả thẳng chuỗi, ta map chuỗi ra tiếng Việt và màu sắc
         const statusMap = {
           "Pending": { color: 'gold', text: 'Chờ xác nhận' },
           "Confirmed": { color: 'blue', text: 'Đã xác nhận' },
           "Completed": { color: 'green', text: 'Hoàn thành' },
           "Cancelled": { color: 'red', text: 'Đã hủy' },
         };
-
         const config = statusMap[status] || { color: 'default', text: status };
-
-        return (
-          <Tag color={config.color} style={{ fontWeight: '500' }}>
-            {String(config.text).toUpperCase()}
-          </Tag>
-        );
+        return <Tag color={config.color} style={{ fontWeight: '500' }}>{String(config.text).toUpperCase()}</Tag>;
       }
     },
     {
@@ -204,18 +291,10 @@ const AppointmentManager = () => {
         const items = [
           { key: 'detail', label: 'Xem chi tiết', icon: <EyeOutlined />, onClick: () => showDetail(record.id) },
           { key: 'edit', label: 'Chỉnh sửa', icon: <EditOutlined />, onClick: () => handleEdit(record) },
-          { 
-            key: 'status', 
-            label: 'Đổi trạng thái', 
-            icon: <CheckCircleOutlined />, 
-            onClick: () => handleOpenUpdateStatus(record) 
-          },
+          { key: 'status', label: 'Đổi trạng thái', icon: <CheckCircleOutlined />, onClick: () => handleOpenUpdateStatus(record) },
           { type: 'divider' },
           { 
-            key: 'delete', 
-            label: 'Xóa lịch hẹn', 
-            icon: <DeleteOutlined />, 
-            danger: true,
+            key: 'delete', label: 'Xóa lịch hẹn', icon: <DeleteOutlined />, danger: true,
             onClick: () => Modal.confirm({
               title: 'Xóa lịch hẹn?',
               content: 'Hành động này không thể hoàn tác.',
@@ -238,7 +317,6 @@ const AppointmentManager = () => {
 
   return (
     <Card bordered={false}>
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
         <Title level={3} style={{ margin: 0 }}>Quản lý lịch hẹn</Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleAddNew}>
@@ -246,7 +324,6 @@ const AppointmentManager = () => {
         </Button>
       </div>
 
-      {/* Filter Options */}
       <div style={{ marginBottom: 16 }}>
         <Space size="middle">
           <Select
@@ -255,7 +332,6 @@ const AppointmentManager = () => {
             allowClear
             onChange={(val) => handleFilterChange({ Status: val })}
           >
-            {/* Lọc theo Enum chữ String từ BE */}
             <Option value="Pending">Chờ xác nhận</Option>
             <Option value="Confirmed">Đã xác nhận</Option>
             <Option value="Completed">Hoàn thành</Option>
@@ -264,16 +340,11 @@ const AppointmentManager = () => {
         </Space>
       </div>
 
-      {/* Bảng Dữ Liệu */}
       <Table
         columns={columns}
         dataSource={data}
         loading={loading}
-        pagination={{
-          ...pagination,
-          showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50'],
-        }} 
+        pagination={pagination ? { ...pagination, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] } : { current: 1, pageSize: 10, total: 0 }} 
         onChange={handleTableChange}
         rowKey="id"
         bordered
@@ -286,33 +357,120 @@ const AppointmentManager = () => {
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
         confirmLoading={actionLoading}
-        width={700}
+        width={750}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form 
+          form={form} 
+          layout="vertical" 
+          onFinish={handleSubmit}
+          onValuesChange={handleValuesChange} // Lắng nghe sự thay đổi của Form
+        >
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="userId" label="ID Khách hàng" rules={[{ required: true }]}>
-                <Input type="number" placeholder="Nhập ID khách hàng" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="staffId" label="ID Nhân viên (Tùy chọn)">
-                <Input type="number" placeholder="Nhập ID nhân viên thực hiện" />
+            <Col span={24}>
+              <Form.Item name="userId" label="Khách hàng">
+                <Select 
+                  placeholder="Chọn khách hàng (có thể trống)" 
+                  showSearch 
+                  allowClear
+                  optionFilterProp="children"
+                >
+                  {customerList.map(cus => (
+                    <Option key={cus.id} value={cus.id}>
+                      {cus.fullName || cus.name || cus.userName || `Khách hàng #${cus.id}`}
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
           </Row>
+
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="appointmentDate" label="Ngày hẹn" rules={[{ required: true }]}>
+            <Col span={24}>
+              <Form.Item 
+                name="serviceIds" 
+                label="Dịch vụ" 
+                rules={[{ required: true, message: 'Vui lòng chọn ít nhất 1 dịch vụ' }]}
+              >
+                <Select 
+                  mode="multiple"
+                  placeholder="Chọn các dịch vụ khách muốn làm"
+                  optionFilterProp="children"
+                >
+                  {serviceList.map(srv => (
+                    <Option key={srv.id} value={srv.id}>{srv.name || srv.serviceName}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item 
+                name="appointmentDate" 
+                label="Ngày hẹn" 
+                rules={[{ required: true, message: 'Chọn ngày hẹn' }]}
+              >
                 <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
               </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item 
+                name="startTime" 
+                label="Giờ bắt đầu" 
+                rules={[{ required: true, message: 'Chọn giờ bắt đầu' }]}
+              >
+                <TimePicker 
+                  style={{ width: '100%' }} 
+                  format="HH:mm" 
+                  minuteStep={15} 
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item 
+                name="endTime" 
+                label="Giờ kết thúc (Dự kiến)" 
+                rules={[{ required: true, message: 'Chọn giờ kết thúc để lọc nhân viên' }]}
+              >
+                <TimePicker 
+                  style={{ width: '100%' }} 
+                  format="HH:mm" 
+                  minuteStep={15} 
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={24}>
+              <Spin spinning={loadingStaffData} tip="Đang tìm nhân viên rảnh...">
+                <Form.Item 
+                  name="staffId" 
+                  label="Nhân viên phụ trách (Tự động lọc theo thời gian)" 
+                  rules={[{ required: true, message: 'Bắt buộc chọn nhân viên' }]}
+                >
+                  <Select 
+                    placeholder="Vui lòng chọn Ngày và Giờ để xem nhân viên rảnh" 
+                    showSearch
+                    disabled={availableStaffs.length === 0}
+                    optionFilterProp="children"
+                  >
+                    {availableStaffs.map(staff => (
+                      <Option key={staff.id} value={staff.id}>
+                        {staff.fullName || staff.name || `Nhân viên #${staff.id}`}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Spin>
             </Col>
           </Row>
         </Form>
       </Modal>
 
-      {/* MODAL CẬP NHẬT TRẠNG THÁI */}
+      {/* MODAL TRẠNG THÁI */}
       <Modal
         title={`Cập nhật trạng thái lịch hẹn #${selectedAppointment?.id}`}
         open={isStatusModalOpen}
@@ -323,13 +481,8 @@ const AppointmentManager = () => {
         destroyOnClose
       >
         <Form form={statusForm} layout="vertical" onFinish={handleStatusSubmit}>
-          <Form.Item 
-            name="status" 
-            label="Trạng thái" 
-            rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
-          >
-            {/* Sử dụng Enum chữ thay cho số */}
-            <Select placeholder="Chọn trạng thái mới">
+          <Form.Item name="status" label="Trạng thái" rules={[{ required: true }]}>
+            <Select placeholder="Chọn trạng thái">
               <Option value="Pending">Chờ xác nhận</Option>
               <Option value="Confirmed">Đã xác nhận</Option>
               <Option value="Completed">Hoàn thành</Option>
@@ -346,14 +499,18 @@ const AppointmentManager = () => {
         onClose={() => setOpenDetail(false)}
         open={openDetail}
       >
-        {detailLoading ? <p>Đang tải dữ liệu...</p> : (
+        {detailLoading ? (
+          <div style={{ textAlign: 'center', padding: '50px 0' }}>
+            <Spin tip="Đang tải dữ liệu..." size="large" />
+          </div>
+        ) : (
           <>
             <Descriptions column={1} bordered size="small" style={{ marginBottom: 16 }}>
               <Descriptions.Item label="Mã lịch hẹn"><Text strong>{selectedAppointment?.id}</Text></Descriptions.Item>
               <Descriptions.Item label="Khách hàng">{selectedAppointment?.userName || 'N/A'}</Descriptions.Item>
               <Descriptions.Item label="Nhân viên">{selectedAppointment?.staffName || 'Chưa xếp'}</Descriptions.Item>
               <Descriptions.Item label="Ngày hẹn">{selectedAppointment?.appointmentDate}</Descriptions.Item>
-              <Descriptions.Item label="Giờ hẹn">{selectedAppointment?.timeRange}</Descriptions.Item>
+              <Descriptions.Item label="Giờ hẹn">{selectedAppointment?.timeRange || convertMinutesToTimeStr(selectedAppointment?.startTime)}</Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
                 <Tag color={selectedAppointment?.appointmentStatus === 'Completed' ? 'green' : 'blue'}>
                   {selectedAppointment?.appointmentStatus}
@@ -366,7 +523,6 @@ const AppointmentManager = () => {
               </Descriptions.Item>
             </Descriptions>
 
-            {/* Hiển thị mảng AppointmentServices */}
             <Title level={5}>Dịch vụ đã đặt:</Title>
             <List
               bordered

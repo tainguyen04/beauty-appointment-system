@@ -117,9 +117,9 @@ namespace BeautyBooking.Controllers
 
         [HttpGet("available")]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<StaffProfileResponse>>> GetAvailable([FromQuery] DateOnly date, [FromQuery] int startTime, [FromQuery] int endTime)
+        public async Task<ActionResult<IEnumerable<StaffProfileResponse>>> GetAvailable([FromQuery] DateOnly date, [FromQuery] int startTime, [FromQuery] List<int> serviceIds)
         {
-            var staff = await _staffProfileService.GetAvailableAsync(date, startTime, endTime);
+            var staff = await _staffProfileService.GetAvailableAsync(date, startTime, serviceIds);
             return Ok(staff);
         }
     }
