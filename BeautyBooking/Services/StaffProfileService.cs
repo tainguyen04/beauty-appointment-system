@@ -95,9 +95,12 @@ namespace BeautyBooking.Services
 
         public async Task<IEnumerable<StaffProfileResponse>> GetAvailableAsync(DateOnly date, int startTime, List<int> serviceIds)
         {
-            var services = await _serviceRepository.GetRangeByIdsAsync(serviceIds);
-            if(services == null || services.Any())
+            if (serviceIds == null || !serviceIds.Any())
                 throw new InvalidOperationException("Vui lòng chọn dịch vụ.");
+
+            var services = await _serviceRepository.GetRangeByIdsAsync(serviceIds);
+            if (services == null || !services.Any())
+                throw new InvalidOperationException("Không tìm thấy dịch vụ.");
             var totalDuration = services.Sum(s => s.Duration);
             var endTime = startTime + totalDuration;
             var staffProfiles = await _staffProfileRepository.GetAvailableByTimeSlotAsync(date, startTime, endTime, serviceIds);

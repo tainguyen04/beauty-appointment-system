@@ -39,14 +39,6 @@ namespace BeautyBooking.Repository
                 .ToPagedResultAsync(pageNumber, pageSize);
         }
 
-        public async Task<bool> HasAnyAppointmentsAsync(int staffId, DateOnly date)
-        {
-            return await _entities.AnyAsync(a =>
-                a.StaffId == staffId &&
-                a.AppointmentDate == date &&
-                a.AppointmentStatus != AppointmentStatus.Cancelled &&
-                !a.IsDeleted);
-        }
 
         public async Task<bool> HasOverlapAsync(int staffId, DateOnly appointmentDate, int startTime, int endTime, int? excludeId = null)
         {
@@ -82,20 +74,8 @@ namespace BeautyBooking.Repository
                 .ToPagedResultAsync(pageNumber, pageSize);
         }
 
-        public IQueryable<Appointment> QueryByStaff(int staffId, DateOnly date)
-        {
-            return _entities
-                .Where(a => a.StaffId == staffId && a.AppointmentDate == date &&
-                            a.AppointmentStatus != AppointmentStatus.Cancelled &&
-                            !a.IsDeleted)
-                .Include(a => a.User)
-                .Include(a => a.AppointmentServices)
-                    .ThenInclude(a => a.Service)
-                .AsSplitQuery()
-                .AsNoTracking();
-        }
 
-        public async Task<List<int>> GetBusyStaffIdsAsync(DateOnly date, int startTime, int endTime)
+        public async Task<IEnumerable<int>> GetBusyStaffIdsAsync(DateOnly date, int startTime, int endTime)
         {
             return await _entities
                 .Where(a => a.AppointmentDate == date &&

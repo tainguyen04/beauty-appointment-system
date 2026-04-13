@@ -91,12 +91,12 @@ namespace BeautyBooking.Controllers
 
         [HttpPost("calculate-total")]
         [Authorize]
-        public async Task<ActionResult<decimal>> CalculateTotalAmount([FromBody] IEnumerable<int> serviceIds)
+        public async Task<ActionResult<decimal>> CalculateTotalPrice([FromBody] IEnumerable<int> serviceIds)
         {
             if(serviceIds == null || !serviceIds.Any())
                 return BadRequest("Danh sách dịch vụ không được để trống.");
 
-            var total = await _serviceManager.CalculateTotalAmountAsync(serviceIds);
+            var total = await _serviceManager.CalculateTotalPriceAsync(serviceIds);
             return Ok(new {TotalAmount = total});
         }
     }

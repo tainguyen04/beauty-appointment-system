@@ -41,7 +41,6 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Include(sp => sp.User)
                 .Include(sp => sp.Services)
-                .Include(sp => sp.Appointments)
                 .AsSplitQuery()
                 .Where(sp => !sp.IsDeleted && sp.User != null && !sp.User.IsDeleted && sp.User.IsActived &&
                         serviceIds.All(sid => sp.Services.Any(s => s.Id == sid)) &&

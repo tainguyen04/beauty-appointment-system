@@ -15,17 +15,17 @@ namespace BeautyBooking.Controllers
     [Authorize]
     public class AppointmentController : ControllerBase
     {
-        private readonly IAppointmentService _bookingService;
+        private readonly IAppointmentService _appointmentService;
 
-        public AppointmentController(IAppointmentService bookingService)
+        public AppointmentController(IAppointmentService appointmentService)
         {
-            _bookingService = bookingService;
+            _appointmentService = appointmentService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] AppointmentFilter filter)
         {
-            var appointments = await _bookingService.GetAppointmentsAsync(filter);
+            var appointments = await _appointmentService.GetAppointmentsAsync(filter);
             return Ok(appointments);
         }
 
@@ -33,7 +33,7 @@ namespace BeautyBooking.Controllers
         [Authorize]
         public async Task<ActionResult<AppointmentResponse>> GetById(int id)
         {
-            var appointment = await _bookingService.GetByIdWithDetailsAsync(id);
+            var appointment = await _appointmentService.GetByIdWithDetailsAsync(id);
             return Ok(appointment);
         }
 
@@ -41,7 +41,7 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "StaffOnly")]
         public async Task<ActionResult<IEnumerable<AppointmentResponse>>> GetMySchedule([FromQuery] DateOnly date)
         {
-            var schedule = await _bookingService.GetMyScheduleAsync(date);
+            var schedule = await _appointmentService.GetMyScheduleAsync(date);
             return Ok(schedule);
         }
 
@@ -49,7 +49,7 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "CustomerOnly")]
         public async Task<ActionResult<PagedResult<AppointmentResponse>>> GetMyAppointments([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var appointments = await _bookingService.GetMyAppointmentsAsync(pageNumber,pageSize);
+            var appointments = await _appointmentService.GetMyAppointmentsAsync(pageNumber,pageSize);
             return Ok(appointments);
         }
 
@@ -57,8 +57,8 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> CreateByAdmin([FromBody] CreateAppointmentRequest request)
         {
-            var id = await _bookingService.CreateAppointmentByAdminAsync(request);
-            var appointment = await _bookingService.GetByIdWithDetailsAsync(id);
+            var id = await _appointmentService.CreateAppointmentByAdminAsync(request);
+            var appointment = await _appointmentService.GetByIdWithDetailsAsync(id);
             return CreatedAtAction(nameof(GetById), new { id }, appointment);
         }
 
@@ -66,8 +66,8 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "CustomerOnly")]
         public async Task<ActionResult> CreateByCustomer([FromBody] CreateAppointmentRequest request)
         {
-            var id = await _bookingService.CreateAppointmentByCustomerAsync(request);
-            var appointment = await _bookingService.GetByIdWithDetailsAsync(id);
+            var id = await _appointmentService.CreateAppointmentByCustomerAsync(request);
+            var appointment = await _appointmentService.GetByIdWithDetailsAsync(id);
             if(appointment == null)
                 return NotFound();
             return CreatedAtAction(nameof(GetById), new { id }, appointment);
@@ -77,7 +77,7 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> Update(int id, [FromBody] UpdateAppointmentRequest request)
         {
-            await _bookingService.UpdateAppointmentAsync(id, request);
+            await _appointmentService.UpdateAppointmentAsync(id, request);
             return NoContent();
         }
 
@@ -85,7 +85,7 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "StaffOrAdmin")]
         public async Task<ActionResult> UpdateStatus(int id, [FromBody] AppointmentStatus status)
         {
-            await _bookingService.UpdateStatusAsync(id, status);
+            await _appointmentService.UpdateStatusAsync(id, status);
             return NoContent();
         }
 
@@ -94,7 +94,7 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> Delete(int id)
         {
-           await _bookingService.DeleteAppointmentAsync(id);
+           await _appointmentService.DeleteAppointmentAsync(id);
            return NoContent();
         }
 
@@ -102,7 +102,7 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "CustomerOnly")]
         public async Task<ActionResult> CancelByCustomer(int appointmentId)
         {
-            await _bookingService.CancelAppointmentByCustomerAsync(appointmentId);
+            await _appointmentService.CancelAppointmentByCustomerAsync(appointmentId);
             return NoContent();
         }
     }

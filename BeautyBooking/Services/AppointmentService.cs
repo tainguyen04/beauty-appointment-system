@@ -57,9 +57,8 @@ namespace BeautyBooking.Services
         {
             if (request.ServiceIds == null || !request.ServiceIds.Any())
                 throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
-            var services = (await _serviceRepository.GetRangeByIdsAsync(request.ServiceIds)).ToList();
             var distinctServiceIds = request.ServiceIds.Distinct().ToList();
-
+            var services = (await _serviceRepository.GetRangeByIdsAsync(distinctServiceIds)).ToList();
             if (services.Count() != distinctServiceIds.Count())
                 throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
 
@@ -68,7 +67,12 @@ namespace BeautyBooking.Services
 
             ApplyServicesToAppointment(appointment, services);
 
-            await ValidateAsync(appointment.StaffId, appointment.AppointmentDate, appointment.StartTime, appointment.EndTime, request.ServiceIds);
+            await ValidateAsync(
+                appointment.StaffId, 
+                appointment.AppointmentDate, 
+                appointment.StartTime, 
+                appointment.EndTime, 
+                request.ServiceIds);
 
             await _appointmentRepository.CreateAsync(appointment);
             await _appointmentRepository.SaveChangesAsync();
@@ -92,12 +96,6 @@ namespace BeautyBooking.Services
             
 
             ApplyServicesToAppointment(appointment, services);
-
-            await ValidateAsync(appointment.StaffId, 
-                appointment.AppointmentDate, 
-                appointment.StartTime, 
-                appointment.EndTime, 
-                request.ServiceIds);
 
             await _appointmentRepository.CreateAsync(appointment);
             await _appointmentRepository.SaveChangesAsync();
@@ -198,23 +196,24 @@ namespace BeautyBooking.Services
 
             if (appointment.AppointmentStatus == AppointmentStatus.Cancelled)
                 throw new InvalidOperationException("Không thể cập nhật lịch bị hủy.");
-
-            var services = (await _serviceRepository.GetRangeByIdsAsync(request.ServiceIds)).ToList();
-            var serviceIds = request.ServiceIds.Distinct().ToList();
-            if (services.Count() != serviceIds.Count())
-                throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
-            if (services == null || !services.Any())
+            if (request.ServiceIds == null || !request.ServiceIds.Any())
                 throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
 
+            var serviceIds = request.ServiceIds.Distinct().ToList();
+            var services = (await _serviceRepository.GetRangeByIdsAsync(serviceIds)).ToList();
+            
+            if (services.Count() != serviceIds.Count())
+                throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
+
+
             int newtotalDuration = services.Sum(s => s.Duration);
+            _mapper.Map(request, appointment);
             int newEndTime = request.StartTime + newtotalDuration;
+            appointment.EndTime = newEndTime;
 
             await ValidateAsync(request.StaffId, request.AppointmentDate, request.StartTime, newEndTime, request.ServiceIds, appointment.Id);
 
-            _mapper.Map(request, appointment);
-
             ApplyServicesToAppointment(appointment, services);
-
             await _appointmentRepository.SaveChangesAsync();
             return true;
         }
@@ -247,67 +246,54 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<bool> UpdateStatusByStaffAsync(int id, AppointmentStatus status)
-        {
-            var staffId = _currentUserService.StaffId;
-            var appointment = await _appointmentRepository.GetByIdAsync(id);
-            if (appointment == null)
-                throw new Exception("Không tìm thấy lịch hẹn");
-            if (appointment.StaffId != staffId)
-                throw new UnauthorizedAccessException("Bạn không có quyền cập nhật lịch hẹn này.");
-            if (appointment.AppointmentStatus == AppointmentStatus.Cancelled)
-                throw new InvalidOperationException("Không thể cập nhật lịch bị hủy.");
-            appointment.AppointmentStatus = status;
-            await _appointmentRepository.SaveChangesAsync();
-            return true;
-        }
         private void ApplyServicesToAppointment(Appointment appointment, IEnumerable<Service> services)
         {
             if (services == null || !services.Any())
                 throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
-            var serviceList = services.ToList();
-            int totalDuration = serviceList.Sum(s => s.Duration);
-            appointment.EndTime = appointment.StartTime + totalDuration;
+            var serviceList = services.GroupBy(s => s.Id).Select(g => g.First()).ToList();
             appointment.TotalPrice = serviceList.Sum(s => s.Price);
-            if(appointment.AppointmentServices == null)
-                appointment.AppointmentServices = new List<Entities.AppointmentService>();
-            else
-                appointment.AppointmentServices.Clear();
-
-            foreach (var service in serviceList)
+            appointment.AppointmentServices = serviceList.Select(service => new Entities.AppointmentService
             {
-                appointment.AppointmentServices.Add(new Entities.AppointmentService
-                {
-                    ServiceId = service.Id,
-                    PriceAtBooking = service.Price,
-                    DurationAtBooking = service.Duration,
-                });
-            }
+                ServiceId = service.Id,
+                PriceAtBooking = service.Price,
+                DurationAtBooking = service.Duration,
+            }).ToList();
         }
         private async Task ValidateAsync(int staffId, DateOnly date, int startTime, int endTime, List<int> serviceIds, int? excludeId = null)
         {
-            if(startTime > endTime)
+            if (startTime >= endTime)
                 throw new InvalidOperationException("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
 
+            if (serviceIds == null || !serviceIds.Any())
+                throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
+
             var staffServiceIds = await _staffProfileRepository.GetServiceIdsByIdAsync(staffId);
+
             var unqualifiedServiceIds = serviceIds.Except(staffServiceIds).ToList();
             if (unqualifiedServiceIds.Any())
                 throw new InvalidOperationException($"Nhân viên không thực hiện các dịch vụ có ID: {string.Join(", ", unqualifiedServiceIds)}");
 
-            if (await _staffDayOffRepository.IsAlreadyOffAsync(staffId, date))
-                throw new Exception("Nhân viên đã nghỉ vào thời gian này.");
+            var isOff = await _staffDayOffRepository.IsAlreadyOffAsync(staffId, date);
+            if (isOff)
+                throw new InvalidOperationException("Nhân viên đã nghỉ vào ngày này.");
 
             var dayOfWeek = date.DayOfWeek;
             var schedules = await _workScheduleRepository.GetByStaffIdAndDayOfWeekAsync(staffId, dayOfWeek);
-            bool isWithinSchedule = schedules != null && schedules.Any(s => startTime >= s.StartTime && endTime <= s.EndTime);
-            if (!isWithinSchedule)
-                throw new InvalidOperationException("Thời gian hẹn không nằm trong lịch làm việc của nhân viên.");
+            if (schedules == null || !schedules.Any())
+                throw new InvalidOperationException("Nhân viên không có lịch làm việc trong ngày này.");
 
-            if (await _appointmentRepository.HasOverlapAsync(staffId, date, startTime, endTime, excludeId))
-                throw new InvalidOperationException("Nhân viên đã có cuộc hẹn trùng vào thời gian này.");
-            if (startTime >= endTime)
-                throw new InvalidOperationException("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
-           
+            bool isWithinSchedule = schedules.Any(s =>startTime >= s.StartTime && endTime <= s.EndTime);
+            if (!isWithinSchedule)
+                throw new InvalidOperationException("Thời gian hẹn không nằm trong lịch làm việc.");
+            var hasOverlap = await _appointmentRepository.HasOverlapAsync(
+                staffId,
+                date,
+                startTime,
+                endTime,
+                excludeId
+            );
+            if (hasOverlap)
+                throw new InvalidOperationException("Nhân viên đã có lịch trùng trong khung giờ này.");
         }
     }
 }

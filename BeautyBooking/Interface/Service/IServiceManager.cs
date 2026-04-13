@@ -13,7 +13,7 @@ namespace BeautyBooking.Interface.Service
         Task<bool> UpdateAsync(int id, UpdateServiceRequest request);
         Task<bool> DeleteAsync(int id);
 
-        Task<decimal> CalculateTotalAmountAsync(IEnumerable<int> serviceIds);
+        Task<decimal> CalculateTotalPriceAsync(IEnumerable<int> serviceIds);
         Task<PagedResult<ServiceResponse>> GetServicesAsync(ServiceFilter filter);
 
     }

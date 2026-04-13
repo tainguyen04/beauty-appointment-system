@@ -25,14 +25,16 @@ namespace BeautyBooking.Services
             _staffProfileRepo = staffProfileRepo;
             _photoService = photoService;
         }
-        public async Task<decimal> CalculateTotalAmountAsync(IEnumerable<int> serviceIds)
+        public async Task<decimal> CalculateTotalPriceAsync(IEnumerable<int> serviceIds)
         {
+            if(serviceIds == null)
+                throw new ArgumentNullException(nameof(serviceIds), "Danh sách serviceIds không được null.");
             var distinctServiceIds = serviceIds.Distinct().ToList();
             if(!distinctServiceIds.Any())
                 return 0;
 
-            var services = await _serviceRepo.Query().Where(s => distinctServiceIds.Contains(s.Id)).ToListAsync();
-            if(services.Count != distinctServiceIds.Count)
+            var services = (await _serviceRepo.GetRangeByIdsAsync(distinctServiceIds)).ToList();
+            if (services.Count != distinctServiceIds.Count)
             {
                 var existingIds = services.Select(s => s.Id);
                 var missingIds = distinctServiceIds.Except(existingIds);
