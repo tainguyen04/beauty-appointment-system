@@ -1,84 +1,58 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Table, Tag, Button, Space, Card, Typography, Modal, Form, Select,
-  Row, Col, DatePicker, TimePicker, Segmented, Input, Calendar, Badge, Popover, Spin, Dropdown,
-  Drawer, Descriptions, List 
+  Avatar, Dropdown, Segmented, Input, DatePicker, Tooltip, Calendar, Badge, Popover, Spin // MỚI: Thêm Spin
 } from 'antd';
 import { 
-  EditOutlined, PlusOutlined, MoreOutlined,
-  TableOutlined, CalendarOutlined, CheckCircleOutlined,
-  ClockCircleOutlined, CloseCircleOutlined, SyncOutlined,
-  EyeOutlined 
+  CheckCircleOutlined, CloseCircleOutlined, 
+  MoreOutlined, ClockCircleOutlined, 
+  UserOutlined, PlusOutlined, DeleteOutlined,
+  TableOutlined, CalendarOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-
-// --- API & Hooks ---
 import { usePagination } from '../../hooks/usePagination';
-import { useApiAction } from '../../hooks/useApiAction';
-import appointmentApi from '../../api/appointmentApi';
-import staffApi from '../../api/staffApi'; 
-import userApi from '../../api/userApi'; 
-import serviceApi from '../../api/serviceApi';
-import { convertMinutesToTimeStr, convertDayjsToMinutes } from '../../utils/apiHelper'; 
+import staffDayOffApi from '../../api/staffDayOffApi';
+import staffApi from '../../api/staffApi';
+import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
-};
-
-const AppointmentManager = () => {
-  // --- States ---
+const StaffDayOffManager = () => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = user.role === 'Admin';
+  
   const [viewMode, setViewMode] = useState('table');
   const [filterStatus, setFilterStatus] = useState('All');
-  
-  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
-  
-  // Drawer states
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [recordDetails, setRecordDetails] = useState(null);
-  
-  // Data states
-  const [customerList, setCustomerList] = useState([]); 
-  const [serviceList, setServiceList] = useState([]); 
-  const [availableStaffs, setAvailableStaffs] = useState([]); 
-  const [estimatedTotal, setEstimatedTotal] = useState(0);
-
+  const [staffList, setStaffList] = useState([]);
   const [form] = Form.useForm();
 
-  // --- Hooks ---
   const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(
-    appointmentApi.getAll
+    staffDayOffApi.getAllWithStaff 
   );
+
+  // MỚI: Khởi tạo custom hook xử lý gọi API
   const { actionLoading, execute } = useApiAction();
 
-  const fetchInitialData = async () => {
-    try {
-      const userRes = await userApi.getAll();
-      const allUsers = userRes?.items || userRes?.data || userRes || [];
-      setCustomerList(allUsers.filter(u => u.role === 'Customer' || u.roleName === 'Customer'));
-      
-      const serviceRes = await serviceApi.getAll();
-      setServiceList(serviceRes?.items || serviceRes?.data || serviceRes || []);
-    } catch (error) { 
-      console.error("Lỗi khi tải dữ liệu ban đầu:", error); 
-    }
-  };
-  // --- Effects ---
   useEffect(() => {
-    const initData = async () => {
-      await fetchInitialData();
-    };
     runFetch();
-    initData();
   }, [runFetch]);
 
+  useEffect(() => {
+    if (!isAdmin) return;
+    const fetchStaffList = async () => {
+      try {
+        const response = await staffApi.getAll({ pageSize: 100, pageNumber: 1 });
+        const actualData = response?.items || response?.data || [];
+        setStaffList(actualData);
+      } catch (error) {
+        console.error('Failed to fetch staff list:', error);
+      }
+    };
+    fetchStaffList();
+  }, [isAdmin]);
 
-  // --- Handlers ---
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
     if (mode === 'calendar') {
@@ -88,193 +62,85 @@ const AppointmentManager = () => {
     }
   };
 
-  const handleAddNew = useCallback(() => {
-    setIsEdit(false);
-    setSelectedAppointment(null);
-    form.resetFields();
-    setAvailableStaffs([]);
-    setEstimatedTotal(0);
-    setIsModalOpen(true);
-  }, [form]);
-
-  const handleEdit = useCallback((record) => {
-    setIsEdit(true);
-    setSelectedAppointment(record);
-    const startTimeObj = record.startTime ? dayjs().startOf('day').add(record.startTime, 'minute') : null;
-    const endTimeObj = record.endTime ? dayjs().startOf('day').add(record.endTime, 'minute') : null;
-    setEstimatedTotal(record.totalPrice || 0);
-
-    form.setFieldsValue({
-      userId: record.userId,
-      appointmentDate: record.appointmentDate ? dayjs(record.appointmentDate) : null,
-      startTime: startTimeObj,
-      endTime: endTimeObj,
-      serviceIds: record.appointmentServices?.map(s => s.serviceId) || [] 
-    });
-
-    if (record.appointmentDate && record.startTime) {
-      const tempEndTime = record.endTime || (record.startTime + 60);
-      staffApi.getAvailable(
-        dayjs(record.appointmentDate).format('YYYY-MM-DD'), 
-        record.startTime, 
-        tempEndTime
-      ).then(res => {
-        setAvailableStaffs(res?.items || res?.data || res || []);
-        form.setFieldsValue({ staffId: record.staffId });
-      }).catch(err => console.error("Lỗi tải staff:", err));
-    } else {
-      form.setFieldsValue({ staffId: record.staffId });
-    }
+  // MỚI: Dùng execute để bọc các API thao tác (Duyệt, Từ chối, Hủy, Xóa)
+  const handleAction = useCallback(async (id, action) => {
+    let apiCall;
+    let msg = "Thao tác thành công!";
     
-    setIsModalOpen(true);
-  }, [form]);
+    if (action === 'approve') apiCall = () => staffDayOffApi.approve(id);
+    else if (action === 'reject') apiCall = () => staffDayOffApi.reject(id);
+    else if (action === 'cancel') apiCall = () => staffDayOffApi.cancel(id);
+    else if (action === 'delete') {
+      apiCall = () => staffDayOffApi.delete(id);
+      msg = 'Đã xóa đơn nghỉ thành công!';
+    }
 
-  const handleSubmit = useCallback(async (values) => {
+    if (apiCall) {
+      const { success } = await execute(apiCall, msg);
+      if (success) runFetch();
+    }
+  }, [runFetch, execute]);
+
+  // MỚI: Dùng execute để bọc API tạo mới
+  const handleFinish = useCallback(async (values) => {
     const payload = {
-      ...values,
-      userId: values.userId ? Number(values.userId) : null,
-      staffId: values.staffId ? Number(values.staffId) : null,
-      appointmentDate: values.appointmentDate ? values.appointmentDate.format('YYYY-MM-DD') : null,
-      startTime: values.startTime ? convertDayjsToMinutes(values.startTime) : null,
-      endTime: values.endTime ? convertDayjsToMinutes(values.endTime) : null,
-      totalPrice: estimatedTotal
+      staffId: isAdmin ? values.staffId : undefined, 
+      date: values.date.format('YYYY-MM-DD'),
+      reason: values.reason,
     };
     
-    const apiCall = isEdit ? () => appointmentApi.update(selectedAppointment.id, payload) : () => appointmentApi.createByAdmin(payload);
-    const { success } = await execute(apiCall, isEdit ? "Cập nhật thành công!" : "Tạo thành công!");
+    const msg = isAdmin ? 'Đã đăng ký nghỉ hộ thành công!' : 'Đăng ký nghỉ thành công!';
+    const { success } = await execute(() => staffDayOffApi.create(payload), msg);
     
-    if (success) { 
-      setIsModalOpen(false); 
-      runFetch(); 
+    if (success) {
+      form.resetFields();
+      setIsModalOpen(false);
+      runFetch();
     }
-  }, [isEdit, selectedAppointment, estimatedTotal, execute, runFetch]);
+  }, [isAdmin, form, runFetch, execute]);
 
-  // --- Table Columns ---
-  const columns = useMemo(() => {
-    const baseCols = [
-      { 
-        title: 'Mã', 
-        dataIndex: 'id',
-        width: 60,
-      },
-      { 
-        title: 'Khách hàng', 
-        dataIndex: 'userName', 
-        render: (name) => <Text strong>{name || 'Khách vãng lai'}</Text> 
-      },
-      { 
-        title: 'Thời gian hẹn', 
-        key: 'time',
-        render: (_, record) => (
-          <Space direction="vertical" size={0}>
-            <Text style={{ fontSize: '13px', fontWeight: 500 }}>
-              {dayjs(record.appointmentDate).format('DD/MM/YYYY')}
-            </Text>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              {record.timeRange} 
-            </Text>
-          </Space>
-        ),
-      },
-      { 
-        title: 'Nhân viên', 
-        dataIndex: 'staffName', 
-        render: (staff) => staff ? <Tag color="blue">{staff}</Tag> : <Text type="secondary">Chưa xếp</Text>
-      },
-      { 
-        title: 'Tổng tiền', 
-        dataIndex: 'totalPrice', 
-        render: p => <Text type="success" strong>{formatCurrency(p)}</Text> 
-      },
-      { 
-        title: 'Trạng thái', 
-        dataIndex: 'appointmentStatus', 
-        align: 'center',
-        render: (status) => {
-          const config = {
-            Pending: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Chờ xác nhận' },
-            Confirmed: { color: 'processing', icon: <SyncOutlined spin />, text: 'Đã xác nhận' },
-            Completed: { color: 'success', icon: <CheckCircleOutlined />, text: 'Hoàn thành' },
-            Cancelled: { color: 'error', icon: <CloseCircleOutlined />, text: 'Đã hủy' },
-          }[status] || { color: 'default', text: status };
-          return <Tag icon={config.icon} color={config.color} style={{ fontSize: '11px' }}>{config.text}</Tag>;
-        } 
-      }
-    ];
-
-    const actionCol = {
-      title: 'Thao tác', 
-      key: 'action',
-      width: 80,
-      align: 'center',
-      render: (_, record) => {
-        const items = [
-          { 
-            key: 'view', 
-            label: 'Xem chi tiết', 
-            icon: <EyeOutlined style={{ color: '#1890ff' }}/>, 
-            onClick: () => {
-              setRecordDetails(record);
-              setIsDrawerOpen(true);
-            } 
-          },
-          { type: 'divider' },
-          { key: 'edit', label: 'Chỉnh sửa', icon: <EditOutlined />, onClick: () => handleEdit(record) },
-        ];
-        return (
-          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
-            <Button type="text" size="small" icon={<MoreOutlined />} />
-          </Dropdown>
-        );
-      }
-    };
-
-    return [...baseCols, actionCol];
-  }, [handleEdit]);
-
-  // --- Calendar Rendering ---
+  // Render ô lịch 
   const dateCellRender = (value) => {
     const stringValue = value.format('YYYY-MM-DD');
-    const listData = Array.isArray(data) ? data.filter(item => dayjs(item.appointmentDate).format('YYYY-MM-DD') === stringValue) : [];
+    const listData = data.filter(item => dayjs(item.date).format('YYYY-MM-DD') === stringValue);
     
     return (
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {listData.map((item) => {
           const config = {
             Pending: { color: 'warning', text: 'Chờ' },
-            Confirmed: { color: 'processing', text: 'XN' },
-            Completed: { color: 'success', text: 'Xong' },
-            Cancelled: { color: 'error', text: 'Hủy' },
-          }[item.appointmentStatus] || { color: 'default', text: '?' };
+            Approved: { color: 'success', text: 'Duyệt' },
+            Rejected: { color: 'error', text: 'Từ chối' },
+            Canceled: { color: 'default', text: 'Hủy' },
+          }[item.status] || { color: 'default', text: '?' };
 
           return (
             <Popover 
               key={item.id}
-              title={`Lịch hẹn #${item.id}`}
               content={
                 <div style={{ maxWidth: 200 }}>
-                  <p><b>Khách:</b> {item.userName || 'N/A'}</p>
-                  <p><b>Giờ:</b> {item.timeRange}</p>
-                  <p><b>Tổng:</b> {formatCurrency(item.totalPrice)}</p>
-                  <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                    <Button size="small" onClick={(e) => {
-                      e.stopPropagation();
-                      setRecordDetails(item);
-                      setIsDrawerOpen(true);
-                    }}>Chi tiết</Button>
-                    <Button size="small" type="primary" onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(item);
-                    }}>Sửa</Button>
-                  </Space>
+                  <p><b>Lý do:</b> {item.reason || 'Không có'}</p>
+                  {item.status === 'Pending' && isAdmin && (
+                    <Space>
+                      <Button size="small" type="primary" loading={actionLoading} onClick={(e) => {
+                        e.stopPropagation(); 
+                        handleAction(item.id, 'approve');
+                      }}>Duyệt</Button>
+                      <Button size="small" danger loading={actionLoading} onClick={(e) => {
+                        e.stopPropagation();
+                        handleAction(item.id, 'reject');
+                      }}>Từ chối</Button>
+                    </Space>
+                  )}
                 </div>
               }
+              title={`Đơn của ${item.staffName}`}
             >
-              <li style={{ marginBottom: '2px', cursor: 'pointer' }}>
+              <li style={{ marginBottom: '2px' }}>
                 <Badge 
                   status={config.color} 
-                  text={<span style={{ fontSize: '11px' }}>{convertMinutesToTimeStr(item.startTime)} - {item.userName || 'Khách'}</span>} 
-                  style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
+                  text={isAdmin ? `${item.staffName?.split(' ').pop()}: ${config.text}` : config.text} 
+                  style={{ fontSize: '10px' }}
                 />
               </li>
             </Popover>
@@ -284,12 +150,130 @@ const AppointmentManager = () => {
     );
   };
 
+  const columns = useMemo(() => {
+    const cols = [
+      {
+        title: 'Ngày nghỉ',
+        dataIndex: 'date',
+        width: 130,
+        render: (date) => (
+          <Space direction="vertical" size={0}>
+            <Text style={{ fontSize: '13px' }}>{dayjs(date).format('DD/MM/YYYY')}</Text>
+            <Text type="secondary" style={{ fontSize: '11px' }}>{dayjs(date).format('dddd')}</Text>
+          </Space>
+        ),
+      },
+      {
+        title: 'Lý do',
+        dataIndex: 'reason',
+        ellipsis: true,
+        render: (reason) => <Text type="secondary" style={{ fontSize: '12px' }}>{reason || '...'}</Text>,
+      },
+      {
+        title: 'Trạng thái',
+        dataIndex: 'status',
+        align: 'center',
+        width: 120,
+        render: (status) => {
+          const config = {
+            Pending: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Chờ duyệt' },
+            Approved: { color: 'success', icon: <CheckCircleOutlined />, text: 'Đã duyệt' },
+            Rejected: { color: 'error', icon: <CloseCircleOutlined />, text: 'Từ chối' },
+            Canceled: { color: 'default', icon: <CloseCircleOutlined />, text: 'Đã hủy' },
+          }[status] || { color: 'default', text: status };
+          return <Tag icon={config.icon} color={config.color} style={{ fontSize: '11px' }}>{config.text}</Tag>;
+        },
+      },
+      {
+        title: 'Thao tác',
+        key: 'action',
+        width: 80,
+        align: 'center',
+        render: (_, record) => {
+          const items = [];
+
+            if (isAdmin && record.status === 'Pending') {
+              items.push(
+                { 
+                  key: 'approve', 
+                  label: 'Phê duyệt', 
+                  icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />, 
+                  onClick: () => handleAction(record.id, 'approve') 
+                },
+                { 
+                  key: 'reject', 
+                  label: 'Từ chối', 
+                  icon: <CloseCircleOutlined style={{ color: '#ff4d4f' }} />, 
+                  onClick: () => handleAction(record.id, 'reject') 
+                },
+                { type: 'divider' } 
+              );
+            }
+
+            if (!isAdmin && record.status === 'Pending') {
+              items.push({
+                key: 'cancel',
+                label: 'Hủy yêu cầu',
+                icon: <DeleteOutlined />,
+                onClick: () => handleAction(record.id, 'cancel')
+              });
+            }
+
+            if (isAdmin || record.status !== 'Approved') {
+              items.push({
+                key: 'delete',
+                label: 'Xóa đơn',
+                danger: true,
+                icon: <DeleteOutlined />,
+                onClick: () => {
+                  Modal.confirm({
+                    title: 'Xác nhận xóa đơn nghỉ',
+                    content: 'Hành động này sẽ ẩn đơn nghỉ khỏi hệ thống. Bạn chắc chắn chứ?',
+                    okText: 'Xóa',
+                    okType: 'danger',
+                    cancelText: 'Hủy',
+                    // MỚI: Cập nhật hàm gọi khi confirm
+                    onOk: () => handleAction(record.id, 'delete'),
+                  });
+                }
+              });
+            }
+
+            if (items.length === 0) return null;
+
+            return (
+              <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+                <Button type="text" size="small" icon={<MoreOutlined />} />
+              </Dropdown>
+            );
+        },
+      },
+    ];
+
+    if (isAdmin) {
+      cols.unshift({
+        title: 'Nhân viên',
+        key: 'staff',
+        width: 180,
+        render: (_, record) => (
+          <Space>
+            <Avatar size="small" icon={<UserOutlined />} src={record.avatarUrl} />
+            <div>
+              <Text strong style={{ fontSize: '13px', display: 'block' }}>{record.staffName}</Text>
+              <Text type="secondary" style={{ fontSize: '11px' }}>ID: {record.staffId}</Text>
+            </div>
+          </Space>
+        ),
+      });
+    }
+    return cols;
+  }, [isAdmin, handleAction]);
+
   return (
     <Card bordered={false} size="small">
-      {/* HEADER & TOOLBAR */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
         <Space size="middle">
-          <Title level={4} style={{ margin: 0 }}>Quản lý lịch hẹn</Title>
+          <Title level={4} style={{ margin: 0 }}>{isAdmin ? "Quản lý nghỉ phép" : "Lịch nghỉ của tôi"}</Title>
           <Segmented
             value={viewMode}
             onChange={handleViewModeChange}
@@ -301,10 +285,10 @@ const AppointmentManager = () => {
         </Space>
         
         <Space wrap>
-          {viewMode === 'table' && (
+          {isAdmin && viewMode === 'table' && (
             <Input.Search 
-              placeholder="Tìm khách hàng, SĐT..." 
-              size="small" style={{ width: 180 }}
+              placeholder="Tìm nhân viên..." 
+              size="small" style={{ width: 160 }}
               onSearch={(v) => handleFilterChange({ Keyword: v })}
               allowClear
             />
@@ -312,23 +296,20 @@ const AppointmentManager = () => {
 
           <RangePicker 
             size="small" style={{ width: 230 }} 
-            format="DD/MM/YYYY"
             onChange={(dates) => handleFilterChange({
               FromDate: dates ? dates[0].format('YYYY-MM-DD') : undefined,
               ToDate: dates ? dates[1].format('YYYY-MM-DD') : undefined,
             })}
           />
 
-          <Select
+          <Segmented 
             value={filterStatus}
-            size="small" style={{ width: 130 }}
+            size="small"
             options={[
               { label: 'Tất cả', value: 'All' },
-              { label: 'Chờ xác nhận', value: 'Pending' },
-              { label: 'Đã xác nhận', value: 'Confirmed' },
-              { label: 'Hoàn thành', value: 'Completed' },
-              { label: 'Đã hủy', value: 'Cancelled' }
-            ]}
+              { label: 'Chờ', value: 'Pending' },
+              { label: 'Duyệt', value: 'Approved' }
+            ]} 
             onChange={(v) => {
               setFilterStatus(v);
               handleFilterChange({ Status: v === 'All' ? undefined : v });
@@ -337,39 +318,35 @@ const AppointmentManager = () => {
 
           <Button 
             type="primary" size="small" icon={<PlusOutlined />}
-            onClick={handleAddNew}
+            onClick={() => setIsModalOpen(true)}
           >
-            Tạo mới
+            Đăng ký
           </Button>
         </Space>
       </div>
 
-      {/* NỘI DUNG CHÍNH (TABLE HOẶC CALENDAR) */}
       {viewMode === 'table' ? (
         <Table 
-          columns={columns} 
-          dataSource={Array.isArray(data) ? data : (data?.items || [])} 
-          loading={loading} 
+          columns={columns} dataSource={data} loading={loading} 
           pagination={{
             ...pagination,
             showSizeChanger: true,
-            pageSizeOptions: ['5', '10', '20', '50'],
+            pageSizeOptions: ['5', '10', '20'],
           }}   
-          onChange={handleTableChange} 
-          rowKey="id" 
-          size="middle"
+          onChange={handleTableChange} rowKey="id" size="middle"
         />
       ) : (
         <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #f0f0f0' }}>
+          {/* MỚI: Bọc Spin xung quanh Calendar để hiển thị Loading đồng bộ */}
           <Spin spinning={loading} tip="Đang tải lịch...">
             <Calendar 
               fullscreen={true} 
-              cellRender={(current, info) => info.type === 'date' ? dateCellRender(current) : info.originNode} 
+              cellRender={dateCellRender} 
               onPanelChange={() => runFetch()} 
               onSelect={(date, {source}) => {
                 if(source === 'date'){
-                  handleAddNew();
-                  form.setFieldsValue({ appointmentDate: date });
+                  form.setFieldsValue({ date });
+                  setIsModalOpen(true);
                 }
               }} 
             />
@@ -377,124 +354,45 @@ const AppointmentManager = () => {
         </div>
       )}
 
-      {/* MODAL THÊM / SỬA */}
-      <Modal 
-        title={isEdit ? "Sửa lịch hẹn" : "Tạo lịch hẹn"}
+      <Modal
+        title={isAdmin ? "Đăng ký nghỉ hộ nhân viên" : "Đăng ký nghỉ phép"}
         open={isModalOpen}
         onOk={() => form.submit()}
         onCancel={() => setIsModalOpen(false)}
-        width={750}
+        okText="Gửi yêu cầu"
+        cancelText="Hủy bỏ"
         destroyOnClose
-        confirmLoading={actionLoading}
-        okText="Lưu lại"
-        cancelText="Hủy"
+        confirmLoading={actionLoading} // MỚI: Truyền state loading của hook vào Modal
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-           <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item name="appointmentDate" label="Ngày hẹn" rules={[{ required: true }]}>
-                  <DatePicker style={{width:'100%'}} format="DD/MM/YYYY" />
-                </Form.Item>
-              </Col>
-              <Col span={6}>
-                <Form.Item name="startTime" label="Giờ bắt đầu" rules={[{ required: true }]}>
-                  <TimePicker format="HH:mm" style={{width:'100%'}} minuteStep={15}/>
-                </Form.Item>
-              </Col>
-              <Col span={6}>
-                <Form.Item name="endTime" label="Giờ kết thúc">
-                  <TimePicker format="HH:mm" style={{width:'100%'}} minuteStep={15}/>
-                </Form.Item>
-              </Col>
-           </Row>
-           <Form.Item name="userId" label="Khách hàng">
+        <Form form={form} layout="vertical" onFinish={handleFinish}>
+          {isAdmin && (
+            <Form.Item 
+              name="staffId" label="Nhân viên" 
+              rules={[{ required: true, message: 'Vui lòng chọn nhân viên!' }]}
+            >
               <Select 
+                placeholder="Chọn nhân viên cần đăng ký nghỉ" 
                 showSearch 
-                placeholder="Chọn khách" 
-                allowClear
-                options={customerList.map(c => ({ label: c.fullName || c.userName, value: c.id }))}
-                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                optionFilterProp="label"
+                options={staffList.map(s => ({
+                  value: s.id || s.Id,
+                  label: s.fullName || s.FullName 
+                }))}
               />
-           </Form.Item>
-           <Form.Item name="serviceIds" label="Dịch vụ" rules={[{ required: true }]}>
-              <Select 
-                mode="multiple" 
-                placeholder="Chọn dịch vụ"
-                options={serviceList.map(s => ({ label: s.name || s.serviceName, value: s.id }))}
-              />
-           </Form.Item>
-           <Form.Item name="staffId" label="Nhân viên phụ trách">
-              <Select 
-                placeholder="Chọn nhân viên (Tùy chọn)" 
-                allowClear
-                options={availableStaffs.map(s => ({ label: s.fullName, value: s.id }))}
-              />
-           </Form.Item>
+            </Form.Item>
+          )}
+
+          <Form.Item name="date" label="Ngày nghỉ" rules={[{ required: true, message: 'Vui lòng chọn ngày!' }]}>
+            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+          </Form.Item>
+
+          <Form.Item name="reason" label="Lý do" rules={[{ required: true, message: 'Vui lòng nhập lý do!' }]}>
+            <Input.TextArea rows={3} placeholder="Ví dụ: Nghỉ việc gia đình..." />
+          </Form.Item>
         </Form>
       </Modal>
-
-      {/* DRAWER XEM CHI TIẾT */}
-      <Drawer
-        title={`Chi tiết lịch hẹn #${recordDetails?.id || ''}`}
-        placement="right"
-        width={450}
-        onClose={() => setIsDrawerOpen(false)}
-        open={isDrawerOpen}
-      >
-        {recordDetails && (
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            
-            {/* THÔNG TIN CHUNG */}
-            <Descriptions title="Thông tin chung" column={1} bordered size="small">
-              <Descriptions.Item label="Khách hàng">
-                <Text strong>{recordDetails.userName}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="Nhân viên phục vụ">
-                {recordDetails.staffName || 'Chưa phân công'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Ngày hẹn">
-                {dayjs(recordDetails.appointmentDate).format('DD/MM/YYYY')}
-              </Descriptions.Item>
-              <Descriptions.Item label="Khung giờ">
-                {recordDetails.timeRange}
-              </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái">
-                <Tag color={recordDetails.appointmentStatus === 'Completed' ? 'success' : recordDetails.appointmentStatus === 'Pending' ? 'warning' : 'processing'}>
-                  {recordDetails.appointmentStatus}
-                </Tag>
-              </Descriptions.Item>
-            </Descriptions>
-
-            {/* DANH SÁCH DỊCH VỤ */}
-            <div>
-              <Title level={5}>Dịch vụ đã chọn</Title>
-              <List
-                size="small"
-                bordered
-                dataSource={recordDetails.appointmentServices || []}
-                renderItem={(item) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      title={item.serviceName}
-                      description={`Thời gian: ${item.durationAtBooking} phút`}
-                    />
-                    <Text strong>{formatCurrency(item.priceAtBooking)}</Text>
-                  </List.Item>
-                )}
-              />
-              <div style={{ textAlign: 'right', marginTop: '16px' }}>
-                <Text>Tổng cộng: </Text>
-                <Title level={4} type="danger" style={{ display: 'inline', margin: 0 }}>
-                  {formatCurrency(recordDetails.totalPrice)}
-                </Title>
-              </div>
-            </div>
-
-          </Space>
-        )}
-      </Drawer>
     </Card>
   );
 };
 
-export default AppointmentManager;
+export default StaffDayOffManager;
