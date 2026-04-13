@@ -1,64 +1,63 @@
-// src/api/appointmentApi.js
 import axiosClient from './axiosClient'; // Giả định bạn đang dùng file config axios này
-import { cleanParams } from '../utils/apiHelper';
+import { cleanParams } from '../utils/apiHelper'; // Hàm này sẽ loại bỏ các trường có giá trị null hoặc undefined khỏi params
 
 const appointmentApi = {
-  // GET: /api/Appointment?pageNumber=1&pageSize=10&... (Dùng cho Admin/Staff/Customer với các filter khác nhau)
+  // GET: /Appointment?pageNumber=1&pageSize=10&... (Dùng cho Admin/Staff/Customer với các filter khác nhau)
   getAll: (params) => {
     const cleaned = cleanParams(params);
-    return axiosClient.get('/api/Appointment', { params: cleaned });
+    return axiosClient.get('/Appointment', { params: cleaned });
   },
 
-  // GET: /api/Appointment/{id}
+  // GET: /Appointment/{id}
   getById: (id) => {
-    return axiosClient.get(`/api/Appointment/${id}`);
+    return axiosClient.get(`/Appointment/${id}`);
   },
-  // GetMySchedule: /api/Appointment/my-schedule?staffId=123&date=2024-07-01 (Dành cho Staff)
+  // GetMySchedule: /Appointment/my-schedule?staffId=123&date=2024-07-01 (Dành cho Staff)
   getMySchedule: (params) => {
     const cleaned = cleanParams(params);
-    return axiosClient.get('/api/Appointment/my-schedule', { params: cleaned });
+    return axiosClient.get('/Appointment/my-schedule', { params: cleaned });
   },
-  // GET: /api/Appointment/my-bookings?customerId=123&pageNumber=1&pageSize=10 (Dành cho Customer)
+  // GET: /Appointment/my-bookings?customerId=123&pageNumber=1&pageSize=10 (Dành cho Customer)
   getMyAppointments: (params) => {
     const cleaned = cleanParams(params);
-    return axiosClient.get('/api/Appointment/my-bookings', { params: cleaned });
+    return axiosClient.get('/Appointment/my-bookings', { params: cleaned });
   },
 
-  // POST: /api/Appointment/admin
+  // POST: /Appointment/admin
   createByAdmin: (data) => {
-    return axiosClient.post('/api/Appointment/admin', data);
+    return axiosClient.post('/Appointment/admin', data);
   },
-  // POST: /api/Appointment/customer
+  // POST: /Appointment/customer
     createByCustomer: (data) => {
-    return axiosClient.post('/api/Appointment/customer', data);
+    return axiosClient.post('/Appointment/customer', data);
     },
 
-  // PUT: /api/Appointment/admin/{id}
+  // PUT: /Appointment/admin/{id}
   update: (id, data) => {
-    return axiosClient.put(`/api/Appointment/admin/${id}`, data);
+    return axiosClient.put(`/Appointment/admin/${id}`, data);
   },
 
-  // PATCH: /api/Appointment/{id}/status (Dành cho Admin)
+  // PATCH: /Appointment/{id}/status (Dành cho Admin)
   // Lưu ý: C# nhận [FromBody] AppointmentStatus (Enum), ta gửi thẳng giá trị lên
   updateStatus: (id, status) => {
-    return axiosClient.patch(`/api/Appointment/${id}/status`, status, {
+    return axiosClient.patch(`/Appointment/${id}/status`, status, {
       headers: { 'Content-Type': 'application/json' }
     });
   },
-  //PATCH: /api/Appointment/{id}/status/staff (Dành cho Staff)
+  //PATCH: /Appointment/{id}/status/staff (Dành cho Staff)
   updateStatusByStaff: (id, status) => {
-    return axiosClient.patch(`/api/Appointment/${id}/status/staff`, status, {
+    return axiosClient.patch(`/Appointment/${id}/status/staff`, status, {
       headers: { 'Content-Type': 'application/json' }
     });
   },
 
-  // DELETE: /api/Appointment/{id}
+  // DELETE: /Appointment/{id}
   delete: (id) => {
-    return axiosClient.delete(`/api/Appointment/${id}`);
+    return axiosClient.delete(`/Appointment/${id}`);
   },
-  //DELETE: /api/Appointment/customer/{id} (Dành cho Customer)
+  //DELETE: /Appointment/customer/{id} (Dành cho Customer)
   cancelByCustomer: (id) => {
-    return axiosClient.delete(`/api/Appointment/${id}/cancel`);
+    return axiosClient.delete(`/Appointment/${id}/cancel`);
   }
 };
 

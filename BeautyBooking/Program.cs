@@ -21,7 +21,7 @@ builder.Services.AddHttpContextAccessor();
 //Connect to DB
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString, o => o.UseCompatibilityLevel(120)).UseSnakeCaseNamingConvention()
+    options.UseSqlServer(connectionString).UseSnakeCaseNamingConvention()
 );
 // DbContext infrastructure layer uses ApplicationDbContext, so we need to register it as well
 builder.Services.AddScoped<DbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());

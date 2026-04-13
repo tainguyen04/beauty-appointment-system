@@ -18,7 +18,12 @@ const staffApi = {
   delete: (id) => axiosClient.delete(`/StaffProfile/${id}`),
   
   // Các API bổ trợ
-  getAvailable: (params) => axiosClient.get('/StaffProfile/available', { params: cleanParams(params) }),
+  getAvailable: (params) => {
+    return axiosClient.get('/StaffProfile/available', { 
+      params: cleanParams(params), 
+      paramsSerializer: { indexes: null } 
+    });
+  },
   getByService: (serviceId) => axiosClient.get(`/StaffProfile/service/${serviceId}`),
   // Thêm hàm này vào object staffApi
   assignServices: (id, serviceIds) => {
