@@ -49,6 +49,14 @@ namespace BeautyBooking.Repository
                 ((startTime < a.EndTime && endTime > a.StartTime) && (!excludeId.HasValue || a.Id != excludeId.Value)) &&
                 !a.IsDeleted);
         }
+        public async Task<bool> HasAnyAppointmentsAsync(int staffId, DateOnly date)
+        {
+            return await _entities.AnyAsync(a =>
+                a.StaffId == staffId &&
+                a.AppointmentDate == date &&
+                a.AppointmentStatus != AppointmentStatus.Cancelled &&
+                !a.IsDeleted);
+        }
         public async Task<Appointment?> GetDetailedByIdAsync(int id)
         {
             return await _entities

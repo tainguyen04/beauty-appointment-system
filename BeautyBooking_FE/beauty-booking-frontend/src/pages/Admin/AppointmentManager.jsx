@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { 
   Table, Tag, Button, Space, Modal, Card, Typography, Drawer, 
-  Descriptions, Select, Dropdown, Form, Row, Col, DatePicker, List, TimePicker, Spin, message
+  Descriptions, Select, Dropdown, Form, Row, Col, DatePicker, List, TimePicker, Spin, message, Alert
 } from 'antd';
 import { 
   EyeOutlined, EditOutlined, DeleteOutlined, 
@@ -15,13 +15,17 @@ import { useApiAction } from '../../hooks/useApiAction';
 import appointmentApi from '../../api/appointmentApi';
 import staffApi from '../../api/staffApi'; 
 import userApi from '../../api/userApi'; 
-import serviceApi from '../../api/serviceApi'; // <-- THÊM API lấy danh sách Dịch vụ chung
+import serviceApi from '../../api/serviceApi';
 
 // --- Imports Helpers ---
 import { convertMinutesToTimeStr, convertDayjsToMinutes } from '../../utils/apiHelper'; 
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+};
 
 const AppointmentManager = () => {
   // --- States Modal & Drawer ---
@@ -35,10 +39,13 @@ const AppointmentManager = () => {
   
   // --- States Lists ---
   const [customerList, setCustomerList] = useState([]); 
-  const [serviceList, setServiceList] = useState([]); // State lưu toàn bộ dịch vụ
-  const [availableStaffs, setAvailableStaffs] = useState([]); // State lưu nhân viên rảnh
+  const [serviceList, setServiceList] = useState([]); 
+  const [availableStaffs, setAvailableStaffs] = useState([]); 
   
+  // --- States Loading & Calculation ---
   const [loadingStaffData, setLoadingStaffData] = useState(false);
+  const [calculatingTotal, setCalculatingTotal] = useState(false);
+  const [estimatedTotal, setEstimatedTotal] = useState(0); // <-- State lưu tổng tiền
 
   const [form] = Form.useForm();
   const [statusForm] = Form.useForm();
@@ -57,56 +64,71 @@ const AppointmentManager = () => {
 
   const fetchData = useCallback(() => { runFetch(); }, [runFetch]);
   
-  // Load dữ liệu bảng và các Dropdown khi mở trang
   useEffect(() => { 
     fetchData(); 
     fetchInitialData(); 
   }, [fetchData]);
 
-  // --- Hàm lấy danh sách Customer & Services ---
   const fetchInitialData = async () => {
     try {
       const [userRes, serviceRes] = await Promise.all([
         userApi.getAll(),
-        serviceApi.getAll() // Lấy toàn bộ dịch vụ của hệ thống
+        serviceApi.getAll() 
       ]);
       
-      const allUsers = userRes?.items || userRes || [];
+      const allUsers = userRes?.items || userRes?.data || userRes || [];
       const customers = allUsers.filter(u => u.role === 'Customer' || u.roleName === 'Customer'); 
       setCustomerList(customers);
 
-      setServiceList(serviceRes?.items || serviceRes || []);
+      setServiceList(serviceRes?.items || serviceRes?.data || serviceRes || []);
     } catch (error) {
       console.error("Lỗi lấy dữ liệu ban đầu:", error);
     }
   };
 
-  // --- Lắng nghe thay đổi Ngày/Giờ để gọi API getAvailable ---
+  // --- Lắng nghe thay đổi Form ---
   const handleValuesChange = async (changedValues, allValues) => {
-    // Nếu có sự thay đổi ở Ngày, Giờ bắt đầu hoặc Giờ kết thúc
+    // 1. XỬ LÝ TỔNG TIỀN KHI CHỌN DỊCH VỤ
+    if (changedValues.serviceIds) {
+      const { serviceIds } = allValues;
+      if (serviceIds && serviceIds.length > 0) {
+        setCalculatingTotal(true);
+        try {
+          // Gọi API tính tổng tiền. (Lưu ý: Truyền payload theo đúng cấu trúc BE của bạn)
+          const res = await serviceApi.calculateTotal(serviceIds);
+          // Gán kết quả (Tùy thuộc BE trả về số trực tiếp hay object { total: ... })
+          setEstimatedTotal(res?.totalPrice ?? res?.total ?? res?.data ?? res ?? 0);
+        } catch (error) {
+          console.error("Lỗi tính tổng tiền:", error);
+          setEstimatedTotal(0);
+        } finally {
+          setCalculatingTotal(false);
+        }
+      } else {
+        setEstimatedTotal(0);
+      }
+    }
+
+    // 2. XỬ LÝ TÌM NHÂN VIÊN KHI ĐỔI THỜI GIAN
     if (changedValues.appointmentDate || changedValues.startTime || changedValues.endTime) {
       const { appointmentDate, startTime, endTime } = allValues;
-
-      // Xóa nhân viên đang chọn vì thời gian đã đổi
       form.setFieldsValue({ staffId: null });
 
-      // Chỉ gọi API khi đã điền đủ 3 field thời gian
       if (appointmentDate && startTime && endTime) {
         const dateStr = appointmentDate.format('YYYY-MM-DD');
         const startMin = convertDayjsToMinutes(startTime);
         const endMin = convertDayjsToMinutes(endTime);
 
         if (startMin >= endMin) {
-          message.warning("Giờ kết thúc phải lớn hơn giờ bắt đầu!");
+          message.warning("Giờ kết thúc phải sau giờ bắt đầu!");
           setAvailableStaffs([]);
           return;
         }
 
         setLoadingStaffData(true);
         try {
-          // Gọi API getAvailable theo cấu trúc bạn cung cấp
           const res = await staffApi.getAvailable(dateStr, startMin, endMin);
-          const staffs = res?.items || res || [];
+          const staffs = res?.items || res?.data || res || [];
           setAvailableStaffs(staffs);
 
           if (staffs.length === 0) {
@@ -114,13 +136,11 @@ const AppointmentManager = () => {
           }
         } catch (error) {
           console.error("Lỗi tìm nhân viên:", error);
-          message.error("Lỗi khi tìm kiếm nhân viên rảnh.");
           setAvailableStaffs([]);
         } finally {
           setLoadingStaffData(false);
         }
       } else {
-        // Nếu chưa điền đủ thì xóa list nhân viên
         setAvailableStaffs([]);
       }
     }
@@ -132,6 +152,7 @@ const AppointmentManager = () => {
     setSelectedAppointment(null);
     form.resetFields();
     setAvailableStaffs([]);
+    setEstimatedTotal(0);
     setIsModalOpen(true);
   };
 
@@ -141,10 +162,10 @@ const AppointmentManager = () => {
     
     const startTimeStr = convertMinutesToTimeStr(record.startTime); 
     const startTimeObj = startTimeStr ? dayjs().startOf('day').add(record.startTime, 'minute') : null;
-
-    // Giả sử record.endTime có tồn tại, nếu BE chỉ trả về duration thì bạn tự cộng thêm nhé
     const endTimeStr = record.endTime ? convertMinutesToTimeStr(record.endTime) : null;
     const endTimeObj = endTimeStr ? dayjs().startOf('day').add(record.endTime, 'minute') : null;
+
+    setEstimatedTotal(record.totalPrice || 0);
 
     form.setFieldsValue({
       userId: record.userId,
@@ -154,20 +175,16 @@ const AppointmentManager = () => {
       serviceIds: record.appointmentServices?.map(s => s.serviceId) || [] 
     });
 
-    // Mẹo: Khi mở Edit, bạn có thể gọi luôn getAvailable để load danh sách có chứa staff hiện tại
     if (record.appointmentDate && record.startTime && record.endTime) {
-       // Code gọi nhanh API ở đây (hoặc kích hoạt qua onValuesChange)
        staffApi.getAvailable(
          dayjs(record.appointmentDate).format('YYYY-MM-DD'), 
          record.startTime, 
          record.endTime
        ).then(res => {
-         setAvailableStaffs(res?.items || res || []);
-         // Set staff sau khi đã load xong danh sách
+         setAvailableStaffs(res?.items || res?.data || res || []);
          form.setFieldsValue({ staffId: record.staffId });
        });
     } else {
-       // Fallback nếu thiếu thời gian kết thúc
        form.setFieldsValue({ staffId: record.staffId });
     }
     
@@ -180,9 +197,9 @@ const AppointmentManager = () => {
       staffId: Number(values.staffId),
       appointmentDate: values.appointmentDate ? values.appointmentDate.format('YYYY-MM-DD') : null,
       startTime: convertDayjsToMinutes(values.startTime), 
-      // Gửi kèm endTime nếu backend cần (bạn có thể xóa dòng dưới nếu BE C# không nhận biến này)
       endTime: convertDayjsToMinutes(values.endTime), 
-      serviceIds: values.serviceIds || []
+      serviceIds: values.serviceIds || [],
+      totalPrice: estimatedTotal // Gửi kèm tổng tiền nếu BE yêu cầu
     };
 
     let apiCall = isEdit 
@@ -198,7 +215,7 @@ const AppointmentManager = () => {
     }
   };
 
-  // --- Handlers: Trạng thái & Chi tiết (Giữ nguyên) ---
+  // --- Handlers: Trạng thái & Chi tiết ---
   const handleOpenUpdateStatus = (record) => {
     setSelectedAppointment(record);
     statusForm.setFieldsValue({ status: record.appointmentStatus });
@@ -231,7 +248,7 @@ const AppointmentManager = () => {
     }
   };
 
-  // --- Columns Definition (Giữ nguyên) ---
+  // --- Columns Definition ---
   const columns = [
     { title: 'Mã LH', dataIndex: 'id', width: 80 },
     { title: 'Khách hàng', dataIndex: 'userName', render: (text) => <Text strong>{text || 'N/A'}</Text> },
@@ -263,7 +280,7 @@ const AppointmentManager = () => {
       dataIndex: 'totalPrice',
       render: (price) => (
         <Text type="success" strong>
-          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)}
+          {formatCurrency(price)}
         </Text>
       )
     },
@@ -315,6 +332,9 @@ const AppointmentManager = () => {
     }
   ];
 
+  // Khắc phục lỗi Data Source không map đúng chuẩn mảng
+  const tableDataSource = Array.isArray(data) ? data : (data?.items || data?.data || []);
+
   return (
     <Card bordered={false}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -342,7 +362,7 @@ const AppointmentManager = () => {
 
       <Table
         columns={columns}
-        dataSource={data}
+        dataSource={tableDataSource} // <-- SỬ DỤNG MẢNG ĐÃ PARSE CHUẨN
         loading={loading}
         pagination={pagination ? { ...pagination, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] } : { current: 1, pageSize: 10, total: 0 }} 
         onChange={handleTableChange}
@@ -364,7 +384,7 @@ const AppointmentManager = () => {
           form={form} 
           layout="vertical" 
           onFinish={handleSubmit}
-          onValuesChange={handleValuesChange} // Lắng nghe sự thay đổi của Form
+          onValuesChange={handleValuesChange}
         >
           <Row gutter={16}>
             <Col span={24}>
@@ -402,6 +422,23 @@ const AppointmentManager = () => {
                   ))}
                 </Select>
               </Form.Item>
+            </Col>
+          </Row>
+
+          {/* HIỂN THỊ TỔNG TIỀN DỰ KIẾN */}
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            <Col span={24}>
+              <Spin spinning={calculatingTotal} size="small">
+                <Alert 
+                  message={
+                    <Text strong>
+                      Tổng tiền dự kiến: <span style={{ color: '#52c41a', fontSize: '16px' }}>{formatCurrency(estimatedTotal)}</span>
+                    </Text>
+                  } 
+                  type="success" 
+                  showIcon 
+                />
+              </Spin>
             </Col>
           </Row>
 
@@ -518,7 +555,7 @@ const AppointmentManager = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Tổng tiền">
                 <Text type="success" strong>
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(selectedAppointment?.totalPrice || 0)}
+                  {formatCurrency(selectedAppointment?.totalPrice)}
                 </Text>
               </Descriptions.Item>
             </Descriptions>
@@ -534,7 +571,7 @@ const AppointmentManager = () => {
                     description={`Thời lượng: ${item.durationAtBooking} phút`}
                   />
                   <Text strong>
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.priceAtBooking)}
+                    {formatCurrency(item.priceAtBooking)}
                   </Text>
                 </List.Item>
               )}
