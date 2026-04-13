@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
 {
-    public class BookingService : IBookingService
+    public class AppointmentService : IAppointmentService
     {
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IStaffDayOffRepository _staffDayOffRepository;
@@ -22,7 +22,7 @@ namespace BeautyBooking.Services
         private readonly IWorkScheduleRepository _workScheduleRepository;
         private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
-        public BookingService(IAppointmentRepository appointmentRepository,
+        public AppointmentService(IAppointmentRepository appointmentRepository,
             IMapper mapper, IStaffDayOffRepository staffDayOffRepository, IServiceRepository serviceRepository, 
             IStaffProfileRepository staffProfileRepository, 
             ICurrentUserService currentUserService, IWorkScheduleRepository workScheduleRepository)
@@ -113,12 +113,6 @@ namespace BeautyBooking.Services
 
             await _appointmentRepository.SaveChangesAsync();
             return true;
-        }
-
-        public async Task<PagedResult<AppointmentResponse>> GetAllWithDetailedAsync(int pageNumber, int pageSize)
-        {
-            var pagedAppointments = await _appointmentRepository.GetPagedAsync(pageNumber, pageSize);
-            return pagedAppointments.ToPagedResult<Appointment, AppointmentResponse>(_mapper);
         }
 
         public async Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(AppointmentFilter filter)
@@ -225,10 +219,28 @@ namespace BeautyBooking.Services
 
         public async Task<bool> UpdateStatusAsync(int id, AppointmentStatus status)
         {
+            var userRole = _currentUserService.Role;
             var appointment = await _appointmentRepository.GetByIdAsync(id);
             if (appointment == null)
-                return false;
-            appointment.AppointmentStatus = status;
+                throw new Exception("Không tìm thấy lịch hẹn");
+            if (appointment.AppointmentStatus == AppointmentStatus.Cancelled)
+                throw new InvalidOperationException("Không thể cập nhật lịch bị hủy.");
+            if (userRole == UserRole.Admin)
+            {
+                // Admin có thể cập nhật tất cả lịch hẹn
+                appointment.AppointmentStatus = status;
+            }
+            else if (userRole == UserRole.Staff)
+            {
+                if (appointment.StaffId != _currentUserService.StaffId)
+                    throw new UnauthorizedAccessException("Bạn không có quyền cập nhật lịch hẹn này.");
+                appointment.AppointmentStatus = status;
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Bạn không có quyền cập nhật lịch hẹn này.");
+            }
+
             await _appointmentRepository.SaveChangesAsync();
             return true;
         }
@@ -256,13 +268,13 @@ namespace BeautyBooking.Services
             appointment.EndTime = appointment.StartTime + totalDuration;
             appointment.TotalPrice = serviceList.Sum(s => s.Price);
             if(appointment.AppointmentServices == null)
-                appointment.AppointmentServices = new List<AppointmentService>();
+                appointment.AppointmentServices = new List<Entities.AppointmentService>();
             else
                 appointment.AppointmentServices.Clear();
 
             foreach (var service in serviceList)
             {
-                appointment.AppointmentServices.Add(new AppointmentService
+                appointment.AppointmentServices.Add(new Entities.AppointmentService
                 {
                     ServiceId = service.Id,
                     PriceAtBooking = service.Price,

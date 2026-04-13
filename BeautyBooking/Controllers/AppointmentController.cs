@@ -13,24 +13,16 @@ namespace BeautyBooking.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class BookingController : ControllerBase
+    public class AppointmentController : ControllerBase
     {
-        private readonly IBookingService _bookingService;
+        private readonly IAppointmentService _bookingService;
 
-        public BookingController(IBookingService bookingService)
+        public AppointmentController(IAppointmentService bookingService)
         {
             _bookingService = bookingService;
         }
 
-        //[HttpGet]
-        //[Authorize(Policy = "AdminOnly")]
-        //public async Task<ActionResult<PagedResult<AppointmentResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-        //{
-        //    var appointments = await _bookingService.GetAllWithDetailedAsync(pageNumber,pageSize);
-        //    return Ok(appointments);
-        //}
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> GetAll([FromQuery] AppointmentFilter filter)
         {
             var appointments = await _bookingService.GetAppointmentsAsync(filter);
@@ -90,20 +82,13 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpPatch("{id}/status")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "StaffOrAdmin")]
         public async Task<ActionResult> UpdateStatus(int id, [FromBody] AppointmentStatus status)
         {
             await _bookingService.UpdateStatusAsync(id, status);
             return NoContent();
         }
 
-        [HttpPatch("{id}/status/staff")]
-        [Authorize(Policy = "StaffOnly")]
-        public async Task<ActionResult> UpdateStatusByStaff(int id, [FromBody] AppointmentStatus status)
-        {
-            await _bookingService.UpdateStatusByStaffAsync(id, status);
-            return NoContent();
-        }
 
         [HttpDelete("{id}")]
         [Authorize(Policy = "AdminOnly")]

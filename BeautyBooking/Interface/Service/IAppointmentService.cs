@@ -5,14 +5,11 @@ using BeautyBooking.Entities;
 
 namespace BeautyBooking.Interface.Service
 {
-    public interface IBookingService
+    public interface IAppointmentService
     {
         //Admin
-        Task<PagedResult<AppointmentResponse>> GetAllWithDetailedAsync(int pageNumber, int pageSize);
         Task<int> CreateAppointmentByAdminAsync(CreateAppointmentRequest request);
         Task<bool> UpdateAppointmentAsync(int id, UpdateAppointmentRequest request);
-        Task<bool> UpdateStatusAsync(int id, AppointmentStatus status);
-        
         Task<bool> DeleteAppointmentAsync(int id);
         //User
 
@@ -23,8 +20,10 @@ namespace BeautyBooking.Interface.Service
         //Staff
 
         Task<IEnumerable<AppointmentResponse>> GetMyScheduleAsync(DateOnly date);
-        
-        Task<bool> UpdateStatusByStaffAsync(int id, AppointmentStatus status);
+        //Admin,Staff
+        Task<bool> UpdateStatusAsync(int id, AppointmentStatus status);
+
+
         //Common
         Task<AppointmentResponse?> GetByIdWithDetailsAsync(int id);
         Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(AppointmentFilter filter);
