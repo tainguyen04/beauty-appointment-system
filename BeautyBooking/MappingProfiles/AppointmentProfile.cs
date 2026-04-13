@@ -13,7 +13,7 @@ namespace BeautyBooking.MappingProfiles
             CreateMap<Appointment, AppointmentResponse>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
                 .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff.User.FullName))
-                .ForMember(dest => dest.AppointmentStatus, opt => opt.MapFrom(src => src.AppointmentStatus.ToString()))
+                .ForMember(dest => dest.AppointmentStatus, opt => opt.MapFrom(src => src.AppointmentStatus))
                 .ForMember(dest => dest.TimeRange, opt => opt.MapFrom(src => TimeHelper.FormatToTimeRange(src.StartTime, src.EndTime)))
                 .ForMember(dest => dest.AppointmentServices, opt => opt.MapFrom(src => src.AppointmentServices));
                 
