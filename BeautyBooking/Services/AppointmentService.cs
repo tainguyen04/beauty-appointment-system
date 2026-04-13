@@ -55,11 +55,13 @@ namespace BeautyBooking.Services
 
         public async Task<int> CreateAppointmentByAdminAsync(CreateAppointmentRequest request)
         {
-            var services = (await _serviceRepository.GetRangeByIdsAsync(request.ServiceIds)).ToList();
-            if (services.Count() != request.ServiceIds.Distinct().ToList().Count())
-                throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
-            if (services == null || !services.Any())
+            if (request.ServiceIds == null || !request.ServiceIds.Any())
                 throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
+            var services = (await _serviceRepository.GetRangeByIdsAsync(request.ServiceIds)).ToList();
+            var distinctServiceIds = request.ServiceIds.Distinct().ToList();
+
+            if (services.Count() != distinctServiceIds.Count())
+                throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
 
             var appointment = _mapper.Map<Appointment>(request);
             appointment.AppointmentStatus = AppointmentStatus.Confirmed;

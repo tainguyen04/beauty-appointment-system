@@ -10,7 +10,6 @@ namespace BeautyBooking.Interface.Service
         Task<int> CreateAsync(CreateWorkScheduleRequest request);
         Task<bool> UpdateAsync(int id, UpdateWorkScheduleRequest request);
         Task<bool> DeleteAsync(int id);
-        Task<PagedResult<WorkScheduleResponse>> GetAllAsync(int pageNumber, int pageSize);
         Task<WorkScheduleResponse?> GetDetailedByIdAsync(int id);
         Task<IEnumerable<WorkScheduleResponse>> GetMyScheduleAsync();
         Task<IEnumerable<WorkScheduleResponse>> GetByStaffIdAsync(int staffId);

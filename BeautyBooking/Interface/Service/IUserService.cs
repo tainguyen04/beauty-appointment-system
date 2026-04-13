@@ -8,7 +8,6 @@ namespace BeautyBooking.Interface.Service
     public interface IUserService
     {
         //Admin
-        Task<PagedResult<UserResponse>> GetAllAsync(int pageNumber, int pageSize);
         Task<PagedResult<UserResponse>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize);
         Task<UserResponse?> GetByIdAsync(int id);
         Task<bool> BlockAccountAsync(int id);

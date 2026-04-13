@@ -38,11 +38,6 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<IEnumerable<CategoryResponse>> GetAllAsync()
-        {
-            return _mapper.Map<IEnumerable<CategoryResponse>>(await _categoryRepository.GetAllAsync());
-        }
-
         public async Task<CategoryResponse?> GetByIdAsync(int id)
         {
             var category = await _categoryRepository.GetByIdAsync(id);

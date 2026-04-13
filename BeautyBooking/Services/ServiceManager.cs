@@ -66,12 +66,6 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<PagedResult<ServiceResponse>> GetAllAsync(int pageNumber, int pageSize)
-        {
-            var pagedServices = await _serviceRepo.GetPagedWithCategoryAsync(pageNumber, pageSize);
-            return pagedServices.ToPagedResult<Service, ServiceResponse>(_mapper);
-        }
-
         public async Task<IEnumerable<ServiceResponse>> GetByCategoryIdAsync(int categoryId)
         {
             var services = await _serviceRepo.GetByCategoryIdAsync(categoryId);

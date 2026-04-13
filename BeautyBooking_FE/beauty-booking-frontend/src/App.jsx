@@ -12,6 +12,7 @@ import StaffManager from './pages/Admin/StaffManager';
 import Profile from './pages/Admin/Profile';
 import StaffDayOffManager from './pages/Admin/StaffDayOffManager';
 import WorkScheduleManager from './pages/Admin/WorkScheduleManager';
+import AppointmentManager from './pages/Admin/AppointmentManager';
 // 1. Import ProtectedRoute vừa tạo
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -41,7 +42,7 @@ function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="day-offs" element={<StaffDayOffManager />} />
             <Route path="work-schedules" element={<WorkScheduleManager />} />
-
+            <Route path="appointments" element={<AppointmentManager />} />
           </Route>
         </Route>
         

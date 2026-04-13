@@ -13,25 +13,7 @@ const { Text } = Typography;
 
 const menuItems = [
   { key: '/admin', icon: <DashboardOutlined />, label: 'Dashboard' },
-  {
-    key: 'sub-services',
-    icon: <CustomerServiceOutlined />,
-    label: 'Quản lý Dịch vụ',
-    children: [
-      { key: '/admin/categories', icon: <TagsOutlined />, label: 'Danh mục' },
-      { key: '/admin/services', icon: <AppstoreAddOutlined />, label: 'Dịch vụ' },
-    ],
-  },
   { key: '/admin/appointments', icon: <CalendarOutlined />, label: 'Quản lý Lịch hẹn' },
-  {
-    key: 'sub-users',
-    icon: <TeamOutlined />,
-    label: 'Quản lý Tài khoản',
-    children: [
-      { key: '/admin/users', icon: <UserOutlined />, label: 'Khách hàng' },
-      { key: '/admin/staffs', icon: <IdcardOutlined />, label: 'Nhân viên' },
-    ],
-  },
   {
     key: 'sub-scheduling',
     icon: <CalendarOutlined />,
@@ -47,6 +29,24 @@ const menuItems = [
         icon: <CoffeeOutlined />, // Icon mang tính chất nghỉ ngơi/thư giãn
         label: 'Nghỉ phép' 
       },
+    ],
+  },
+  {
+    key: 'sub-services',
+    icon: <CustomerServiceOutlined />,
+    label: 'Quản lý Dịch vụ',
+    children: [
+      { key: '/admin/categories', icon: <TagsOutlined />, label: 'Danh mục' },
+      { key: '/admin/services', icon: <AppstoreAddOutlined />, label: 'Dịch vụ' },
+    ],
+  },
+  {
+    key: 'sub-users',
+    icon: <TeamOutlined />,
+    label: 'Quản lý Tài khoản',
+    children: [
+      { key: '/admin/users', icon: <UserOutlined />, label: 'Khách hàng' },
+      { key: '/admin/staffs', icon: <IdcardOutlined />, label: 'Nhân viên' },
     ],
   },
 ];

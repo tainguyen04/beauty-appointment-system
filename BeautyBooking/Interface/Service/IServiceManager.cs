@@ -6,7 +6,6 @@ namespace BeautyBooking.Interface.Service
 {
     public interface IServiceManager
     {
-        Task<PagedResult<ServiceResponse>> GetAllAsync(int pageNumber, int pageSize);
         Task<ServiceResponse?> GetByIdAsync(int id);
         Task<IEnumerable<ServiceResponse>> GetByStaffIdAsync(int staffId);
         Task<IEnumerable<ServiceResponse>> GetByCategoryIdAsync(int categoryId);

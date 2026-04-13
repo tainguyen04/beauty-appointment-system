@@ -109,12 +109,6 @@ namespace BeautyBooking.Services
 
         }
 
-        public async Task<PagedResult<WorkScheduleResponse>> GetAllAsync(int pageNumber, int pageSize)
-        {
-            var schedules = await _workScheduleRepository.GetPagedSchedulesAsync(pageNumber, pageSize);
-            return schedules.ToPagedResult<WorkSchedule, WorkScheduleResponse>(_mapper);
-        }
-
         public async Task<IEnumerable<WorkScheduleResponse>> GetByStaffIdAsync(int staffId)
         {
             var staff = await _staffProfileRepository.GetByIdAsync(staffId);

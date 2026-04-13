@@ -6,7 +6,6 @@ namespace BeautyBooking.Interface.Service
 {
     public interface IStaffProfileService
     {
-        Task<PagedResult<StaffProfileResponse>> GetAllAsync(int pageNumber, int pageSize);
         Task<StaffProfileResponse?> GetByIdAsync(int id);
         Task<StaffProfileResponse?> GetByUserIdAsync(int userId);
         Task<StaffProfileResponse?> GetMyProfileAsync();

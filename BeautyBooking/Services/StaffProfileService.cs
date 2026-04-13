@@ -92,11 +92,6 @@ namespace BeautyBooking.Services
             await _staffProfileRepository.SaveChangesAsync();
             return true;
         }
-        public async Task<PagedResult<StaffProfileResponse>> GetAllAsync(int pageNumber, int pageSize)
-        {
-            var pagedStaffProfiles = await _staffProfileRepository.GetPagedWithUserAndServicesAsync(pageNumber, pageSize);
-            return pagedStaffProfiles.ToPagedResult<StaffProfile, StaffProfileResponse>(_mapper);
-        }
 
         public async Task<IEnumerable<StaffProfileResponse>> GetAvailableAsync(DateOnly date, int startTime, int endTime)
         {
