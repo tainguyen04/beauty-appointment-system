@@ -5,12 +5,13 @@ import {
   Dropdown, Form, Row, Col, Upload
 } from 'antd';
 import { 
-  UserOutlined, EyeOutlined, FilterOutlined, KeyOutlined, 
+  UserOutlined, EyeOutlined, KeyOutlined, 
   MoreOutlined, PlusOutlined, EditOutlined, UploadOutlined,
-  DeleteOutlined, StopOutlined, CheckCircleOutlined, UserSwitchOutlined // ĐÃ FIX: Thêm UserSwitchOutlined
+  DeleteOutlined, UserSwitchOutlined // ĐÃ FIX: Thêm UserSwitchOutlined
 } from '@ant-design/icons';
 import { usePagination } from '../../hooks/usePagination';
 import { useApiAction } from '../../hooks/useApiAction'; 
+import { USER_ROLE, getRoleConfig } from '../../utils/apiHelper';
 import userApi from '../../api/userApi';
 
 const { Title, Text } = Typography;
@@ -148,19 +149,10 @@ const UserManager = () => {
       // ĐÃ FIX: Chống sập Cell bằng Null Check
       render: (role) => {
         if (!role) return <Tag color="default">KHÔNG RÕ</Tag>;
-
-        const safeRole = String(role);
-        const roleConfig = {
-          Admin: { color: 'volcano', text: 'Quản trị viên' },
-          Staff: { color: 'blue', text: 'Nhân viên' },
-          Customer: { color: 'green', text: 'Khách hàng' }
-        };
-
-        const config = roleConfig[safeRole] || { color: 'default', text: safeRole };
-
+        const config = getRoleConfig(role);
         return (
           <Tag color={config.color} style={{ fontWeight: '500' }}>
-            {String(config.text).toUpperCase()}
+            {config.label?.toUpperCase()}
           </Tag>
         );
       }
@@ -237,9 +229,11 @@ const UserManager = () => {
             allowClear
             onChange={(val) => handleFilterChange({ Role: val })}
           >
-            <Option value="Customer">Khách hàng</Option>
-            <Option value="Staff">Nhân viên</Option>
-            <Option value="Admin">Quản trị viên</Option>
+            {USER_ROLE.map(role => (
+              <Option key={role.value} value={role.value}>
+                <Tag color={role.color}>{role.label}</Tag>
+              </Option>
+            ))} 
           </Select>
           <Input.Search 
             placeholder="Tìm kiếm..." 
@@ -303,24 +297,27 @@ const UserManager = () => {
             </Row>
           )}
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}>
-                <Select placeholder="Chọn vai trò">
-                  <Option value="Customer">Khách hàng</Option>
-                  <Option value="Staff">Nhân viên</Option>
-                  <Option value="Admin">Quản trị viên</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            {!isEdit && (
+          {!isEdit && (
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}>
+                  <Select placeholder="Chọn vai trò">
+                    {USER_ROLE.map(role => (
+                      <Option key={role.value} value={role.value}>
+                        <Tag color={role.color}>{role.label}</Tag>
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+
               <Col span={12}>
                 <Form.Item name="wardId" label="Mã vùng (WardId)">
                   <Input type="number" />
                 </Form.Item>
               </Col>
-            )}
-          </Row>
+            </Row>
+          )}
 
           {isEdit && (
             <Form.Item name="avatar" label="Thay đổi ảnh đại diện">
@@ -349,9 +346,11 @@ const UserManager = () => {
             rules={[{ required: true, message: 'Vui lòng chọn vai trò!' }]}
           >
             <Select placeholder="Chọn vai trò">
-              <Option value="Customer">Khách hàng</Option>
-              <Option value="Staff">Nhân viên</Option>
-              <Option value="Admin">Quản trị viên</Option>
+              {USER_ROLE.map(role => (
+                <Option key={role.value} value={role.value}>
+                  <Tag color={role.color}>{role.label}</Tag>
+                </Option>
+              ))}
             </Select>
           </Form.Item>
         </Form>
@@ -372,7 +371,11 @@ const UserManager = () => {
             <Descriptions.Item label="Họ tên">{selectedUser?.fullName}</Descriptions.Item>
             <Descriptions.Item label="Email">{selectedUser?.email}</Descriptions.Item>
             <Descriptions.Item label="SĐT">{selectedUser?.phone}</Descriptions.Item>
-            <Descriptions.Item label="Vai trò">{selectedUser?.role}</Descriptions.Item>
+            <Descriptions.Item label="Vai trò">
+              <Tag color={getRoleConfig(selectedUser?.role)?.color}>
+                {getRoleConfig(selectedUser?.role)?.label}
+              </Tag>
+            </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
               {selectedUser?.createdAt && new Date(selectedUser.createdAt).toLocaleDateString('vi-VN')}
             </Descriptions.Item>

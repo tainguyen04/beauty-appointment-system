@@ -234,7 +234,15 @@ const AppointmentManager = () => {
           return <Text>{rangeStr}</Text>;
         },
       },
-      { title: 'Tổng tiền', dataIndex: 'totalPrice', render: p => <Text type="success" strong>{formatCurrency(p)}</Text> },
+      { title: 'Tổng tiền', dataIndex: 'totalPrice',
+        render: (p) => (
+          <div style={{ textAlign: 'right', width: '100%' }}>
+            <Text type="success" strong>
+              {formatCurrency(p)}
+            </Text>
+          </div>
+          ) 
+      },
       { 
         title: 'Trạng thái', 
         dataIndex: 'appointmentStatus', 
@@ -307,13 +315,13 @@ const AppointmentManager = () => {
                 </div>
               }
             >
-              <li style={{ marginBottom: '2px', cursor: 'pointer' }}>
-                <Badge 
-                  status={config?.color || 'default'} 
-                  text={<span style={{ fontSize: '11px' }}>{convertMinutesToTimeStr(item.startTime)} - {item.userName || 'Khách'}</span>} 
-                  style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
-                />
-              </li>
+                <li style={{ marginBottom: '2px', cursor: 'pointer' }}>
+                  <Badge 
+                    status={config?.color || 'default'} 
+                    text={<span style={{ fontSize: '11px' }}>{convertMinutesToTimeStr(item.startTime)} - {item.userName || 'Khách'}</span>} 
+                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
+                  />
+                </li>
             </Popover>
           );
         })}

@@ -75,6 +75,20 @@ export const DAYS_OF_WEEK = [
   { value: 'Saturday', label: 'Thứ Bảy', color: 'orange' },
   { value: 'Sunday', label: 'Chủ Nhật', color: 'volcano' },
 ];
+// Danh sách các vai trò người dùng khớp với Enum của Backend
+export const USER_ROLE = [
+  { value: 'Admin', label: 'Quản trị viên', color: 'volcano' },
+  { value: 'Staff', label: 'Nhân viên', color: 'blue' },
+  { value: 'Customer', label: 'Khách hàng', color: 'green' },
+];
+
+export const getRoleConfig = (role) =>
+  USER_ROLE.find(r => r.value === role) || {
+    label: role,
+    color: 'default'
+  };
+
+
 /**
  * Danh sách các trạng thái cuộc hẹn khớp với Enum của Backend
  */

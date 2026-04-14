@@ -36,6 +36,7 @@ namespace BeautyBooking.MappingProfiles
                     // Map from UpdateUserRequest to User entity
                     CreateMap<UpdateUserRequest, User>()
                             .IgnoreAuditFields()
+                            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Name))
                             .ForMember(dest => dest.Role, opt => opt.Ignore())
                             .ForMember(dest => dest.Ward, opt => opt.Ignore())
                             .ForMember(dest => dest.AvatarUrl, opt => opt.Ignore())

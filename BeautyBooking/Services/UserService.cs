@@ -269,7 +269,6 @@ namespace BeautyBooking.Services
             if(user == null || user.IsDeleted)
                 throw new KeyNotFoundException("Tài khoản không tồn tại.");
             _mapper.Map(request, user);
-            string? oldAvatarPublicId = user.AvatarPublicId;
             string? newAvatarPublicId = null;
             if (request.AvatarUrl != null)
             {
