@@ -4,7 +4,7 @@ import {
   DashboardOutlined, UserOutlined, TeamOutlined, IdcardOutlined,
   CalendarOutlined, LogoutOutlined, DownOutlined, SettingOutlined,
   CustomerServiceOutlined, EnvironmentOutlined, AppstoreOutlined,ScheduleOutlined, CoffeeOutlined
-  ,ScissorOutlined 
+  ,ScissorOutlined ,TagOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import authApi from '../api/AuthApi';
