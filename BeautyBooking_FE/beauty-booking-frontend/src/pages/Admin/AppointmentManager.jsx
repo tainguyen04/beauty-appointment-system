@@ -18,7 +18,7 @@ import appointmentApi from '../../api/appointmentApi';
 import staffApi from '../../api/staffApi'; 
 import userApi from '../../api/userApi'; 
 import serviceApi from '../../api/serviceApi';
-import { convertMinutesToTimeStr, convertDayjsToMinutes } from '../../utils/apiHelper'; 
+import { convertMinutesToTimeStr, convertDayjsToMinutes, APPOINTMENT_STATUS, getStatusConfig } from '../../utils/apiHelper'; 
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -240,13 +240,8 @@ const AppointmentManager = () => {
         dataIndex: 'appointmentStatus', 
         align: 'center',
         render: (status) => {
-          const config = {
-            Pending: { color: 'warning', text: 'Pending' },
-            Confirmed: { color: 'processing', text: 'Confirmed' },
-            Completed: { color: 'success', text: 'Completed' },
-            Cancelled: { color: 'error', text: 'Cancelled' },
-          }[status] || { color: 'default', text: status };
-          return <Tag color={config.color}>{config.text}</Tag>;
+          const config = getStatusConfig(status);
+          return <Tag color={config?.color}>{config?.label || status}</Tag>;
         } 
       }
     ];
@@ -266,12 +261,12 @@ const AppointmentManager = () => {
           { type: 'divider' },
           { 
             key: 'status', label: 'Đổi trạng thái', icon: <SwapOutlined />,
-            children: [
-              { key: 's_Pending', label: 'Pending', onClick: () => handleUpdateStatus(record.id, 'Pending') },
-              { key: 's_Confirmed', label: 'Confirmed', onClick: () => handleUpdateStatus(record.id, 'Confirmed') },
-              { key: 's_Completed', label: 'Completed', onClick: () => handleUpdateStatus(record.id, 'Completed') },
-              { key: 's_Cancelled', label: 'Cancelled', danger: true, onClick: () => handleUpdateStatus(record.id, 'Cancelled') },
-            ]
+            children: APPOINTMENT_STATUS.map(s => ({
+              key: `s_${s.value}`,
+              label: s.label,
+              danger: s.value === 'Cancelled',
+              onClick: () => handleUpdateStatus(record.id, s.value)
+            }))
           },
           { type: 'divider' },
           { key: 'delete', label: 'Xóa', danger: true, icon: <DeleteOutlined />, onClick: () => handleDelete(record.id) },
@@ -295,10 +290,7 @@ const AppointmentManager = () => {
     return (
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {listData.map((item) => {
-          const config = {
-            Pending: { color: 'warning' }, Confirmed: { color: 'processing' },
-            Completed: { color: 'success' }, Cancelled: { color: 'error' },
-          }[item.appointmentStatus] || { color: 'default' };
+          const config = getStatusConfig(item.appointmentStatus);
 
           return (
             <Popover 
@@ -317,7 +309,7 @@ const AppointmentManager = () => {
             >
               <li style={{ marginBottom: '2px', cursor: 'pointer' }}>
                 <Badge 
-                  status={config.color} 
+                  status={config?.color || 'default'} 
                   text={<span style={{ fontSize: '11px' }}>{convertMinutesToTimeStr(item.startTime)} - {item.userName || 'Khách'}</span>} 
                   style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
                 />
@@ -366,9 +358,8 @@ const AppointmentManager = () => {
                 <Text>Trạng thái:</Text>
                 <Select value={filterStatus} style={{ width: 150 }}
                   options={[
-                    { label: 'Chọn trạng thái', value: 'All' }, { label: 'Pending', value: 'Pending' },
-                    { label: 'Confirmed', value: 'Confirmed' }, { label: 'Completed', value: 'Completed' },
-                    { label: 'Cancelled', value: 'Cancelled' }
+                    { label: 'Chọn trạng thái', value: 'All' }, 
+                    ...APPOINTMENT_STATUS.map(s => ({ label: s.label, value: s.value }))
                   ]}
                   onChange={(v) => { setFilterStatus(v); handleFilterChange({ Status: v === 'All' ? undefined : v }); }}
                 />
@@ -466,7 +457,9 @@ const AppointmentManager = () => {
               <Descriptions.Item label="Ngày hẹn">{dayjs(recordDetails.appointmentDate).format('DD/MM/YYYY')}</Descriptions.Item>
               <Descriptions.Item label="Khung giờ">{recordDetails.timeRange || `${convertMinutesToTimeStr(recordDetails.startTime)} - ${convertMinutesToTimeStr(recordDetails.endTime)}`}</Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
-                <Tag color={recordDetails.appointmentStatus === 'Completed' ? 'success' : recordDetails.appointmentStatus === 'Pending' ? 'warning' : 'processing'}>{recordDetails.appointmentStatus}</Tag>
+                <Tag color={getStatusConfig(recordDetails?.appointmentStatus)?.color}>
+                  {getStatusConfig(recordDetails?.appointmentStatus)?.label}
+                </Tag>
               </Descriptions.Item>
             </Descriptions>
 
