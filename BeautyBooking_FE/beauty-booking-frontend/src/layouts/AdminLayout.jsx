@@ -3,7 +3,8 @@ import { Layout, Menu, theme, Dropdown, Avatar, Space, Typography, message } fro
 import { 
   DashboardOutlined, UserOutlined, TeamOutlined, IdcardOutlined,
   CalendarOutlined, LogoutOutlined, DownOutlined, SettingOutlined,
-  CustomerServiceOutlined, TagsOutlined, AppstoreAddOutlined,ScheduleOutlined, CoffeeOutlined
+  CustomerServiceOutlined, EnvironmentOutlined, AppstoreOutlined,ScheduleOutlined, CoffeeOutlined
+  ,ScissorOutlined 
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import authApi from '../api/AuthApi';
@@ -14,6 +15,7 @@ const { Text } = Typography;
 const menuItems = [
   { key: '/admin', icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/admin/appointments', icon: <CalendarOutlined />, label: 'Quản lý Lịch hẹn' },
+  { key: '/admin/services', icon: <ScissorOutlined />, label: 'Quản lý Dịch vụ'},
   {
     key: 'sub-scheduling',
     icon: <CalendarOutlined />,
@@ -32,21 +34,34 @@ const menuItems = [
     ],
   },
   {
-    key: 'sub-services',
-    icon: <CustomerServiceOutlined />,
-    label: 'Quản lý Dịch vụ',
-    children: [
-      { key: '/admin/categories', icon: <TagsOutlined />, label: 'Danh mục' },
-      { key: '/admin/services', icon: <AppstoreAddOutlined />, label: 'Dịch vụ' },
-    ],
-  },
-  {
     key: 'sub-users',
     icon: <TeamOutlined />,
     label: 'Quản lý Tài khoản',
     children: [
       { key: '/admin/users', icon: <UserOutlined />, label: 'Khách hàng' },
       { key: '/admin/staffs', icon: <IdcardOutlined />, label: 'Nhân viên' },
+    ],
+  },
+  {
+    key: 'catalogs',
+    icon: <AppstoreOutlined />, // Icon bánh răng siêu hợp
+    label: 'Quản lý danh mục', 
+    children: [
+      {
+        key: '/admin/helpdesk-catalog',
+        icon: <CustomerServiceOutlined />,
+        label: 'Danh mục Helpdesk',
+      },
+      {
+        key: '/admin/website-localization',
+        icon: <EnvironmentOutlined />,
+        label: 'Khu vực & Địa lý', // API Ward, Province của bạn nằm ở đây
+      },
+      {
+        key: '/admin/categories',
+        icon: <TagOutlined />,
+        label: 'Danh mục Dịch vụ',
+      },
     ],
   },
 ];
@@ -159,7 +174,7 @@ const AdminLayout = () => {
           theme="dark"
           selectedKeys={[location.pathname]}
           // Tự động mở menu cha chứa đường dẫn hiện tại
-          defaultOpenKeys={['sub-services', 'sub-users', 'sub-scheduling']} 
+          defaultOpenKeys={['catalogs', 'sub-users', 'sub-scheduling']} 
           onClick={(e) => navigate(e.key)}
           items={menuItems}
         />

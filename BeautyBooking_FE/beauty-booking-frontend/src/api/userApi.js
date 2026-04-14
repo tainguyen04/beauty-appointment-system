@@ -28,7 +28,9 @@ const userApi = {
   },
   //Cap nhật thông tin user (Admin cập nhật cho khách hàng hoặc nhân viên)
   update: (id, data) => {
-    return axiosClient.put(`/User/${id}`, data);
+    return axiosClient.put(`/User/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
   },
   // Cập nhật trạng thái (Active/Inactive)
  updateStatus: (id, isActive) => {
