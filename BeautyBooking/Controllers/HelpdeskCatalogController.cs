@@ -63,7 +63,7 @@ namespace BeautyBooking.Controllers
                 var catalogId = await _catalogService.CreateAsync(request);
                 var catalogResponse = _mapper.Map<HelpdeskCatalogResponse>(request);
                 catalogResponse.CatalogId = catalogId;
-                return CreatedAtAction(nameof(GetByIdAsync),new { id = catalogId }, catalogResponse);
+                return CreatedAtAction(nameof(GetByIdAsync), new { id = catalogId }, catalogResponse);
             }
             catch (Exception ex)
             {
@@ -79,6 +79,22 @@ namespace BeautyBooking.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest("Dữ liệu không hợp lệ!");
                 var result = await _catalogService.UpdateAsync(id, request);
+                if (!result)
+                    return NotFound($"Không tìm thấy dữ liệu với id {id}");
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi máy chủ: {ex.Message}");
+            }
+        }
+        [HttpPatch("{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult> ActiveAsync(int id)
+        {
+            try
+            {
+                var result = await _catalogService.ActiveAsync(id);
                 if (!result)
                     return NotFound($"Không tìm thấy dữ liệu với id {id}");
                 return NoContent();

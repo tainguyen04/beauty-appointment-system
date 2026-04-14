@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { Form, Input, InputNumber, Button, Select, Row, Col, Card, Switch } from 'antd';
+import { Form, Input, InputNumber, Button, Select, Row, Col, Card, Switch, Space, Popconfirm } from 'antd';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -20,14 +20,13 @@ const AdminWardForm = ({ editKey }) => {
   const [form] = Form.useForm();
   const markerRef = useRef(null);
 
+  const [mode, setMode] = useState('create');
   const [position, setPosition] = useState({
     lat: 10.762622,
     lng: 106.660172
   });
 
-  const isEdit = !!editKey;
-
-  // ================= LOAD EDIT (ONLY INFO) =================
+  // ================= LOAD DATA =================
   useEffect(() => {
     if (!editKey) return;
 
@@ -38,7 +37,8 @@ const AdminWardForm = ({ editKey }) => {
       form.setFieldsValue({
         keyLocalization: data.keyLocalization,
         localization: data.localization,
-        isActived: data.isActived
+        isActived: data.isActived,
+        wards: data.wards
       });
 
       if (data.wards?.length > 0) {
@@ -47,6 +47,8 @@ const AdminWardForm = ({ editKey }) => {
           lng: data.wards[0].longitude
         });
       }
+
+      setMode('edit-localization');
     };
 
     fetchData();
@@ -59,63 +61,93 @@ const AdminWardForm = ({ editKey }) => {
       if (!marker) return;
 
       const { lat, lng } = marker.getLatLng();
-
       setPosition({ lat, lng });
+
+      const wards = form.getFieldValue('wards') || [];
+
+      if (wards.length > 0) {
+        wards[0] = {
+          ...wards[0],
+          latitude: lat,
+          longitude: lng
+        };
+
+        form.setFieldsValue({ wards });
+      }
     }
-  }), []);
+  }), [form]);
 
   // ================= SUBMIT =================
   const onFinish = async (values) => {
 
-    // ================= CREATE =================
-    if (!isEdit) {
+    // CREATE
+    if (mode === 'create') {
       const payload = {
         keyLocalization: values.keyLocalization,
         localization: values.localization,
         isActived: values.isActived,
-
-        // CREATE luôn wards
-        wards: [
-          {
-            wardPid: values.wardPid || 0,
-            name: values.name,
-            nameEn: values.nameEn,
-            fullName: values.fullName,
-            fullNameEn: values.fullNameEn,
-            latitude: position.lat,
-            longitude: position.lng
-          }
-        ]
+        wards: values.wards || []
       };
 
       await websitelocalizationApi.create(payload);
       return;
     }
 
-    // ================= UPDATE (KHÔNG UPDATE WARDS) =================
-    const payload = {
-      localization: values.localization,
-      isActived: values.isActived
-    };
+    // UPDATE LOCALIZATION ONLY
+    if (mode === 'edit-localization') {
+      const payload = {
+        localization: values.localization,
+        isActived: values.isActived
+      };
 
-    await websitelocalizationApi.update(editKey, payload);
+      await websitelocalizationApi.update(editKey, payload);
+      return;
+    }
+
+    // UPDATE WARDS ONLY
+    if (mode === 'edit-wards') {
+      await websitelocalizationApi.updateWards(editKey, values.wards || []);
+      return;
+    }
+  };
+
+  // ================= DELETE =================
+  const handleDelete = async () => {
+    await websitelocalizationApi.delete(editKey);
   };
 
   return (
     <Row gutter={24}>
 
-      {/* FORM */}
+      {/* ================= FORM ================= */}
       <Col span={8}>
-        <Card title={isEdit ? "Update Localization" : "Create Localization"}>
+        <Card
+          title="Localization Manager"
+          extra={
+            editKey && (
+              <Space>
+                <Button onClick={() => setMode('edit-localization')}>
+                  Edit Info
+                </Button>
+                <Button onClick={() => setMode('edit-wards')}>
+                  Edit Wards
+                </Button>
+                <Popconfirm title="Delete?" onConfirm={handleDelete}>
+                  <Button danger>Delete</Button>
+                </Popconfirm>
+              </Space>
+            )
+          }
+        >
 
           <Form form={form} layout="vertical" onFinish={onFinish}>
 
             <Form.Item
               name="keyLocalization"
-              label="Key Localization"
+              label="Key"
               rules={[{ required: true }]}
             >
-              <Input disabled={isEdit} />
+              <Input disabled={mode !== 'create'} />
             </Form.Item>
 
             <Form.Item
@@ -133,46 +165,54 @@ const AdminWardForm = ({ editKey }) => {
               <Switch />
             </Form.Item>
 
-            {/* ONLY FOR CREATE */}
-            {!isEdit && (
-              <>
-                <Form.Item label="WardPid" name="wardPid">
-                  <InputNumber style={{ width: '100%' }} />
-                </Form.Item>
+            {/* ================= WARDS ================= */}
+            <Form.List name="wards">
+              {(fields) => (
+                <>
+                  {fields.map((field) => (
+                    <Card key={field.key} size="small" style={{ marginBottom: 10 }}>
 
-                <Form.Item label="Name" name="name">
-                  <Input />
-                </Form.Item>
+                      <Form.Item name={[field.name, 'wardPid']} label="WardPid">
+                        <InputNumber style={{ width: '100%' }} />
+                      </Form.Item>
 
-                <Form.Item label="Name EN" name="nameEn">
-                  <Input />
-                </Form.Item>
+                      <Form.Item name={[field.name, 'name']} label="Name">
+                        <Input />
+                      </Form.Item>
 
-                <Form.Item label="Full Name" name="fullName">
-                  <Input />
-                </Form.Item>
+                      <Form.Item name={[field.name, 'nameEn']} label="Name EN">
+                        <Input />
+                      </Form.Item>
 
-                <Form.Item label="Full Name EN" name="fullNameEn">
-                  <Input />
-                </Form.Item>
+                      <Form.Item name={[field.name, 'fullName']} label="Full Name">
+                        <Input />
+                      </Form.Item>
 
-                <Row gutter={8}>
-                  <Col span={12}>
-                    <Form.Item label="Latitude">
-                      <InputNumber value={position.lat} disabled style={{ width: '100%' }} />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item label="Longitude">
-                      <InputNumber value={position.lng} disabled style={{ width: '100%' }} />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              </>
-            )}
+                      <Form.Item name={[field.name, 'fullNameEn']} label="Full Name EN">
+                        <Input />
+                      </Form.Item>
+
+                      <Row gutter={8}>
+                        <Col span={12}>
+                          <Form.Item name={[field.name, 'latitude']} label="Lat">
+                            <InputNumber disabled style={{ width: '100%' }} />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item name={[field.name, 'longitude']} label="Lng">
+                            <InputNumber disabled style={{ width: '100%' }} />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+
+                    </Card>
+                  ))}
+                </>
+              )}
+            </Form.List>
 
             <Button type="primary" htmlType="submit" block>
-              {isEdit ? "Update" : "Create"}
+              Save
             </Button>
 
           </Form>
@@ -180,9 +220,9 @@ const AdminWardForm = ({ editKey }) => {
         </Card>
       </Col>
 
-      {/* MAP */}
+      {/* ================= MAP ================= */}
       <Col span={16}>
-        <Card title="Select Location">
+        <Card title="Map Picker">
 
           <MapContainer
             center={[position.lat, position.lng]}
@@ -200,7 +240,7 @@ const AdminWardForm = ({ editKey }) => {
               ref={markerRef}
               eventHandlers={eventHandlers}
             >
-              <Popup>Drag to set ward location</Popup>
+              <Popup>Drag to update ward location</Popup>
             </Marker>
 
           </MapContainer>

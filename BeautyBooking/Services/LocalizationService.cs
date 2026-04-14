@@ -21,6 +21,37 @@ namespace BeautyBooking.Services
             _wardRepo = wardRepo;
             _mapper = mapper;
         }
+
+        public async Task<bool> ActiveAsync(string id)
+        {
+            var localization = await _localizationRepo.GetByIdAsync(id);
+            if (localization == null)
+                return false;
+            localization.IsActived = true;
+            await _localizationRepo.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ActiveWardAsync(string key, IEnumerable<int> wardIds)
+        {
+            var localization = await _localizationRepo.GetByKeyWithWardAsync(key);
+            if (localization == null)
+                throw new KeyNotFoundException("Localization không tồn tại.");
+            if (localization.WebsiteLocalizationWards == null)
+                return false;
+            var wardsToActivate = localization.WebsiteLocalizationWards
+                        .Where(w => wardIds.Contains(w.WardId))
+                        .ToList();
+            if (!wardsToActivate.Any())
+                return false;
+            foreach (var ward in wardsToActivate)
+            {
+                ward.IsActived = true;
+            }
+            await _wardRepo.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<string> CreateAsync(CreateLocalizationRequest request)
         {
             var exist = await _localizationRepo.GetByIdAsync(request.KeyLocalization);
@@ -50,6 +81,28 @@ namespace BeautyBooking.Services
                 return false;
             localization.IsActived = false;
             await _localizationRepo.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteWardAsync(string key, IEnumerable<int> wardIds)
+        {
+            var localization = await _localizationRepo.GetByKeyWithWardAsync(key);
+            if (localization == null)
+                throw new KeyNotFoundException("Localization không tồn tại.");
+            if (localization.WebsiteLocalizationWards == null)
+                return false;
+            var wardsToDelete = localization.WebsiteLocalizationWards
+                        .Where(w => wardIds.Contains(w.WardId))
+                        .ToList();
+
+            if(!wardsToDelete.Any())
+                return false;
+            foreach (var ward in wardsToDelete)
+            {
+                ward.IsActived = false;
+            }
+
+            await _wardRepo.SaveChangesAsync();
             return true;
         }
 

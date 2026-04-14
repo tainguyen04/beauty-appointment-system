@@ -9,7 +9,10 @@ namespace BeautyBooking.Interface.Service
         Task<LocalizationResponse?> GetByIdAsync(string id);
         Task<string> CreateAsync(CreateLocalizationRequest request);
         Task<bool> UpdateAsync(string key,UpdateLocalizationRequest request);
-        Task<bool> UpdateWardAsync(string key, IEnumerable<UpdateWardRequest> request);  
+        Task<bool> UpdateWardAsync(string key, IEnumerable<UpdateWardRequest> request);
+        Task<bool> ActiveAsync(string id);
         Task<bool> DeleteAsync(string id);
+        Task<bool> ActiveWardAsync(string key, IEnumerable<int> wardIds);
+        Task<bool> DeleteWardAsync(string key, IEnumerable<int> wardIds);
     }
 }

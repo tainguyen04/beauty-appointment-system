@@ -65,12 +65,39 @@ namespace BeautyBooking.Controllers
                 return NotFound();
             return NoContent();
         }
+        [HttpPatch("{key}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> Active(string key)
+        {
+            var activated = await _localizationService.ActiveAsync(key);
+            if (!activated)
+                return NotFound();
+            return NoContent();
+        }
+        [HttpPatch("{key}/wards")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> ActiveWard(string key, [FromBody] IEnumerable<int> wardIds)
+        {
+            var activated = await _localizationService.ActiveWardAsync(key, wardIds);
+            if (!activated)
+                return NotFound();
+            return NoContent();
+        }
 
         [HttpDelete("{id}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(string id)
         {
             var deleted = await _localizationService.DeleteAsync(id);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
+        }
+        [HttpDelete("{key}/wards")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> DeleteWard(string key, [FromBody] IEnumerable<int> wardIds)
+        {
+            var deleted = await _localizationService.DeleteWardAsync(key, wardIds);
             if (!deleted)
                 return NotFound();
             return NoContent();

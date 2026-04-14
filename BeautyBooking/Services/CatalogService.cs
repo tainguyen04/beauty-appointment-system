@@ -21,6 +21,17 @@ namespace BeautyBooking.Services
             _contentRepo = contentRepo;
             _mapper = mapper;
         }
+
+        public async Task<bool> ActiveAsync(int id)
+        {
+            var catalog = await _catalogRepo.GetByIdAsync(id);
+            if (catalog == null)
+                return false;
+            catalog.IsActived = true;
+            await _catalogRepo.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<int> CreateAsync(CreateCatalogRequest request)
         {
             var catalog = _mapper.Map<HelpdeskCatalog>(request);
