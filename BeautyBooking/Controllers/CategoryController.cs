@@ -20,13 +20,6 @@ namespace BeautyBooking.Controllers
             _categoryService = categoryService;
         }
 
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public async Task<ActionResult<IEnumerable<CategoryResponse>>> GetAll()
-        //{
-        //    var categories = await _categoryService.GetAllAsync();
-        //    return Ok(categories);
-        //}
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAll([FromQuery] CategoryFilter filter)

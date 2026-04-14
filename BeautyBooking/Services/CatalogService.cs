@@ -32,9 +32,29 @@ namespace BeautyBooking.Services
             return true;
         }
 
+        public async Task<bool> AddContentAsync(int catalogId, IEnumerable<CreateContentRequest> request)
+        {
+            var catalog = await _catalogRepo.GetContentsByIdAsync(catalogId);
+            if (catalog == null || !catalog.IsActived)
+                throw new KeyNotFoundException("Catalog không tồn tại");
+            var contents = _mapper.Map<HelpdeskContent>(request);
+            foreach (var content in request)
+            {
+
+                contents.CatalogId = catalogId;
+                await _contentRepo.CreateAsync(contents);
+            }
+            await _catalogRepo.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<int> CreateAsync(CreateCatalogRequest request)
         {
             var catalog = _mapper.Map<HelpdeskCatalog>(request);
+            catalog.HelpdeskContents = request.Contents.Select(text => new HelpdeskContent
+            {
+                ContentDetail = text
+            }).ToList();
             await _catalogRepo.CreateAsync(catalog);
             await _catalogRepo.SaveChangesAsync();
 

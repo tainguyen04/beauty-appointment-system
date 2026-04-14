@@ -45,6 +45,15 @@ namespace BeautyBooking.Controllers
             var created = await _localizationService.GetByIdAsync(key);
             return CreatedAtAction(nameof(GetById), new { id = key }, created);
         }
+        [HttpPost("{key}/wards")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> AddWard(string key, [FromBody] IEnumerable<CreateWardRequest> request)
+        {
+            var added = await _localizationService.AddWardAsync(key, request);
+            if (!added)
+                return NotFound();
+            return NoContent();
+        }
 
         [HttpPut("{key}")]
         [Authorize(Policy = "AdminOnly")]

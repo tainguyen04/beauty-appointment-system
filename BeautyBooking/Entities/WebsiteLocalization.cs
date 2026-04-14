@@ -9,6 +9,6 @@ namespace BeautyBooking.Entities
         
         public string Localization { get; set; }  = null!;
         public bool IsActived { get; set; } = true;
-        public ICollection<WebsiteLocalizationWard> WebsiteLocalizationWards { get; set; }
+        public ICollection<WebsiteLocalizationWard> WebsiteLocalizationWards { get; set; } = new List<WebsiteLocalizationWard>();
     }
 }

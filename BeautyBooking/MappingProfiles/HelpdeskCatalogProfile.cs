@@ -11,8 +11,7 @@ namespace BeautyBooking.MappingProfiles
         {
             // Mapper for HelpdeskCatalog
             CreateMap<CreateCatalogRequest, HelpdeskCatalog>()
-                .ForMember(dest => dest.HelpdeskContents, opt => opt.MapFrom(src =>
-                    src.Contents.Select(detail => new HelpdeskContent { ContentDetail = detail })));
+                .ForMember(dest => dest.HelpdeskContents, opt => opt.Ignore());
             CreateMap<HelpdeskCatalog, HelpdeskCatalogResponse>()
                 .ForMember(dest => dest.Contents, opt => opt.MapFrom(src =>
                     src.HelpdeskContents));
@@ -20,8 +19,8 @@ namespace BeautyBooking.MappingProfiles
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
             // Mapper for HelpdeskContent
             CreateMap<HelpdeskContent, HelpdeskContentResponse>();
-
-            CreateMap<CreateCatalogRequest, HelpdeskCatalogResponse>();
+            CreateMap<CreateContentRequest, HelpdeskContent>()
+                .ForMember(dest => dest.CatalogId, opt => opt.Ignore());
         }
     }
 }

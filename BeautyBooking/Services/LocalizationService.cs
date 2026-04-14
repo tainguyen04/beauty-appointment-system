@@ -6,6 +6,7 @@ using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
+using CloudinaryDotNet.Actions;
 using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
@@ -49,6 +50,21 @@ namespace BeautyBooking.Services
                 ward.IsActived = true;
             }
             await _wardRepo.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> AddWardAsync(string key, IEnumerable<CreateWardRequest> request)
+        {
+            var localization = await _localizationRepo.GetByKeyWithWardAsync(key);
+            if (localization == null || !localization.IsActived)
+                throw new KeyNotFoundException("Localization không tồn tại");
+            var wards = _mapper.Map<List<WebsiteLocalizationWard>>(request);
+            foreach (var ward in wards)
+            {
+                ward.KeyLocalization = key;
+                localization.WebsiteLocalizationWards.Add(ward);
+            }
+            await _localizationRepo.SaveChangesAsync();
             return true;
         }
 
@@ -136,10 +152,7 @@ namespace BeautyBooking.Services
             var existingLocalization = await _localizationRepo.GetByKeyWithWardAsync(key);
             if (existingLocalization == null)
                 throw new KeyNotFoundException("Localization không tồn tại.");
-            if(existingLocalization.WebsiteLocalizationWards == null)
-                existingLocalization.WebsiteLocalizationWards = new List<WebsiteLocalizationWard>();
-            else
-                existingLocalization.WebsiteLocalizationWards.Clear();
+            existingLocalization.WebsiteLocalizationWards.Clear();
             foreach (var ward in request)
             {
                 var wardEntity = _mapper.Map<WebsiteLocalizationWard>(ward);
