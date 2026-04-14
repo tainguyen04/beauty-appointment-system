@@ -41,7 +41,7 @@ const AppointmentManager = () => {
   const [customerList, setCustomerList] = useState([]); 
   const [serviceList, setServiceList] = useState([]); 
   const [availableStaffs, setAvailableStaffs] = useState([]); 
-  // const [estimatedTotal, setEstimatedTotal] = useState(0);
+  const [estimatedTotal, setEstimatedTotal] = useState(0);
 
   const [form] = Form.useForm();
   const startTime = Form.useWatch('startTime', form);
@@ -128,7 +128,7 @@ const AppointmentManager = () => {
     setSelectedAppointment(null);
     form.resetFields();
     setAvailableStaffs([]);
-    // setEstimatedTotal(0);
+    setEstimatedTotal(0);
     setIsModalOpen(true);
   }, [form]);
 
@@ -139,7 +139,7 @@ const AppointmentManager = () => {
     const dateObj = record.appointmentDate ? dayjs(record.appointmentDate) : null;
     const sIds = record.appointmentServices?.map(s => s.serviceId) || [];
     
-    // setEstimatedTotal(record.totalPrice || 0);
+    setEstimatedTotal(record.totalPrice || 0);
 
     form.setFieldsValue({
       userId: record.userId,
@@ -155,14 +155,13 @@ const AppointmentManager = () => {
 
   const handleValuesChange = useCallback((changedValues, allValues) => {
     // Tính tổng tiền
-    // if (changedValues.serviceIds !== undefined) {
-    //   let price = 0;
-    //   (allValues.serviceIds || []).forEach(id => {
-    //     const srv = serviceList.find(s => s.id === id);
-    //     if (srv) price += (srv.price || srv.priceAtBooking || 0);
-    //   });
-    //   setEstimatedTotal(price);
-    // }
+    if ('serviceIds' in changedValues) {
+    const price = (allValues.serviceIds || []).reduce((sum, id) => {
+      const srv = serviceList.find(s => s.id === id);
+      return sum + (srv?.price || srv?.priceAtBooking || 0);
+    }, 0);
+      setEstimatedTotal(price);
+    }
 
     // Load lại nhân viên rảnh
     if (changedValues.appointmentDate || changedValues.startTime || changedValues.serviceIds !== undefined) {
@@ -181,7 +180,7 @@ const AppointmentManager = () => {
         form.setFieldsValue({ staffId: null });
       }
     }
-  }, [fetchAvailableStaffs, form]);
+  }, [serviceList, fetchAvailableStaffs, form]);
 
   const handleSubmit = useCallback(async (values) => {
     const startMins = values.startTime ? convertDayjsToMinutes(values.startTime) : null;
@@ -192,7 +191,6 @@ const AppointmentManager = () => {
       staffId: values.staffId ? Number(values.staffId) : null,
       appointmentDate: values.appointmentDate ? values.appointmentDate.format('YYYY-MM-DD') : null,
       startTime: startMins,
-
     };
     console.log("Dữ liệu sắp gửi đi:", payload);
     const apiCall = isEdit ? () => appointmentApi.update(selectedAppointment.id, payload) : () => appointmentApi.createByAdmin(payload);
@@ -415,21 +413,44 @@ const AppointmentManager = () => {
                 </Form.Item>
               </Col>
            </Row>
-           <Form.Item label="Giờ kết thúc dự kiến">
-            <TimePicker 
-              value={previewEndTime} // Hiển thị giá trị đã tính
-              format="HH:mm"
-              disabled // Khóa không cho sửa
-              placeholder="Sẽ tự động tính..."
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
            <Form.Item name="userId" label="Khách hàng">
               <Select showSearch placeholder="Chọn khách" allowClear options={customerList.map(c => ({ label: c.fullName || c.userName, value: c.id }))} filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
            </Form.Item>
-           <Form.Item name="serviceIds" label="Dịch vụ" rules={[{ required: true }]}>
-              <Select mode="multiple" placeholder="Chọn dịch vụ" options={serviceList.map(s => ({ label: s.name || s.serviceName, value: s.id }))} />
+           <Form.Item 
+            name="serviceIds" 
+            label="Dịch vụ" 
+            rules={[{ required: true }]}
+           >
+              <Select
+                mode="multiple"
+                placeholder="Chọn dịch vụ"
+                options={serviceList.map(s => ({
+                  label: `${s.name} (${s.duration}p - ${formatCurrency(s.price)})`,
+                  value: s.id
+                }))}
+              />
            </Form.Item>
+           <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Giờ kết thúc dự kiến">
+                <TimePicker 
+                  value={previewEndTime} // Hiển thị giá trị đã tính
+                  format="HH:mm"
+                  disabled // Khóa không cho sửa
+                  placeholder="Sẽ tự động tính..."
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Tổng tiền dự kiến">
+                  <Input
+                    value={formatCurrency(estimatedTotal)}
+                    disabled
+                  />
+              </Form.Item>
+            </Col>
+           </Row>
            <Form.Item name="staffId" label="Nhân viên phụ trách">
               <Select placeholder="Chọn nhân viên (Tùy chọn)" allowClear options={availableStaffs.map(s => ({ label: s.fullName, value: s.id }))} />
            </Form.Item>

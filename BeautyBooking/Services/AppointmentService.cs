@@ -265,14 +265,20 @@ namespace BeautyBooking.Services
         {
             if (services == null || !services.Any())
                 throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
-            var serviceList = services.GroupBy(s => s.Id).Select(g => g.First()).ToList();
+            var serviceList = services.ToList();
             appointment.TotalPrice = serviceList.Sum(s => s.Price);
-            appointment.AppointmentServices = serviceList.Select(service => new Entities.AppointmentService
+            appointment.AppointmentServices.Clear();
+
+            // Dùng foreach để Add giúp EF Core tracking tốt nhất
+            foreach (var service in serviceList)
             {
-                ServiceId = service.Id,
-                PriceAtBooking = service.Price,
-                DurationAtBooking = service.Duration,
-            }).ToList();
+                appointment.AppointmentServices.Add(new Entities.AppointmentService
+                {
+                    ServiceId = service.Id,
+                    PriceAtBooking = service.Price,
+                    DurationAtBooking = service.Duration,
+                });
+            }
         }
         private async Task ValidateAsync(int staffId, DateOnly date, int startTime, int endTime, List<int> serviceIds, int? excludeId = null)
         {
