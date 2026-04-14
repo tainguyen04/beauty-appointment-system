@@ -75,3 +75,20 @@ export const DAYS_OF_WEEK = [
   { value: 'Saturday', label: 'Thứ Bảy', color: 'orange' },
   { value: 'Sunday', label: 'Chủ Nhật', color: 'volcano' },
 ];
+/**
+ * Danh sách các trạng thái cuộc hẹn khớp với Enum của Backend
+ */
+export const APPOINTMENT_STATUS = [
+  { value: 'Pending', label: 'Chờ xử lý', color: 'warning' },
+  { value: 'Confirmed', label: 'Đã xác nhận', color: 'processing' },
+  { value: 'Completed', label: 'Hoàn thành', color: 'success' },
+  { value: 'Cancelled', label: 'Đã hủy', color: 'error' },
+];
+/**
+ * Hàm lấy config (label, color) cho trạng thái cuộc hẹn, dùng trong nhiều component để đảm bảo nhất quán
+ */
+export const getStatusConfig = (status) =>
+  APPOINTMENT_STATUS.find(s => s.value === status) || {
+    label: status,
+    color: 'default'
+  };
