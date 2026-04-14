@@ -20,9 +20,10 @@ namespace BeautyBooking.MappingProfiles
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
             // Mapper for Ward
+            CreateMap<CreateWardRequest, WebsiteLocalizationWard>();
+            CreateMap<UpdateWardRequest, WebsiteLocalizationWard>()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
             CreateMap<WebsiteLocalizationWard, WardResponse>();
-
-            CreateMap<CreateLocalizationRequest, LocalizationResponse>();
         }
     }
 }
