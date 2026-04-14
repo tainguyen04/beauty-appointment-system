@@ -64,13 +64,15 @@ namespace BeautyBooking.Services
 
             var appointment = _mapper.Map<Appointment>(request);
             appointment.AppointmentStatus = AppointmentStatus.Confirmed;
+            int totalDuration = services.Sum(s => s.Duration);
+            appointment.EndTime = request.StartTime + totalDuration;
 
             ApplyServicesToAppointment(appointment, services);
 
             await ValidateAsync(
                 appointment.StaffId, 
                 appointment.AppointmentDate, 
-                appointment.StartTime, 
+                appointment.StartTime,
                 appointment.EndTime, 
                 request.ServiceIds);
 
@@ -88,14 +90,22 @@ namespace BeautyBooking.Services
                 throw new Exception("Không tìm thấy người dùng");
             appointment.UserId = userId.Value;
             appointment.AppointmentStatus = AppointmentStatus.Pending;
-            var services = (await _serviceRepository.GetRangeByIdsAsync(request.ServiceIds)).ToList();
-            if (services.Count() != request.ServiceIds.Distinct().ToList().Count())
+            var distinctServiceIds = request.ServiceIds.Distinct().ToList();
+            var services = (await _serviceRepository.GetRangeByIdsAsync(distinctServiceIds)).ToList();
+            if (services.Count() != distinctServiceIds.Count())
                 throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
             if(services == null || !services.Any())
                 throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
-            
+            int totalDuration = services.Sum(s => s.Duration);
+            appointment.EndTime = request.StartTime + totalDuration;
 
             ApplyServicesToAppointment(appointment, services);
+            await ValidateAsync(
+                appointment.StaffId,
+                appointment.AppointmentDate,
+                appointment.StartTime,
+                appointment.EndTime,
+                request.ServiceIds);
 
             await _appointmentRepository.CreateAsync(appointment);
             await _appointmentRepository.SaveChangesAsync();
@@ -199,19 +209,24 @@ namespace BeautyBooking.Services
             if (request.ServiceIds == null || !request.ServiceIds.Any())
                 throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
 
-            var serviceIds = request.ServiceIds.Distinct().ToList();
-            var services = (await _serviceRepository.GetRangeByIdsAsync(serviceIds)).ToList();
+            var distinctServiceIds = request.ServiceIds.Distinct().ToList();
+            var services = (await _serviceRepository.GetRangeByIdsAsync(distinctServiceIds)).ToList();
             
-            if (services.Count() != serviceIds.Count())
+            if (services.Count() != distinctServiceIds.Count())
                 throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
 
-
-            int newtotalDuration = services.Sum(s => s.Duration);
             _mapper.Map(request, appointment);
-            int newEndTime = request.StartTime + newtotalDuration;
-            appointment.EndTime = newEndTime;
+            int newtotalDuration = services.Sum(s => s.Duration);
+            appointment.StartTime = request.StartTime;
+            appointment.EndTime = request.StartTime + newtotalDuration;
 
-            await ValidateAsync(request.StaffId, request.AppointmentDate, request.StartTime, newEndTime, request.ServiceIds, appointment.Id);
+            await ValidateAsync(
+                appointment.StaffId, 
+                appointment.AppointmentDate, 
+                appointment.StartTime, 
+                appointment.EndTime, 
+                request.ServiceIds, 
+                appointment.Id);
 
             ApplyServicesToAppointment(appointment, services);
             await _appointmentRepository.SaveChangesAsync();

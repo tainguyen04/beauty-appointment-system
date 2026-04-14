@@ -20,7 +20,7 @@ const staffApi = {
   // Các API bổ trợ
   getAvailable: (params) => {
     return axiosClient.get('/StaffProfile/available', { 
-      params: cleanParams(params), 
+      params, 
       paramsSerializer: { indexes: null } 
     });
   },

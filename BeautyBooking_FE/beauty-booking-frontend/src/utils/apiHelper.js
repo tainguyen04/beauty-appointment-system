@@ -32,6 +32,16 @@ export const cleanParams = (params) => {
       )
   );
 };
+// Hàm này tương tự cleanParams nhưng sẽ giữ lại các giá trị null/undefined/empty để phục vụ logic riêng (ví dụ: filter status = null để lấy các booking chưa xác định trạng thái)
+export const cleanParamsForLogic = (params) => {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) =>
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+    )
+  );
+};
 
 /**
  * Chuyển đổi từ tổng số phút (int) sang chuỗi "HH:mm"

@@ -41,9 +41,22 @@ const AppointmentManager = () => {
   const [customerList, setCustomerList] = useState([]); 
   const [serviceList, setServiceList] = useState([]); 
   const [availableStaffs, setAvailableStaffs] = useState([]); 
-  const [estimatedTotal, setEstimatedTotal] = useState(0);
+  // const [estimatedTotal, setEstimatedTotal] = useState(0);
 
   const [form] = Form.useForm();
+  const startTime = Form.useWatch('startTime', form);
+  const serviceIds = Form.useWatch('serviceIds', form);
+
+  const previewEndTime = useMemo(() => {
+    if (!startTime || !serviceIds?.length) return null;
+
+    const totalDuration = serviceIds.reduce((sum, id) => {
+      const srv = serviceList.find(s => s.id === id);
+      return sum + (srv?.duration || srv?.durationAtBooking || 60);
+    }, 0);
+
+    return startTime.add(totalDuration, 'minute');
+  }, [startTime, serviceIds, serviceList]);
 
   const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(
     appointmentApi.getAll
@@ -108,12 +121,14 @@ const AppointmentManager = () => {
     }
   }, []); // Không cần serviceList nữa
 
+  
+
   const handleAddNew = useCallback(() => {
     setIsEdit(false);
     setSelectedAppointment(null);
     form.resetFields();
     setAvailableStaffs([]);
-    setEstimatedTotal(0);
+    // setEstimatedTotal(0);
     setIsModalOpen(true);
   }, [form]);
 
@@ -124,7 +139,7 @@ const AppointmentManager = () => {
     const dateObj = record.appointmentDate ? dayjs(record.appointmentDate) : null;
     const sIds = record.appointmentServices?.map(s => s.serviceId) || [];
     
-    setEstimatedTotal(record.totalPrice || 0);
+    // setEstimatedTotal(record.totalPrice || 0);
 
     form.setFieldsValue({
       userId: record.userId,
@@ -140,14 +155,14 @@ const AppointmentManager = () => {
 
   const handleValuesChange = useCallback((changedValues, allValues) => {
     // Tính tổng tiền
-    if (changedValues.serviceIds !== undefined) {
-      let price = 0;
-      (allValues.serviceIds || []).forEach(id => {
-        const srv = serviceList.find(s => s.id === id);
-        if (srv) price += (srv.price || srv.priceAtBooking || 0);
-      });
-      setEstimatedTotal(price);
-    }
+    // if (changedValues.serviceIds !== undefined) {
+    //   let price = 0;
+    //   (allValues.serviceIds || []).forEach(id => {
+    //     const srv = serviceList.find(s => s.id === id);
+    //     if (srv) price += (srv.price || srv.priceAtBooking || 0);
+    //   });
+    //   setEstimatedTotal(price);
+    // }
 
     // Load lại nhân viên rảnh
     if (changedValues.appointmentDate || changedValues.startTime || changedValues.serviceIds !== undefined) {
@@ -166,18 +181,10 @@ const AppointmentManager = () => {
         form.setFieldsValue({ staffId: null });
       }
     }
-  }, [serviceList, fetchAvailableStaffs, form]);
+  }, [fetchAvailableStaffs, form]);
 
   const handleSubmit = useCallback(async (values) => {
-    // Vẫn tính endTime gửi lên backend lúc Save (nếu backend của bạn tự tính lúc save thì có thể bỏ đoạn duration này đi)
-    let totalDuration = 0;
-    (values.serviceIds || []).forEach(id => {
-      const srv = serviceList.find(s => s.id === id);
-      if (srv) totalDuration += (srv.duration || srv.durationAtBooking || 60);
-    });
-
     const startMins = values.startTime ? convertDayjsToMinutes(values.startTime) : null;
-    const endMins = startMins !== null ? startMins + totalDuration : null;
 
     const payload = {
       ...values,
@@ -185,10 +192,9 @@ const AppointmentManager = () => {
       staffId: values.staffId ? Number(values.staffId) : null,
       appointmentDate: values.appointmentDate ? values.appointmentDate.format('YYYY-MM-DD') : null,
       startTime: startMins,
-      endTime: endMins,
-      totalPrice: estimatedTotal
+
     };
-    
+    console.log("Dữ liệu sắp gửi đi:", payload);
     const apiCall = isEdit ? () => appointmentApi.update(selectedAppointment.id, payload) : () => appointmentApi.createByAdmin(payload);
     const { success } = await execute(apiCall, isEdit ? "Cập nhật thành công!" : "Tạo thành công!");
     
@@ -196,7 +202,7 @@ const AppointmentManager = () => {
       setIsModalOpen(false); 
       runFetch(); 
     }
-  }, [isEdit, selectedAppointment, estimatedTotal, serviceList, execute, runFetch]);
+  }, [isEdit, selectedAppointment, execute, runFetch]);
 
   const handleUpdateStatus = useCallback(async (id, newStatus) => {
     const { success } = await execute(() => appointmentApi.updateStatus(id, `"${newStatus}"`), "Đổi trạng thái thành công!");
@@ -409,6 +415,15 @@ const AppointmentManager = () => {
                 </Form.Item>
               </Col>
            </Row>
+           <Form.Item label="Giờ kết thúc dự kiến">
+            <TimePicker 
+              value={previewEndTime} // Hiển thị giá trị đã tính
+              format="HH:mm"
+              disabled // Khóa không cho sửa
+              placeholder="Sẽ tự động tính..."
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
            <Form.Item name="userId" label="Khách hàng">
               <Select showSearch placeholder="Chọn khách" allowClear options={customerList.map(c => ({ label: c.fullName || c.userName, value: c.id }))} filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
            </Form.Item>
