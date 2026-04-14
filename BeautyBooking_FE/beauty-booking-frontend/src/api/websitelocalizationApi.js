@@ -12,7 +12,9 @@ const websitelocalizationApi = {
   // ================= CREATE =================
   create: (data) =>
     axiosClient.post('/Websitelocalization', data),
-
+  // create wards
+  createWards: (key, data) =>
+    axiosClient.post(`/Websitelocalization/${key}/wards`, data),
   // ================= UPDATE =================
   // update localization only
   update: (key, data) =>

@@ -2,6 +2,7 @@
 {
     public class WardResponse
     {
+        public int WardId { get; set; }
         public int WardPid { get; set; }
         public string Name { get; set; } = null!;
         public string NameEn { get; set; } = null!;
