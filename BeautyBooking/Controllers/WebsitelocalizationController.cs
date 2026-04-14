@@ -74,7 +74,7 @@ namespace BeautyBooking.Controllers
                 return NotFound();
             return NoContent();
         }
-        [HttpPatch("{key}")]
+        [HttpPatch("{key}/toggle-active")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Active(string key)
         {
@@ -83,7 +83,7 @@ namespace BeautyBooking.Controllers
                 return NotFound();
             return NoContent();
         }
-        [HttpPatch("{key}/wards")]
+        [HttpPatch("{key}/wards/toggle-active")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> ActiveWard(string key, [FromBody] IEnumerable<int> wardIds)
         {
