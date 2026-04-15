@@ -88,6 +88,18 @@ const StaffManager = () => {
       runFetch();
     }
   };
+  const handleAssignServices = async (values) => {
+    const { success } = await execute(
+      // Chú ý: values.serviceIds là mảng [1, 2, 3] khớp với DTO Backend
+      () => staffApi.assignServices(selectedStaff.id, values.serviceIds),
+      "Cập nhật dịch vụ thành công!"
+    );
+    if (success) {
+      setIsServiceModalOpen(false);
+      runFetch();
+    }
+  };
+
 
   const columns = [
     {
@@ -107,28 +119,32 @@ const StaffManager = () => {
       render: (bio) => <Text type="secondary" style={{ fontSize: '13px' }}>{bio || '...'}</Text>,
     },
     {
-      title: 'Dịch vụ',
-      dataIndex: 'serviceNames',
-      key: 'serviceNames',
-      width: 200,
-      render: (services = []) => (
-        <Space wrap size={[0, 4]}>
-          {services.slice(0, 2).map(name => (
-            <Tag color="blue" key={name} style={{ margin: 0, fontSize: '11px' }}>
-              <Text style={{ maxWidth: 80, fontSize: '11px' }} ellipsis={{ tooltip: name }}>
-                {name}
-              </Text>
-            </Tag>
-          ))}
-          {services.length > 2 && (
-            <Tooltip title={services.slice(2).join(", ")}>
-              <Tag borderless style={{ background: '#f5f5f5', fontSize: '11px' }}>
-                +{services.length - 2}
+      title: 'Dịch vụ đảm nhận',
+      dataIndex: 'services', // ĐÃ ĐỔI: từ serviceNames sang services
+      key: 'services',
+      width: 250,
+      render: (services) => {
+        const serviceList = services || [];
+        if (serviceList.length === 0) return <Text type="secondary" style={{ fontSize: '12px' }}>Chưa gán</Text>;
+        return (
+          <Space wrap size={[0, 4]}>
+            {serviceList.slice(0, 2).map((srv, idx) => (
+              <Tag color="blue" key={idx} style={{ margin: 0, fontSize: '11px' }}>
+                <Text style={{ maxWidth: 100, fontSize: '11px', color: '#1677ff' }} ellipsis={{ tooltip: srv.name }}>
+                  {srv.name} {/* Trỏ vào srv.name */}
+                </Text>
               </Tag>
-            </Tooltip>
-          )}
-        </Space>
-      ),
+            ))}
+            {serviceList.length > 2 && (
+              <Tooltip title={serviceList.slice(2).map(s => s.name).join(", ")}>
+                <Tag borderless style={{ background: '#f5f5f5', fontSize: '11px' }}>
+                  +{serviceList.length - 2}
+                </Tag>
+              </Tooltip>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: 'Thao tác',
@@ -157,6 +173,7 @@ const StaffManager = () => {
             icon: <SettingOutlined />, 
             onClick: () => {
               setSelectedStaff(record);
+              // ĐÃ ĐỔI: Trực tiếp lấy danh sách ID từ mảng object services trả về sẵn
               const currentServiceIds = record.services?.map(s => s.id) || [];
               serviceForm.setFieldsValue({ serviceIds: currentServiceIds });
               setIsServiceModalOpen(true);
@@ -295,10 +312,11 @@ const StaffManager = () => {
             <Text italic style={{ fontSize: '13px', color: '#8c8c8c' }}>Danh sách dịch vụ đang đảm nhận:</Text>
           </div>
           <div style={{ padding: '12px', background: '#fafafa', borderRadius: '8px', border: '1px dashed #d9d9d9' }}>
-            {selectedStaff?.serviceNames?.length > 0 ? (
+            {selectedStaff?.services?.length > 0 ? (
               <Space wrap>
-                {selectedStaff.serviceNames.map(name => (
-                  <Tag color="blue" key={name} style={{ borderRadius: '4px' }}>{name}</Tag>
+                {selectedStaff.services.map(srv => (
+                  // ĐÃ ĐỔI: Dùng srv.id làm key và hiển thị srv.name
+                  <Tag color="blue" key={srv.id} style={{ borderRadius: '4px' }}>{srv.name}</Tag>
                 ))}
               </Space>
             ) : (
@@ -311,16 +329,7 @@ const StaffManager = () => {
           form={serviceForm} 
           layout="vertical" 
           // MỚI: Xử lý submit gán dịch vụ bằng execute
-          onFinish={async (values) => {
-            const { success } = await execute(
-              () => staffApi.assignServices(selectedStaff.id, values.serviceIds),
-              "Cập nhật dịch vụ thành công!"
-            );
-            if (success) {
-              setIsServiceModalOpen(false);
-              runFetch();
-            }
-          }}
+          onFinish={handleAssignServices}
         >
           <Form.Item 
             name="serviceIds" 

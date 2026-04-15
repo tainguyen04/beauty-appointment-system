@@ -2,48 +2,55 @@ import axiosClient from './axiosClient';
 import { cleanParams } from '../utils/apiHelper';
 
 const serviceApi = {
-  // GET /api/BeautyService
+  // [GET] Lấy danh sách dịch vụ
   getAll: (params) => {
     return axiosClient.get('/BeautyService', { params: cleanParams(params) });
   },
 
-  // POST /api/BeautyService
+  // [GET] Lấy chi tiết dịch vụ
+  getById: (id) => {
+    return axiosClient.get(`/BeautyService/${id}`);
+  },
+
+  // [GET] Lấy dịch vụ theo StaffId
+  getByStaffId: (staffId) => {
+    return axiosClient.get(`/BeautyService/staff/${staffId}`);
+  },
+
+  // [GET] Lấy dịch vụ theo CategoryId
+  getByCategoryId: (categoryId) => {
+    return axiosClient.get(`/BeautyService/category/${categoryId}`);
+  },
+
+  // [POST] Thêm mới dịch vụ
   create: (formData) => {
     return axiosClient.post('/BeautyService', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
 
-  // GET /api/BeautyService/{id}
-  getById: (id) => {
-    return axiosClient.get(`/BeautyService/${id}`);
-  },
-
-  // PUT /api/BeautyService/{id}
+  // [PUT] Cập nhật dịch vụ
   update: (id, formData) => {
     return axiosClient.put(`/BeautyService/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
 
-  // DELETE /api/BeautyService/{id}
+  // [PATCH] Cập nhật trạng thái dịch vụ (Thêm mới theo Controller)
+  updateStatus: (id, isActive) => {
+    return axiosClient.patch(`/BeautyService/${id}/status`, null, {
+      params: { isActive } // Truyền param lên URL (FromQuery)
+    });
+  },
+
+  // [DELETE] Xóa dịch vụ
   delete: (id) => {
     return axiosClient.delete(`/BeautyService/${id}`);
   },
 
-  // GET /api/BeautyService/staff/{staffId}
-  getByStaffId: (staffId) => {
-    return axiosClient.get(`/BeautyService/staff/${staffId}`);
-  },
-
-  // GET /api/BeautyService/category/{categoryId}
-  getByCategoryId: (categoryId) => {
-    return axiosClient.get(`/BeautyService/category/${categoryId}`);
-  },
-
-  // POST /api/BeautyService/calculate-total
-  calculateTotal: (data) => {
-    return axiosClient.post('/BeautyService/calculate-total', data);
+  // [POST] Tính tổng tiền
+  calculateTotal: (serviceIds) => {
+    return axiosClient.post('/BeautyService/calculate-total', serviceIds);
   }
 };
 

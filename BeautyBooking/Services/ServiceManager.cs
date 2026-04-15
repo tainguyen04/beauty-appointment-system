@@ -67,15 +67,6 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<IEnumerable<ServiceResponse>> GetByCategoryIdAsync(int categoryId)
-        {
-            var services = await _serviceRepo.GetByCategoryIdAsync(categoryId);
-            if (!services.Any())
-                throw new KeyNotFoundException("Không tìm thấy dịch vụ nào trong category này.");
-
-            return _mapper.Map<List<ServiceResponse>>(services);
-        }
-
         public async Task<ServiceResponse?> GetByIdAsync(int id)
         {
             var service = await _serviceRepo.GetByIdWithCategoryAsync(id);
@@ -102,6 +93,8 @@ namespace BeautyBooking.Services
             if (!string.IsNullOrWhiteSpace(keyword))
                 query = query.Where(s => s.Name.Contains(keyword) ||
                                          s.Category.Name.Contains(keyword));
+            if(filter.CategoryId.HasValue)
+                query = query.Where(s => s.CategoryId == filter.CategoryId.Value);
             return await query
                 .OrderBy(c => c.Name)
                 .ProjectTo<ServiceResponse>(_mapper.ConfigurationProvider)

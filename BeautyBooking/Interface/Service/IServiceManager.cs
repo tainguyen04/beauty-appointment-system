@@ -8,7 +8,6 @@ namespace BeautyBooking.Interface.Service
     {
         Task<ServiceResponse?> GetByIdAsync(int id);
         Task<IEnumerable<ServiceResponse>> GetByStaffIdAsync(int staffId);
-        Task<IEnumerable<ServiceResponse>> GetByCategoryIdAsync(int categoryId);
         Task<int> CreateAsync(CreateServiceRequest request);
         Task<bool> UpdateAsync(int id, UpdateServiceRequest request);
         Task<bool> UpdateStatusAsync(int id, bool isActive);

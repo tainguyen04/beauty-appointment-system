@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { 
   Table, Tag, Button, Space, Modal, message, Card, 
   Input, Typography, Drawer, Descriptions, Avatar, Select,
-  Dropdown, Form, Row, Col, Upload, Switch // Bổ sung Switch
+  Dropdown, Form, Row, Col, Upload, Switch
 } from 'antd';
 import { 
   UserOutlined, EyeOutlined, KeyOutlined, 
@@ -83,7 +83,6 @@ const UserManager = () => {
         wardId: values.wardId ? parseInt(values.wardId) : null
       };
 
-      // ĐÃ FIX: Chỉnh thành userApi.create cho khớp với userApi.js
       apiCall = () => userApi.create(createData);
       msg = "Tạo tài khoản mới thành công!";
     }
@@ -103,6 +102,7 @@ const UserManager = () => {
     setIsRoleModalOpen(true);
   };
 
+  // ĐÃ FIX: Logic gọi API vẫn giữ nguyên vì params map chuẩn với api ở file userApi.js
   const handleChangeRoleSubmit = async (values) => {
     const { success } = await execute(
       () => userApi.changeRole(selectedUser.id, values.role), 
@@ -205,7 +205,7 @@ const UserManager = () => {
             icon: <KeyOutlined />, 
             onClick: () => Modal.confirm({
                 title: 'Reset mật khẩu?',
-                content: 'Bạn có chắc chắn muốn đặt lại mật khẩu cho tài khoản này?',
+                content: 'Bạn có chắc chắn muốn đặt lại mật khẩu(123456) cho tài khoản này?',
                 onOk: async () => {
                   await execute(() => userApi.resetPassword(record.id), "Đã reset mật khẩu thành công!");
                 }
@@ -263,7 +263,7 @@ const UserManager = () => {
             ))} 
           </Select>
           <Input.Search 
-            placeholder="Tìm kiếm theo tên/email..." 
+            placeholder="Tìm kiếm theo tên..." 
             onSearch={(val) => handleFilterChange({ Keyword: val })}
             style={{ width: 250 }}
             allowClear

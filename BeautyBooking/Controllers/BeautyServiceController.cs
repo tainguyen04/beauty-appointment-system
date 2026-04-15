@@ -47,14 +47,6 @@ namespace BeautyBooking.Controllers
             return Ok(services);
         }
 
-        [HttpGet("category/{categoryId}")]
-        [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<ServiceResponse>>> GetByCategoryId(int categoryId)
-        {
-            var services = await _serviceManager.GetByCategoryIdAsync(categoryId);
-            return Ok(services);
-        }
-
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<int>> Create([FromForm] CreateServiceRequest request)

@@ -34,15 +34,15 @@ const userApi = {
     });
   },
 
-  // [PUT] Thay đổi Role (Backend dùng [FromBody] ChangeRoleRequest)
-  changeRole: (userId, newRole) => {
-    return axiosClient.put('/User/role', { 
-      userId: userId, 
+  // ĐÃ FIX: Thay đổi Role cập nhật theo Backend mới (Truyền id trên URL)
+  // Backend Controller: [HttpPut("{id}/role")] public async Task<IActionResult> ChangeRole(int id, [FromBody] ChangeRoleRequest request)
+  changeRole: (id, newRole) => {
+    return axiosClient.put(`/User/${id}/role`, { 
       newRole: newRole 
     });
   },
 
-  // [POST] Reset mật khẩu về mặc định
+  // [POST] Reset mật khẩu về mặc định (123456)
   resetPassword: (id) => {
     return axiosClient.post(`/User/${id}/reset-password`);
   },
