@@ -1,68 +1,83 @@
-// src/api/userApi.js
 import axiosClient from './axiosClient';
 import { cleanParams } from '../utils/apiHelper';
 
 const userApi = {
-  // Lấy tất cả user
+  // ================= ADMIN & QUẢN LÝ USER =================
+
+  // [GET] Lấy tất cả user (Có hỗ trợ filter, phân trang từ UserFilter)
   getAll: (params) => {
     return axiosClient.get('/User', { params: cleanParams(params) });
   },
 
-  // Lấy danh sách theo Role (Ví dụ: 'Customer' hoặc 'Admin')
-  getByRole: (role, params) => {
-    return axiosClient.get(`/User/role/${role}`, { params: cleanParams(params) });
-  },
-  // Lấy chi tiết user theo ID
+  // [GET] Lấy chi tiết user theo ID
   getById: (id) => {
     return axiosClient.get(`/User/${id}`);
   },
-  // Tạo mới user (Admin tạo cho khách hàng hoặc nhân viên)
+
+  // [POST] Tạo mới user
   create: (data) => {
     return axiosClient.post('/User', data);
   },
 
-
-  // Khóa/Mở khóa tài khoản
-  blockUser: (id) => {
-    return axiosClient.post(`/User/${id}/block`);
-  },
-  //Cap nhật thông tin user (Admin cập nhật cho khách hàng hoặc nhân viên)
-  update: (id, data) => {
-    return axiosClient.put(`/User/${id}`, data, {
+  // [PUT] Cập nhật thông tin user (Admin cập nhật cho user khác)
+  // Lưu ý: Backend dùng [FromForm] nên data phải là FormData
+  update: (id, formData) => {
+    return axiosClient.put(`/User/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
-  // Cập nhật trạng thái (Active/Inactive)
- updateStatus: (id, isActive) => {
+
+  // [PUT] Cập nhật trạng thái (Active/Inactive)
+  updateStatus: (id, isActive) => {
     return axiosClient.put(`/User/${id}/status`, null, {
       params: { isActive }
     });
   },
-  // Thay đổi Role (Sửa lại: Backend dùng [FromBody] ChangeRoleRequest)
+
+  // [PUT] Thay đổi Role (Backend dùng [FromBody] ChangeRoleRequest)
   changeRole: (userId, newRole) => {
     return axiosClient.put('/User/role', { 
-        userId: userId, 
-        newRole: newRole 
+      userId: userId, 
+      newRole: newRole 
     });
   },
 
-  // Xóa tài khoản
-  delete: (id) => {
-    return axiosClient.delete(`/User/${id}`);
-  },
-  // Profile cá nhân
-  getMyProfile: () => axiosClient.get('/User/me/profile'),
-  // Cập nhật profile cá nhân (có hỗ trợ upload ảnh)
-  updateMyProfile: (formData) => axiosClient.put('/User/me/profile', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-
-  // Reset mật khẩu về mặc định
+  // [POST] Reset mật khẩu về mặc định
   resetPassword: (id) => {
     return axiosClient.post(`/User/${id}/reset-password`);
   },
-  // Kiểm tra email có sẵn hay không (dành cho form đăng ký hoặc cập nhật email)
-  checkEmail: (email) => axiosClient.get('/User/email-availability', { params: { email } }),
+
+  // [DELETE] Xóa tài khoản
+  delete: (id) => {
+    return axiosClient.delete(`/User/${id}`);
+  },
+
+  // ================= CÁ NHÂN (ME) =================
+
+  // [GET] Profile cá nhân
+  getMyProfile: () => {
+    return axiosClient.get('/User/me/profile');
+  },
+
+  // [PUT] Cập nhật profile cá nhân (có hỗ trợ upload ảnh)
+  // Lưu ý: Backend dùng [FromForm] nên data phải là FormData
+  updateMyProfile: (formData) => {
+    return axiosClient.put('/User/me/profile', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
+  // [PUT] Đổi mật khẩu cá nhân
+  changeMyPassword: (data) => {
+    return axiosClient.put('/User/me/password', data);
+  },
+
+  // ================= TIỆN ÍCH (PUBLIC) =================
+
+  // [GET] Kiểm tra email có sẵn hay không (Dành cho form đăng ký/cập nhật)
+  checkEmailAvailability: (email) => {
+    return axiosClient.get('/User/email-availability', { params: { email } });
+  }
 };
 
 export default userApi;

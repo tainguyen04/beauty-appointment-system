@@ -6,6 +6,7 @@
         public int UserId { get; set; }
         public string? FullName { get; set; }
         public string? Bio { get; set; }
+        public bool IsActive { get; set; }
         public string? AvatarUrl { get; set; }
         public int WardId { get; set; }
         public string? WardName { get; set; }

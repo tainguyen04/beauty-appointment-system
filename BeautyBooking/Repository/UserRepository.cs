@@ -18,7 +18,6 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Include(u => u.StaffProfile)
                 .Include(u => u.Ward)
-                .Where(u => !u.IsDeleted)
                 .OrderBy(u => u.FullName)
                 .AsNoTracking()
                 .ToPagedResultAsync(pageNumber, pageSize);
@@ -29,13 +28,13 @@ namespace BeautyBooking.Repository
         {
             return await _entities
                 .Include(u => u.StaffProfile)
-                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
+                .FirstOrDefaultAsync(u => u.Email == email);
         }
 
         public async Task<PagedResult<User>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)
         {
             return await _entities
-                .Where(u => u.Role == role && !u.IsDeleted)
+                .Where(u => u.Role == role)
                 .Include(u => u.StaffProfile)
                 .Include(u => u.Ward)
                 .AsNoTracking()
@@ -47,12 +46,12 @@ namespace BeautyBooking.Repository
            return await _entities
                 .Include(u => u.StaffProfile)
                 .Include(u => u.Ward)
-                .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+                .FirstOrDefaultAsync(u => u.Id == id);
         }
 
         public async Task<bool> IsEmailUniqueAsync(string email)
         {
-            return !await _entities.AnyAsync(u => u.Email == email && !u.IsDeleted);
+            return !await _entities.AnyAsync(u => u.Email == email);
         }
 
         public IQueryable<User> QueryDetailed()
@@ -66,7 +65,7 @@ namespace BeautyBooking.Repository
         public async Task UpdateAvatarAsync(int userId, string avatarUrl, string avatarPublicId)
         {
              await _entities
-                .Where(u => u.Id == userId && !u.IsDeleted)
+                .Where(u => u.Id == userId)
                 .ExecuteUpdateAsync(setter => setter
                     .SetProperty(u => u.AvatarUrl, avatarUrl)
                     .SetProperty(u => u.AvatarPublicId, avatarPublicId));

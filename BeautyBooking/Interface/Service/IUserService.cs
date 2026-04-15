@@ -12,7 +12,7 @@ namespace BeautyBooking.Interface.Service
         Task<bool> UpdateMyProfileAsync(UpdateUserRequest request);
         Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request);
         Task<bool> UpdateActiveStatusAsync(int id, bool isActive);
-        Task<bool> ChangeRoleAsync(ChangeRoleRequest request);
+        Task<bool> ChangeRoleAsync(int id,ChangeRoleRequest request);
         Task<bool> ResetPasswordAsync(int id);
         Task<bool> DeleteAsync(int id);
 

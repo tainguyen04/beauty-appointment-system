@@ -48,7 +48,7 @@ namespace BeautyBooking.Services
             var user = await _userRepo.GetByIdAsync(currentUserId.Value);
             if (user == null || user.IsDeleted)
                 throw new KeyNotFoundException("Tài khoản không tồn tại.");
-            user.IsActived = false;
+            user.IsActive = false;
             await _userRepo.SaveChangesAsync();
             return true;
         }
@@ -72,12 +72,12 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<bool> ChangeRoleAsync(ChangeRoleRequest request)
+        public async Task<bool> ChangeRoleAsync(int id, ChangeRoleRequest request)
         {
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
-                var user = await _userRepo.GetByIdAsync(request.UserId);
+                var user = await _userRepo.GetByIdAsync(id);
                 if (user == null || user.IsDeleted)
                     return false;
                 
@@ -89,12 +89,12 @@ namespace BeautyBooking.Services
 
                 if (request.NewRole == UserRole.Staff)
                 {
-                    var existingProfile = await _staffProfileService.GetByUserIdAsync(request.UserId);
+                    var existingProfile = await _staffProfileService.GetByUserIdAsync(id);
                     if(existingProfile == null)
                     {
                         await _staffProfileService.CreateAsync(new CreateStaffProfileRequest
                         {
-                            UserId = request.UserId,
+                            UserId = id,
                             Bio = "Nhân viên mới",
                             ServiceIds = new List<int>()
                         });
@@ -103,14 +103,14 @@ namespace BeautyBooking.Services
                     {
                         // Nếu đã có profile nhân viên, đảm bảo nó được kích hoạt
                         // isActive = true để profile có thể hiển thị lại nếu trước đó đã bị khóa
-                        await _staffProfileService.UpdateActiveStatusAsync(request.UserId, true);
+                        await _staffProfileService.UpdateActiveStatusAsync(id, true);
                     }
                 }
                 if(user.Role == UserRole.Staff && request.NewRole != UserRole.Staff)
                 {
                     // Nếu chuyển từ Staff sang vai trò khác, đảm bảo profile nhân viên bị vô hiệu hóa
                     //isActive = false để profile không hiển thị nữa nhưng vẫn giữ lại dữ liệu nếu sau này muốn chuyển lại thành Staff
-                    await _staffProfileService.UpdateActiveStatusAsync(request.UserId, false);
+                    await _staffProfileService.UpdateActiveStatusAsync(id, false);
                 }
 
                 await transaction.CommitAsync(); 
@@ -305,7 +305,7 @@ namespace BeautyBooking.Services
                 throw new KeyNotFoundException("Tài khoản không tồn tại.");
 
             // 2. Update status
-            user.IsActived = isActive;
+            user.IsActive = isActive;
 
             await _userRepo.SaveChangesAsync();
             return true;

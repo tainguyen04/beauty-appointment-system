@@ -12,5 +12,7 @@ namespace BeautyBooking.Interface.Repository
         Task<IEnumerable<Entities.Service>> GetByStaffIdAsync(int staffId);
         Task<IEnumerable<Entities.Service>> GetByIdsAsync(List<int> ids);
 
+        Task UpdateImageAsync(int id, string imgUrl, string imgPublicId);
+
     }
 }

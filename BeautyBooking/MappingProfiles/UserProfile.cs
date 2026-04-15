@@ -13,7 +13,6 @@ namespace BeautyBooking.MappingProfiles
                     // Map from User entity to UserResponse
                     CreateMap<User, UserResponse>()
                             .ForMember(dest => dest.WardName, opt => opt.MapFrom(src => src.Ward != null ? src.Ward.FullName : null))
-                            .ForMember(dest => dest.IsActived, opt => opt.MapFrom(src => !src.IsDeleted))
                             .ForMember(dest => dest.StaffId, opt => opt.MapFrom(src => src.StaffProfile != null ? (int?)src.StaffProfile.Id : null));
                     // Map from RegisterRequest to User entity
                     CreateMap<RegisterRequest, User>()

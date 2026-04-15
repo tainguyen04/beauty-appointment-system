@@ -20,7 +20,7 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Include(ws => ws.Staff)
                     .ThenInclude(s => s.User)
-                .Where(ws => ws.DayOfWeek == dayOfWeek && !ws.Staff.IsDeleted)
+                .Where(ws => ws.DayOfWeek == dayOfWeek)
                 .OrderBy(ws => ws.StartTime)
                 .ThenBy(ws => ws.Staff.User.FullName)
                 .AsNoTracking()
@@ -32,7 +32,7 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Include(ws => ws.Staff)
                     .ThenInclude(s => s.User)
-                .FirstOrDefaultAsync(ws => ws.Id == id && !ws.IsDeleted);
+                .FirstOrDefaultAsync(ws => ws.Id == id);
         }
 
         public async Task<IEnumerable<WorkSchedule>> GetByStaffIdAsync(int staffId)

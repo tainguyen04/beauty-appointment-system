@@ -39,7 +39,7 @@ namespace BeautyBooking.Services
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
         {
             var user = await _userRepo.GetByEmailAsync(request.Email);
-            if (user == null || user.IsDeleted || !user.IsActived)
+            if (user == null || user.IsDeleted || !user.IsActive)
                 return null;
 
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))

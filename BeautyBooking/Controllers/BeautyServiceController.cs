@@ -21,13 +21,6 @@ namespace BeautyBooking.Controllers
             _serviceManager = serviceManager;
         }
 
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public async Task<ActionResult<PagedResult<ServiceResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-        //{
-        //    var result = await _serviceManager.GetAllAsync(pageNumber, pageSize);
-        //    return Ok(result);
-        //}
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAll([FromQuery] ServiceFilter filter)
@@ -78,6 +71,15 @@ namespace BeautyBooking.Controllers
             var result = await _serviceManager.UpdateAsync(id, request);
             if(!result)
                 return BadRequest("Không thể cập nhật dịch vụ. Vui lòng kiểm tra lại.");
+            return NoContent();
+        }
+        [HttpPatch("{id}/status")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromQuery] bool isActive)
+        {
+            var result = await _serviceManager.UpdateStatusAsync(id, isActive);
+            if (!result)
+                return BadRequest("Không thể cập nhật trạng thái dịch vụ. Vui lòng kiểm tra lại.");
             return NoContent();
         }
 

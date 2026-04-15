@@ -81,11 +81,11 @@ namespace BeautyBooking.Controllers
             return NoContent();
         }
 
-        [HttpPut("role")]
+        [HttpPut("{id}/role")]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> ChangeRole([FromBody] ChangeRoleRequest request)
+        public async Task<IActionResult> ChangeRole(int id,[FromBody] ChangeRoleRequest request)
         {
-            var result = await _userService.ChangeRoleAsync(request);
+            var result = await _userService.ChangeRoleAsync(id,request);
             if (!result)
                 return NotFound();
             return NoContent();

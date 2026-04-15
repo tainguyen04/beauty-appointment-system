@@ -2,12 +2,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { 
   Table, Tag, Button, Space, Modal, message, Card, 
   Input, Typography, Drawer, Descriptions, Avatar, Select,
-  Dropdown, Form, Row, Col, Upload
+  Dropdown, Form, Row, Col, Upload, Switch // Bổ sung Switch
 } from 'antd';
 import { 
   UserOutlined, EyeOutlined, KeyOutlined, 
   MoreOutlined, PlusOutlined, EditOutlined, UploadOutlined,
-  DeleteOutlined, UserSwitchOutlined // ĐÃ FIX: Thêm UserSwitchOutlined
+  DeleteOutlined, UserSwitchOutlined 
 } from '@ant-design/icons';
 import { usePagination } from '../../hooks/usePagination';
 import { useApiAction } from '../../hooks/useApiAction'; 
@@ -83,7 +83,8 @@ const UserManager = () => {
         wardId: values.wardId ? parseInt(values.wardId) : null
       };
 
-      apiCall = () => userApi.createUser(createData);
+      // ĐÃ FIX: Chỉnh thành userApi.create cho khớp với userApi.js
+      apiCall = () => userApi.create(createData);
       msg = "Tạo tài khoản mới thành công!";
     }
 
@@ -114,15 +115,26 @@ const UserManager = () => {
     }
   };
 
+  // --- Handler cho Cập nhật trạng thái (Block/Unblock) ---
+  const handleToggleStatus = async (userId, currentStatus) => {
+    const newStatus = !currentStatus;
+    const { success } = await execute(
+      () => userApi.updateStatus(userId, newStatus),
+      newStatus ? "Đã mở khóa tài khoản!" : "Đã khóa tài khoản!"
+    );
+    if (success) fetchData();
+  };
+
   // --- Các hàm hỗ trợ khác (Detail) ---
   const showDetail = async (id) => {
     setDetailLoading(true);
     setOpenDetail(true);
     try {
       const res = await userApi.getById(id);
-      setSelectedUser(res);
+      setSelectedUser(res?.data || res);
     } catch (error) {
-      message.error("Lỗi lấy chi tiết", error);
+      console.log("Lỗi lấy chi tiết user:", error);
+      message.error("Lỗi lấy chi tiết");
       setOpenDetail(false);
     } finally { 
       setDetailLoading(false); 
@@ -146,7 +158,6 @@ const UserManager = () => {
     {
       title: 'Vai trò',
       dataIndex: 'role',
-      // ĐÃ FIX: Chống sập Cell bằng Null Check
       render: (role) => {
         if (!role) return <Tag color="default">KHÔNG RÕ</Tag>;
         const config = getRoleConfig(role);
@@ -156,6 +167,22 @@ const UserManager = () => {
           </Tag>
         );
       }
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'isActive',
+      width: 120,
+      render: (isActive, record) => (
+        <Space>
+          <Switch 
+            size="small" 
+            checked={!!isActive} 
+            onChange={() => handleToggleStatus(record.id, isActive)}
+            loading={actionLoading}
+          />
+          <Tag color={isActive ? 'green' : 'red'}>{isActive ? 'Hoạt động' : 'Đã khóa'}</Tag>
+        </Space>
+      )
     },
     {
       title: 'Thao tác',
@@ -236,7 +263,7 @@ const UserManager = () => {
             ))} 
           </Select>
           <Input.Search 
-            placeholder="Tìm kiếm..." 
+            placeholder="Tìm kiếm theo tên/email..." 
             onSearch={(val) => handleFilterChange({ Keyword: val })}
             style={{ width: 250 }}
             allowClear
@@ -371,6 +398,11 @@ const UserManager = () => {
             <Descriptions.Item label="Họ tên">{selectedUser?.fullName}</Descriptions.Item>
             <Descriptions.Item label="Email">{selectedUser?.email}</Descriptions.Item>
             <Descriptions.Item label="SĐT">{selectedUser?.phone}</Descriptions.Item>
+            <Descriptions.Item label="Trạng thái">
+              <Tag color={selectedUser?.isActive ? 'green' : 'red'}>
+                {selectedUser?.isActive ? 'Đang hoạt động' : 'Đã khóa'}
+              </Tag>
+            </Descriptions.Item>
             <Descriptions.Item label="Vai trò">
               <Tag color={getRoleConfig(selectedUser?.role)?.color}>
                 {getRoleConfig(selectedUser?.role)?.label}

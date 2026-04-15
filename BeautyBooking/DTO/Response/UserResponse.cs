@@ -12,8 +12,8 @@ namespace BeautyBooking.DTO.Response
         public string? AvatarUrl { get; set; }
         public int? WardId { get; set; }
         public string? WardName { get; set; }
-        public bool IsActived { get; set; }
         public int? StaffId { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; }
     }
 }

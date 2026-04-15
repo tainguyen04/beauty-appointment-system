@@ -88,12 +88,12 @@ namespace BeautyBooking.Services
             await _staffProfileRepository.SaveChangesAsync();
             return true;
         }
-        public async Task<bool> UpdateActiveStatusAsync(int userId, bool isAvtive)
+        public async Task<bool> UpdateActiveStatusAsync(int userId, bool isActive)
         {
             var staffProfile = await _staffProfileRepository.GetByUserIdAsync(userId);
             if (staffProfile == null)
                 throw new KeyNotFoundException("Staff không tồn tại");
-            staffProfile.IsActived = isAvtive;
+            staffProfile.IsActive = isActive;
             await _staffProfileRepository.SaveChangesAsync();
             return true;
         }
@@ -121,7 +121,7 @@ namespace BeautyBooking.Services
                 throw new UnauthorizedAccessException("Bạn không có quyền truy cập thông tin của nhân viên khác.");
             var staffProfile =  await _staffProfileRepository
                                 .Query()
-                                .Where(s => s.Id == id && s.IsActived && !s.IsDeleted)
+                                .Where(s => s.Id == id && s.IsActive && !s.IsDeleted)
                                 .ProjectTo<StaffProfileResponse>(_mapper.ConfigurationProvider)
                                 .FirstOrDefaultAsync();
             if(staffProfile == null)

@@ -14,39 +14,22 @@ namespace BeautyBooking.Repository
         {
         }
 
-        public IQueryable<Service> GetByCategoryId(int categoryId)
-        {
-            return _entities.Where(s => s.CategoryId == categoryId && !s.IsDeleted).AsNoTracking();
-        }
-        
-        public IQueryable<Service> GetByIds(List<int> ids)
-        {
-            return _entities.Where(s => ids.Contains(s.Id) && !s.IsDeleted).AsNoTracking();
-        }
-
         public async Task<Service?> GetByIdWithCategoryAsync(int id)
         {
             return await _entities.Include(s => s.Category)
-                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
-        }
-
-        public IQueryable<Service> GetByStaffId(int staffId)
-        {
-            return _entities
-                .Where(s => s.StaffProfiles.Any(sp => sp.Id == staffId) && !s.IsDeleted)
-                .AsNoTracking();
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
 
         public async Task<PagedResult<Service>> GetPagedWithCategoryAsync(int pageNumber, int pageSize)
         {
-            return await _entities.Where(s => !s.IsDeleted)
+            return await _entities
                 .Include(s => s.Category)
                 .OrderBy(s => s.Name)
                 .ToPagedResultAsync(pageNumber, pageSize);
         }
         public async Task<IEnumerable<Service>> GetByIdsAsync(List<int> ids)
         {
-            return await _entities.Where(s => ids.Contains(s.Id) && !s.IsDeleted)
+            return await _entities.Where(s => ids.Contains(s.Id))
                 .Include(s => s.Category)
                 .AsNoTracking()
                 .ToListAsync();
@@ -54,7 +37,7 @@ namespace BeautyBooking.Repository
         public async Task<IEnumerable<Service>> GetByStaffIdAsync(int staffId)
         {
             return await _entities
-                .Where(s => s.StaffProfiles.Any(ss => ss.Id == staffId) && !s.IsDeleted)
+                .Where(s => s.StaffProfiles.Any(ss => ss.Id == staffId))
                 .Include(s => s.Category)
                 .AsNoTracking()
                 .ToListAsync();
@@ -63,9 +46,17 @@ namespace BeautyBooking.Repository
         {
             return await _entities
                 .Include(s => s.Category)
-                .Where(s => s.CategoryId == categoryId && !s.IsDeleted)
+                .Where(s => s.CategoryId == categoryId)
                 .AsNoTracking()
                 .ToListAsync();
+        }
+
+        public async Task UpdateImageAsync(int id, string imgUrl, string imgPublicId)
+        {
+            await _entities.Where(s => s.Id == id)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(p => p.ImageUrl, imgUrl)
+                    .SetProperty(p => p.ImagePublicId, imgPublicId));
         }
     }
 }

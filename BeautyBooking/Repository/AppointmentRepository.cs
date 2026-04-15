@@ -19,8 +19,7 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Where(a => a.StaffId == staffId &&
                             a.AppointmentDate == date &&
-                            a.AppointmentStatus != AppointmentStatus.Cancelled &&
-                            !a.IsDeleted)
+                            a.AppointmentStatus != AppointmentStatus.Cancelled)
                 .Include(a => a.User)
                 .Include(a => a.AppointmentServices)
                     .ThenInclude(a => a.Service)
@@ -30,7 +29,7 @@ namespace BeautyBooking.Repository
         public async Task<PagedResult<Appointment>> GetAppointmentsByUserIdAsync(int userId, int pageNumber, int pageSize)
         {
             return await _entities
-                .Where(a => a.UserId == userId && !a.IsDeleted)
+                .Where(a => a.UserId == userId)
                 .Include(a => a.Staff)
                 .Include(a => a.AppointmentServices)
                     .ThenInclude(a => a.Service)
@@ -46,16 +45,14 @@ namespace BeautyBooking.Repository
                 a.StaffId == staffId &&
                 a.AppointmentDate == appointmentDate &&
                 a.AppointmentStatus != AppointmentStatus.Cancelled &&
-                ((startTime < a.EndTime && endTime > a.StartTime) && (!excludeId.HasValue || a.Id != excludeId.Value)) &&
-                !a.IsDeleted);
+                ((startTime < a.EndTime && endTime > a.StartTime) && (!excludeId.HasValue || a.Id != excludeId.Value)));
         }
         public async Task<bool> HasAnyAppointmentsAsync(int staffId, DateOnly date)
         {
             return await _entities.AnyAsync(a =>
                 a.StaffId == staffId &&
                 a.AppointmentDate == date &&
-                a.AppointmentStatus != AppointmentStatus.Cancelled &&
-                !a.IsDeleted);
+                a.AppointmentStatus != AppointmentStatus.Cancelled);
         }
         public async Task<Appointment?> GetDetailedByIdAsync(int id)
         {
@@ -72,7 +69,6 @@ namespace BeautyBooking.Repository
         public async Task<PagedResult<Appointment>> GetPagedAsync(int pageNumber, int pageSize)
         {
             return await _entities
-                .Where(a => !a.IsDeleted)
                 .Include(a => a.User)
                 .Include(a => a.Staff)
                 .Include(a => a.AppointmentServices)
@@ -88,8 +84,7 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Where(a => a.AppointmentDate == date &&
                             a.AppointmentStatus != AppointmentStatus.Cancelled &&
-                            ((startTime < a.EndTime && endTime > a.StartTime)) &&
-                            !a.IsDeleted)
+                            ((startTime < a.EndTime && endTime > a.StartTime)))
                 .Select(a => a.StaffId)
                 .Distinct()
                 .ToListAsync();

@@ -20,7 +20,7 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Include(s => s.Staff)
                     .ThenInclude(s => s.User)
-                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
 
         public async Task<bool> IsAlreadyOffAsync(int staffId, DateOnly date)

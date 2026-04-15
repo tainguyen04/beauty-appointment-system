@@ -51,8 +51,7 @@ namespace BeautyBooking.Services
             if(request.ImageUrl != null)
             {
                 var uploadResult = await _photoService.UploadPhotoAsync(request.ImageUrl, false);
-                service.ImageUrl = uploadResult.Url;
-                service.ImagePublicId = uploadResult.PublicId;
+                await _serviceRepo.UpdateImageAsync(service.Id, uploadResult.Url, uploadResult.PublicId);
             }
             await _serviceRepo.SaveChangesAsync();
             return service.Id;
@@ -119,8 +118,7 @@ namespace BeautyBooking.Services
             if(request.ImageUrl != null)
             {
                 var uploadResult = await _photoService.UploadPhotoAsync(request.ImageUrl, false);
-                existingService.ImageUrl = uploadResult.Url;
-                existingService.ImagePublicId = uploadResult.PublicId;
+                await _serviceRepo.UpdateImageAsync(existingService.Id, uploadResult.Url, uploadResult.PublicId);
             }
             await _serviceRepo.SaveChangesAsync();
             if(request.ImageUrl != null && !string.IsNullOrEmpty(oldImagePublicId))
@@ -134,6 +132,16 @@ namespace BeautyBooking.Services
                     Console.WriteLine($"Lỗi khi xóa ảnh cũ: {ex.Message}");
                 }
             }
+            return true;
+        }
+
+        public async Task<bool> UpdateStatusAsync(int id, bool isActive)
+        {
+            var service = await _serviceRepo.GetByIdAsync(id);
+            if (service == null)
+                throw new KeyNotFoundException("Service không tồn tại.");
+            service.IsActive = isActive;
+            await _serviceRepo.SaveChangesAsync();
             return true;
         }
     }

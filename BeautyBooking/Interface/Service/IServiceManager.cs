@@ -11,6 +11,7 @@ namespace BeautyBooking.Interface.Service
         Task<IEnumerable<ServiceResponse>> GetByCategoryIdAsync(int categoryId);
         Task<int> CreateAsync(CreateServiceRequest request);
         Task<bool> UpdateAsync(int id, UpdateServiceRequest request);
+        Task<bool> UpdateStatusAsync(int id, bool isActive);
         Task<bool> DeleteAsync(int id);
 
         Task<decimal> CalculateTotalPriceAsync(IEnumerable<int> serviceIds);
