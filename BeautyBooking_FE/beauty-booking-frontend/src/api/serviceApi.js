@@ -17,11 +17,6 @@ const serviceApi = {
     return axiosClient.get(`/BeautyService/staff/${staffId}`);
   },
 
-  // [GET] Lấy dịch vụ theo CategoryId
-  getByCategoryId: (categoryId) => {
-    return axiosClient.get(`/BeautyService/category/${categoryId}`);
-  },
-
   // [POST] Thêm mới dịch vụ
   create: (formData) => {
     return axiosClient.post('/BeautyService', formData, {
