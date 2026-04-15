@@ -83,7 +83,7 @@ namespace BeautyBooking.Controllers
 
         [HttpPut("{id}/role")]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> ChangeRole(int id,[FromBody] ChangeRoleRequest request)
+        public async Task<IActionResult> ChangeRole(int id,[FromQuery] ChangeRoleRequest request)
         {
             var result = await _userService.ChangeRoleAsync(id,request);
             if (!result)
