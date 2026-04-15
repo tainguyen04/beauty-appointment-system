@@ -9,14 +9,17 @@ namespace BeautyBooking.Interface.Repository
         Task<StaffProfile?> GetByUserIdAsync(int userId);
         Task<StaffProfile?> GetByUserIdWithUserAsync(int userId);
         Task<PagedResult<StaffProfile>> GetPagedWithUserAndServicesAsync(int pageNumber, int pageSize);
-        Task<PagedResult<StaffProfile>> GetByServiceIdsAsync(List<int> serviceIds, int pageNumber, int pageSize);
+        Task<PagedResult<StaffProfile>> GetByServiceIdsAsync(
+            List<int> serviceIds, int pageNumber, int pageSize, int? wardId = null);
         Task<IEnumerable<StaffProfile>> GetByServiceIdAsync(int serviceId);
+        Task<IEnumerable<StaffProfile>> GetByWardIdAsync(int wardId);
         Task<StaffProfile?> GetByIdWithUserAndServicesAsync(int id);
         Task<StaffProfile?> GetByIdWithServicesAsync(int id);
         Task<IEnumerable<int>> GetServiceIdsByIdAsync(int id);
-        Task<IEnumerable<StaffProfile>> GetWorkingByDateAsync(DateOnly date);
-        Task<IEnumerable<StaffProfile>> GetActiveAsync();
-        Task<IEnumerable<StaffProfile>> GetAvailableByTimeSlotAsync(DateOnly date, int startTime, int endTime, List<int> serviceIds);
+        Task<IEnumerable<StaffProfile>> GetWorkingByDateAsync(DateOnly date, int? wardId = null);
+        Task<IEnumerable<StaffProfile>> GetActiveAsync(int? wardId = null);
+        Task<IEnumerable<StaffProfile>> GetAvailableByTimeSlotAsync(
+            DateOnly date, int startTime, int endTime, List<int> serviceIds, int? wardId = null);
 
     }
 }

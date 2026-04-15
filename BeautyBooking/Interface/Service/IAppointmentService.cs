@@ -7,24 +7,12 @@
     {
         public interface IAppointmentService
         {
-            //Admin
-            Task<int> CreateAppointmentByAdminAsync(CreateAppointmentRequest request);
-            Task<bool> UpdateAppointmentAsync(int id, UpdateAppointmentRequest request);
-            Task<bool> DeleteAppointmentAsync(int id);
-            //User
-
-            Task<PagedResult<AppointmentResponse>> GetMyAppointmentsAsync(int pageNumber, int pageSize);
-
-            Task<int> CreateAppointmentByCustomerAsync(CreateAppointmentRequest request);
-            Task<bool> CancelAppointmentByCustomerAsync(int appointmentId);
-            //Staff
-
-            Task<IEnumerable<AppointmentResponse>> GetMyScheduleAsync(DateOnly date);
-            //Admin,Staff
+            
+            Task<int> CreateAsync(CreateAppointmentRequest request);
+            Task<bool> UpdateAsync(int id, UpdateAppointmentRequest request);
             Task<bool> UpdateStatusAsync(int id, AppointmentStatus status);
+            Task<bool> DeleteAsync(int id);
 
-
-            //Common
             Task<AppointmentResponse?> GetByIdWithDetailsAsync(int id);
             Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(AppointmentFilter filter);
         }

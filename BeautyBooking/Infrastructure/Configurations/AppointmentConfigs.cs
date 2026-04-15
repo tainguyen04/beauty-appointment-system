@@ -18,6 +18,8 @@ namespace BeautyBooking.Infrastructure.Configurations
 
             builder.Property(a => a.EndTime)
                 .IsRequired();
+            builder.Property(a => a.WardId)
+                .IsRequired();
 
             builder.Property(a => a.TotalPrice)
                 .HasColumnType("decimal(18,2)")
@@ -32,8 +34,13 @@ namespace BeautyBooking.Infrastructure.Configurations
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne(a => a.Staff)
+            builder.HasOne(a => a.Ward)
                 .WithMany()
+                .HasForeignKey(a => a.WardId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(a => a.Staff)
+                .WithMany(a => a.Appointments)
                 .HasForeignKey(a => a.StaffId)
                 .OnDelete(DeleteBehavior.Restrict);
 

@@ -62,5 +62,14 @@ namespace BeautyBooking.Repository
                 .Include(u => u.Ward)
                 .Where(u => !u.IsDeleted);
         }
+
+        public async Task UpdateAvatarAsync(int userId, string avatarUrl, string avatarPublicId)
+        {
+             await _entities
+                .Where(u => u.Id == userId && !u.IsDeleted)
+                .ExecuteUpdateAsync(setter => setter
+                    .SetProperty(u => u.AvatarUrl, avatarUrl)
+                    .SetProperty(u => u.AvatarPublicId, avatarPublicId));
+        }
     }
 }

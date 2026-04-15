@@ -4,6 +4,8 @@
     {
         public int UserId { get; set; }
         public string Bio { get; set; }
+        public int WardId { get; set; }
+        public WebsiteLocalizationWard Ward { get; set; } = null!;
         public User User { get; set; } = null!;
         public ICollection<Service> Services { get; set; } = new List<Service>();
         public ICollection<StaffDayOff> StaffDayOffs { get; set; } = new List<StaffDayOff>();

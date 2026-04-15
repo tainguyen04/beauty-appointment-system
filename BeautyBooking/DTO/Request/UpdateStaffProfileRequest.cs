@@ -4,6 +4,7 @@
     {
         public string? Bio { get; set; }
         public IFormFile? AvatarUrl { get; set; }
-        public List<int> ServiceIds { get; set; } = new();
+        public int? WardId { get; set; }
+        public List<int>? ServiceIds { get; set; }
     }
 }

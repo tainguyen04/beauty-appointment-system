@@ -7,6 +7,8 @@
         public string? FullName { get; set; }
         public string? Bio { get; set; }
         public string? AvatarUrl { get; set; }
-        public List<string> ServiceNames { get; set; } = new();
+        public int WardId { get; set; }
+        public string? WardName { get; set; }
+        public List<ServiceResponse> Services { get; set; } = new();
     }
 }

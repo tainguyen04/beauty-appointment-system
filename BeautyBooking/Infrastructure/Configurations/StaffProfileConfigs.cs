@@ -12,11 +12,20 @@ namespace BeautyBooking.Infrastructure.Configurations
             builder.Property(s => s.Bio)
                 .IsRequired()
                 .HasMaxLength(255);
+            builder.Property(s => s.UserId)
+                .IsRequired();
+            builder.Property(s => s.WardId)
+                .IsRequired();
             builder.HasQueryFilter(s => !s.IsDeleted);
             builder.HasOne(s => s.User)
                 .WithOne(u => u.StaffProfile)
                 .HasForeignKey<StaffProfile>(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(s => s.Ward)
+                .WithMany()
+                .HasForeignKey(s => s.WardId)
+                .OnDelete(DeleteBehavior.Restrict);
             builder.HasMany(s => s.Services)
                 .WithMany(s => s.StaffProfiles);
             builder.HasMany(s => s.StaffDayOffs)
@@ -26,7 +35,7 @@ namespace BeautyBooking.Infrastructure.Configurations
             builder.HasMany(s => s.Appointments)
                 .WithOne(a => a.Staff)
                 .HasForeignKey(a => a.StaffId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
     }

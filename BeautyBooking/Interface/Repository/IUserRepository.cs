@@ -11,5 +11,6 @@ namespace BeautyBooking.Interface.Repository
         Task<bool> IsEmailUniqueAsync(string email);
         Task<User?> GetWithProfileByIdAsync(int id);
         Task<PagedResult<User>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize);
+        Task UpdateAvatarAsync(int userId, string avatarUrl, string avatarPublicId);
     }
 }

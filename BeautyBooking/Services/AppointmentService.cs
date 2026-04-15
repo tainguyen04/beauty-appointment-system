@@ -23,8 +23,8 @@ namespace BeautyBooking.Services
         private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
         public AppointmentService(IAppointmentRepository appointmentRepository,
-            IMapper mapper, IStaffDayOffRepository staffDayOffRepository, IServiceRepository serviceRepository, 
-            IStaffProfileRepository staffProfileRepository, 
+            IMapper mapper, IStaffDayOffRepository staffDayOffRepository, IServiceRepository serviceRepository,
+            IStaffProfileRepository staffProfileRepository,
             ICurrentUserService currentUserService, IWorkScheduleRepository workScheduleRepository)
         {
             _appointmentRepository = appointmentRepository;
@@ -35,71 +35,33 @@ namespace BeautyBooking.Services
             _currentUserService = currentUserService;
             _workScheduleRepository = workScheduleRepository;
         }
-
-        public async Task<bool> CancelAppointmentByCustomerAsync(int appointmentId)
+        public async Task<int> CreateAsync(CreateAppointmentRequest request)
         {
-            var customerId = _currentUserService.UserId;
-            var appointment = await _appointmentRepository.GetByIdAsync(appointmentId);
-            if (appointment == null || appointment.IsDeleted)
-                throw new Exception("Không tìm thấy cuộc hẹn");
-            if (appointment.UserId != customerId)
-                throw new UnauthorizedAccessException("Bạn không có quyền hủy cuộc hẹn này.");
-            if (appointment.AppointmentStatus == AppointmentStatus.Cancelled)
-                throw new InvalidOperationException("Cuộc hẹn đã bị hủy.");
-            appointment.AppointmentStatus = AppointmentStatus.Cancelled;
-            await _appointmentRepository.SaveChangesAsync();
-            return true;
-
-        }
-
-
-        public async Task<int> CreateAppointmentByAdminAsync(CreateAppointmentRequest request)
-        {
+            var userId = _currentUserService.UserId;
+            var role = _currentUserService.Role;
             if (request.ServiceIds == null || !request.ServiceIds.Any())
                 throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
+            if(role == UserRole.Customer)
+            {
+                request.UserId = userId;
+            }
+            if(role != UserRole.Admin && request.UserId != userId)
+            {
+                throw new UnauthorizedAccessException("Bạn không có quyền tạo lịch hẹn cho người khác.");
+            }
             var distinctServiceIds = request.ServiceIds.Distinct().ToList();
             var services = (await _serviceRepository.GetRangeByIdsAsync(distinctServiceIds)).ToList();
             if (services.Count() != distinctServiceIds.Count())
                 throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
 
             var appointment = _mapper.Map<Appointment>(request);
-            appointment.AppointmentStatus = AppointmentStatus.Confirmed;
+            var status = role == UserRole.Customer ? AppointmentStatus.Pending : AppointmentStatus.Confirmed;
+            appointment.AppointmentStatus = status;
             int totalDuration = services.Sum(s => s.Duration);
             appointment.EndTime = request.StartTime + totalDuration;
 
             ApplyServicesToAppointment(appointment, services);
 
-            await ValidateAsync(
-                appointment.StaffId, 
-                appointment.AppointmentDate, 
-                appointment.StartTime,
-                appointment.EndTime, 
-                request.ServiceIds);
-
-            await _appointmentRepository.CreateAsync(appointment);
-            await _appointmentRepository.SaveChangesAsync();
-            return appointment.Id;
-        }
-
-        public async Task<int> CreateAppointmentByCustomerAsync(CreateAppointmentRequest request)
-        {
-            
-            var appointment = _mapper.Map<Appointment>(request);
-            var userId = _currentUserService.UserId;
-            if(!userId.HasValue)
-                throw new Exception("Không tìm thấy người dùng");
-            appointment.UserId = userId.Value;
-            appointment.AppointmentStatus = AppointmentStatus.Pending;
-            var distinctServiceIds = request.ServiceIds.Distinct().ToList();
-            var services = (await _serviceRepository.GetRangeByIdsAsync(distinctServiceIds)).ToList();
-            if (services.Count() != distinctServiceIds.Count())
-                throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
-            if(services == null || !services.Any())
-                throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
-            int totalDuration = services.Sum(s => s.Duration);
-            appointment.EndTime = request.StartTime + totalDuration;
-
-            ApplyServicesToAppointment(appointment, services);
             await ValidateAsync(
                 appointment.StaffId,
                 appointment.AppointmentDate,
@@ -112,7 +74,8 @@ namespace BeautyBooking.Services
             return appointment.Id;
         }
 
-        public async Task<bool> DeleteAppointmentAsync(int id)
+
+        public async Task<bool> DeleteAsync(int id)
         {
             var appointment = await _appointmentRepository.GetByIdAsync(id);
             if (appointment == null)
@@ -129,16 +92,25 @@ namespace BeautyBooking.Services
         {
             var query = _appointmentRepository.Query();
             var userRole = _currentUserService.Role;
-            if(userRole == UserRole.Customer)
+            if (userRole == UserRole.Customer)
             {
-                var userId = _currentUserService.UserId;
-                query = query.Where(a => a.UserId == userId);
+                query = query.Where(a => a.UserId == _currentUserService.UserId);
             }
             else if (userRole == UserRole.Staff)
             {
-                var staffId = _currentUserService.StaffId;
-                query = query.Where(a => a.StaffId == staffId);
+                query = query.Where(a => a.StaffId == _currentUserService.StaffId);
             }
+
+
+            if(filter.UserId.HasValue)
+                query = query.Where(a => a.UserId == filter.UserId.Value);
+
+            if (filter.StaffId.HasValue)
+                query = query.Where(a => a.StaffId == filter.StaffId.Value);
+
+            if(filter.WardId.HasValue)
+                query = query.Where(a => a.WardId == filter.WardId.Value);
+
             var keyword = filter.Keyword?.Trim();
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -179,26 +151,7 @@ namespace BeautyBooking.Services
             return _mapper.Map<AppointmentResponse?>(await _appointmentRepository.GetDetailedByIdAsync(id));
         }
 
-        public async Task<PagedResult<AppointmentResponse>> GetMyAppointmentsAsync(int pageNumber, int pageSize)
-        {
-            var customerId = _currentUserService.UserId;
-            if (!customerId.HasValue)
-                throw new UnauthorizedAccessException("Người dùng chưa đăng nhập");
-
-            var pagedAppointments = await _appointmentRepository.GetAppointmentsByUserIdAsync(customerId.Value, pageNumber, pageSize);
-            return pagedAppointments.ToPagedResult<Appointment, AppointmentResponse>(_mapper);
-        }
-
-        public async Task<IEnumerable<AppointmentResponse>> GetMyScheduleAsync(DateOnly date)
-        {
-            var staffId = _currentUserService.StaffId;
-            if(!staffId.HasValue)
-                throw new UnauthorizedAccessException("Nhân viên chưa đăng nhập");
-            return _mapper.Map<IEnumerable<AppointmentResponse>>(await _appointmentRepository.GetAppointmentsByStaffIdAsync(staffId.Value, date));
-        }
-        
-
-        public async Task<bool> UpdateAppointmentAsync(int id, UpdateAppointmentRequest request)
+        public async Task<bool> UpdateAsync(int id, UpdateAppointmentRequest request)
         {
             var appointment = await _appointmentRepository.GetDetailedByIdAsync(id);
             if (appointment == null)
@@ -211,7 +164,7 @@ namespace BeautyBooking.Services
 
             var distinctServiceIds = request.ServiceIds.Distinct().ToList();
             var services = (await _serviceRepository.GetRangeByIdsAsync(distinctServiceIds)).ToList();
-            
+
             if (services.Count() != distinctServiceIds.Count())
                 throw new InvalidOperationException("Một hoặc nhiều dịch vụ không tồn tại.");
 
@@ -221,11 +174,11 @@ namespace BeautyBooking.Services
             appointment.EndTime = request.StartTime + newtotalDuration;
 
             await ValidateAsync(
-                appointment.StaffId, 
-                appointment.AppointmentDate, 
-                appointment.StartTime, 
-                appointment.EndTime, 
-                request.ServiceIds, 
+                appointment.StaffId,
+                appointment.AppointmentDate,
+                appointment.StartTime,
+                appointment.EndTime,
+                request.ServiceIds,
                 appointment.Id);
 
             ApplyServicesToAppointment(appointment, services);
@@ -236,11 +189,15 @@ namespace BeautyBooking.Services
         public async Task<bool> UpdateStatusAsync(int id, AppointmentStatus status)
         {
             var userRole = _currentUserService.Role;
+            var userId = _currentUserService.UserId;
+            var staffId = _currentUserService.StaffId;
             var appointment = await _appointmentRepository.GetByIdAsync(id);
             if (appointment == null)
                 throw new Exception("Không tìm thấy lịch hẹn");
+
             if (appointment.AppointmentStatus == AppointmentStatus.Cancelled)
                 throw new InvalidOperationException("Không thể cập nhật lịch bị hủy.");
+
             if (userRole == UserRole.Admin)
             {
                 // Admin có thể cập nhật tất cả lịch hẹn
@@ -248,9 +205,21 @@ namespace BeautyBooking.Services
             }
             else if (userRole == UserRole.Staff)
             {
-                if (appointment.StaffId != _currentUserService.StaffId)
+                if (appointment.StaffId != staffId)
                     throw new UnauthorizedAccessException("Bạn không có quyền cập nhật lịch hẹn này.");
+                if(status != AppointmentStatus.Confirmed && 
+                    status != AppointmentStatus.Completed && 
+                    status != AppointmentStatus.Cancelled)
+                    throw new InvalidOperationException("Chỉ có thể xác nhận lịch hẹn đang ở trạng thái chờ.");
                 appointment.AppointmentStatus = status;
+            }
+            else if(userRole == UserRole.Customer)
+            {
+                if (appointment.UserId != userId)
+                    throw new UnauthorizedAccessException("Bạn không có quyền cập nhật lịch hẹn này.");
+                if (status != AppointmentStatus.Cancelled)
+                    throw new InvalidOperationException("Khách hàng chỉ có thể hủy lịch hẹn.");
+                appointment.AppointmentStatus = AppointmentStatus.Cancelled;
             }
             else
             {
@@ -282,30 +251,37 @@ namespace BeautyBooking.Services
         }
         private async Task ValidateAsync(int staffId, DateOnly date, int startTime, int endTime, List<int> serviceIds, int? excludeId = null)
         {
+            ValidateTimeRange(startTime, endTime);
+            await ValidateServicesAsync(staffId, serviceIds);
+            await ValidateStaffAvailabilityAsync(staffId, date);
+            await ValidateOverlapAsync(staffId, date, startTime, endTime, excludeId);
+        }
+        private void ValidateTimeRange(int startTime, int endTime)
+        {
             if (startTime >= endTime)
                 throw new InvalidOperationException("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
-
+        }
+        private async Task ValidateServicesAsync(int staffId, List<int> serviceIds)
+        {
             if (serviceIds == null || !serviceIds.Any())
                 throw new InvalidOperationException("Vui lòng chọn ít nhất một dịch vụ.");
-
             var staffServiceIds = await _staffProfileRepository.GetServiceIdsByIdAsync(staffId);
-
             var unqualifiedServiceIds = serviceIds.Except(staffServiceIds).ToList();
             if (unqualifiedServiceIds.Any())
                 throw new InvalidOperationException($"Nhân viên không thực hiện các dịch vụ có ID: {string.Join(", ", unqualifiedServiceIds)}");
-
+        }
+        private async Task ValidateStaffAvailabilityAsync(int staffId, DateOnly date)
+        {
             var isOff = await _staffDayOffRepository.IsAlreadyOffAsync(staffId, date);
             if (isOff)
                 throw new InvalidOperationException("Nhân viên đã nghỉ vào ngày này.");
-
             var dayOfWeek = date.DayOfWeek;
             var schedules = await _workScheduleRepository.GetByStaffIdAndDayOfWeekAsync(staffId, dayOfWeek);
             if (schedules == null || !schedules.Any())
                 throw new InvalidOperationException("Nhân viên không có lịch làm việc trong ngày này.");
-
-            bool isWithinSchedule = schedules.Any(s =>startTime >= s.StartTime && endTime <= s.EndTime);
-            if (!isWithinSchedule)
-                throw new InvalidOperationException("Thời gian hẹn không nằm trong lịch làm việc.");
+        }
+        private async Task ValidateOverlapAsync(int staffId, DateOnly date, int startTime, int endTime, int? excludeId = null)
+        {
             var hasOverlap = await _appointmentRepository.HasOverlapAsync(
                 staffId,
                 date,
@@ -317,4 +293,5 @@ namespace BeautyBooking.Services
                 throw new InvalidOperationException("Nhân viên đã có lịch trùng trong khung giờ này.");
         }
     }
+
 }

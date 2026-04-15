@@ -8,15 +8,16 @@ namespace BeautyBooking.MappingProfiles
 {
     public class AppointmentProfile : Profile
     {
-        public AppointmentProfile() 
+        public AppointmentProfile()
         {
             CreateMap<Appointment, AppointmentResponse>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
                 .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff.User.FullName))
                 .ForMember(dest => dest.AppointmentStatus, opt => opt.MapFrom(src => src.AppointmentStatus))
                 .ForMember(dest => dest.TimeRange, opt => opt.MapFrom(src => TimeHelper.FormatToTimeRange(src.StartTime, src.EndTime)))
-                .ForMember(dest => dest.AppointmentServices, opt => opt.MapFrom(src => src.AppointmentServices));
-                
+                .ForMember(dest => dest.AppointmentServices, opt => opt.MapFrom(src => src.AppointmentServices))
+                .ForMember(dest => dest.WardName, opt => opt.MapFrom(src => src.Ward != null ? src.Ward.FullName : null));
+
             CreateMap<AppointmentService, AppointmentServiceResponse>()
                 .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service.Name))
                 .ForMember(dest => dest.PriceAtBooking, opt => opt.MapFrom(src => src.PriceAtBooking))
@@ -25,11 +26,14 @@ namespace BeautyBooking.MappingProfiles
             CreateMap<CreateAppointmentRequest, Appointment>()
                 .IgnoreAuditFields()
                 .ForMember(dest => dest.AppointmentStatus, opt => opt.MapFrom(src => AppointmentStatus.Pending))
-                .ForMember(dest => dest.AppointmentServices, opt => opt.Ignore());
+                .ForMember(dest => dest.AppointmentServices, opt => opt.Ignore())
+                .ForMember(dest => dest.Ward, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Staff, opt => opt.Ignore());
             CreateMap<UpdateAppointmentRequest, Appointment>()
                 .IgnoreAuditFields()
                 .ForMember(dest => dest.AppointmentServices, opt => opt.Ignore())
-                .ForAllMembers(opt => opt.Condition((src,dest,srcMember) => srcMember != null ));
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }

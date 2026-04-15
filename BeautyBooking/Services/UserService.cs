@@ -25,10 +25,11 @@ namespace BeautyBooking.Services
         private readonly IStaffProfileService _staffProfileService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IPhotoService _photoService;
+        private readonly IRepository<WebsiteLocalizationWard,int> _wardRepo;
         private readonly ApplicationDbContext _dbContext;
         public UserService(IUserRepository userRepo, IMapper mapper, 
             IStaffProfileService staffProfileService,ApplicationDbContext dbContext, 
-            ICurrentUserService currentUserService, IPhotoService photoService)
+            ICurrentUserService currentUserService, IPhotoService photoService, IRepository<WebsiteLocalizationWard, int> wardRepo)
         {
             _userRepo = userRepo;   
             _mapper = mapper;
@@ -36,6 +37,7 @@ namespace BeautyBooking.Services
             _dbContext = dbContext;
             _currentUserService = currentUserService;
             _photoService = photoService;
+            _wardRepo = wardRepo;
         }
 
         public async Task<bool> BlockAccountAsync(int id)
@@ -100,15 +102,15 @@ namespace BeautyBooking.Services
                     else
                     {
                         // Nếu đã có profile nhân viên, đảm bảo nó được kích hoạt
-                        // isDeleted = false để profile có thể hiển thị lại nếu trước đó đã bị xóa mềm
-                        await _staffProfileService.UpdateStatusAsync(request.UserId, false);
+                        // isActive = true để profile có thể hiển thị lại nếu trước đó đã bị khóa
+                        await _staffProfileService.UpdateActiveStatusAsync(request.UserId, true);
                     }
                 }
                 if(user.Role == UserRole.Staff && request.NewRole != UserRole.Staff)
                 {
                     // Nếu chuyển từ Staff sang vai trò khác, đảm bảo profile nhân viên bị vô hiệu hóa
-                    //isDeleted = true để profile không hiển thị nữa nhưng vẫn giữ lại dữ liệu nếu sau này muốn chuyển lại thành Staff
-                    await _staffProfileService.UpdateStatusAsync(request.UserId, true);
+                    //isActive = false để profile không hiển thị nữa nhưng vẫn giữ lại dữ liệu nếu sau này muốn chuyển lại thành Staff
+                    await _staffProfileService.UpdateActiveStatusAsync(request.UserId, false);
                 }
 
                 await transaction.CommitAsync(); 
@@ -133,6 +135,10 @@ namespace BeautyBooking.Services
                     throw new InvalidOperationException("Không thể tạo tài khoản Admin.");
 
                 var user = _mapper.Map<User>(request);
+                var ward = await _wardRepo.GetByIdAsync(request.WardId);
+                if(ward == null)
+                    throw new KeyNotFoundException("Phường/xã không tồn tại.");
+
                 user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
                 await _userRepo.CreateAsync(user);
                 await _userRepo.SaveChangesAsync();
@@ -142,6 +148,7 @@ namespace BeautyBooking.Services
                     {
                         UserId = user.Id,
                         Bio = "Nhân viên mới",
+                        WardId = request.WardId,
                         ServiceIds = new List<int>()
                     });
                 }
@@ -244,8 +251,7 @@ namespace BeautyBooking.Services
             if(request.AvatarUrl != null)
             {
                 var photoResult = await _photoService.UploadPhotoAsync(request.AvatarUrl, true);
-                user.AvatarUrl = photoResult.Url;
-                user.AvatarPublicId = photoResult.PublicId;
+                await _userRepo.UpdateAvatarAsync(user.Id, photoResult.Url, photoResult.PublicId);
             }
             await _userRepo.SaveChangesAsync();
             if(request.AvatarUrl != null && !string.IsNullOrEmpty(oldAvatarPublicId))
@@ -269,36 +275,29 @@ namespace BeautyBooking.Services
             if(user == null || user.IsDeleted)
                 throw new KeyNotFoundException("Tài khoản không tồn tại.");
             _mapper.Map(request, user);
-            string? newAvatarPublicId = null;
+            string? oldAvatarPublicId = user.AvatarPublicId;
             if (request.AvatarUrl != null)
             {
                 var photoResult = await _photoService.UploadPhotoAsync(request.AvatarUrl, true);
-                user.AvatarUrl = photoResult.Url;
-                user.AvatarPublicId = photoResult.PublicId;
-                newAvatarPublicId = photoResult.PublicId;
+                await _userRepo.UpdateAvatarAsync(user.Id, photoResult.Url, photoResult.PublicId);
             }
-            try
+            await _userRepo.SaveChangesAsync();
+
+            if (request.AvatarUrl != null && !string.IsNullOrEmpty(oldAvatarPublicId))
             {
-                await _userRepo.SaveChangesAsync();
-            }
-            catch
-            {
-                if (newAvatarPublicId != null)
+                try
                 {
-                    try
-                    {
-                        await _photoService.DeletePhotoAsync(newAvatarPublicId);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Lỗi khi xóa ảnh mới do lỗi khác: {ex.Message}");
-                    }
+                    await _photoService.DeletePhotoAsync(oldAvatarPublicId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi khi xóa ảnh mới do lỗi khác: {ex.Message}");
                 }
             }
             return true;
         }
 
-        public async Task<bool> UpdateStatusAsync(int id, bool isActive)
+        public async Task<bool> UpdateActiveStatusAsync(int id, bool isActive)
         {
             // 1. Get user by id
             var user = await _userRepo.GetByIdAsync(id);

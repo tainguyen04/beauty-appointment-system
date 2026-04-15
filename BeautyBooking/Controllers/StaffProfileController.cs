@@ -24,13 +24,6 @@ namespace BeautyBooking.Controllers
             _staffProfileService = staffProfileService;
         }
 
-        //[HttpGet]
-        //[AllowAnonymous]
-        //public async Task<ActionResult<PagedResult<StaffProfileResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-        //{
-        //    var result = await _staffProfileService.GetAllAsync(pageNumber, pageSize);
-        //    return Ok(result);
-        //}
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAll([FromQuery] StaffProfileFilter filter)
@@ -39,7 +32,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<StaffProfileResponse>> GetById(int id)
         {
             var staff = await _staffProfileService.GetByIdAsync(id);
@@ -64,14 +57,6 @@ namespace BeautyBooking.Controllers
             var staff = await _staffProfileService.GetMyProfileAsync();
             if (staff == null)
                 return NotFound("Bạn chưa có hồ sơ nhân viên.");
-            return Ok(staff);
-        }
-
-        [HttpGet("service/{serviceId}")]
-        [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<StaffProfileResponse>>> GetByServiceId(int serviceId)
-        {
-            var staff = await _staffProfileService.GetByServiceIdAsync(serviceId);
             return Ok(staff);
         }
 
@@ -117,9 +102,10 @@ namespace BeautyBooking.Controllers
 
         [HttpGet("available")]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<StaffProfileResponse>>> GetAvailable([FromQuery] DateOnly date, [FromQuery] int startTime, [FromQuery] List<int> serviceIds)
+        public async Task<ActionResult<IEnumerable<StaffProfileResponse>>> GetAvailable(
+            [FromQuery] DateOnly date, [FromQuery] int startTime, [FromQuery] List<int> serviceIds, [FromQuery] int wardId)
         {
-            var staff = await _staffProfileService.GetAvailableAsync(date, startTime, serviceIds);
+            var staff = await _staffProfileService.GetAvailableAsync(date, startTime, serviceIds,wardId);
             return Ok(staff);
         }
     }

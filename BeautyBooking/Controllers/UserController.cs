@@ -21,13 +21,6 @@ namespace BeautyBooking.Controllers
             _userService = userService;
         }
 
-        //[HttpGet]
-        //[Authorize(Policy = "AdminOnly")]
-        //public async Task<ActionResult<PagedResult<UserResponse>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-        //{
-        //    var result = await _userService.GetAllAsync(pageNumber, pageSize);
-        //    return Ok(result);
-        //}
         [HttpGet]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> GetAll([FromQuery] UserFilter filter)
@@ -35,13 +28,6 @@ namespace BeautyBooking.Controllers
             return Ok(await _userService.GetUsersAsync(filter));
         }
 
-        [HttpGet("role/{role}")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<PagedResult<UserResponse>>> GetUsersByRole(UserRole role, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-        {
-            var result = await _userService.GetUsersByRoleAsync(role, pageNumber, pageSize);
-            return Ok(result);
-        }
         [HttpGet("{id}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<UserResponse>> GetById(int id)
@@ -58,15 +44,6 @@ namespace BeautyBooking.Controllers
             var result = await _userService.CreateUserAsync(request);
             var createdUser = await _userService.GetByIdAsync(result);
             return CreatedAtAction(nameof(GetById), new { id = result }, createdUser);
-        }
-        [HttpPost("{id}/block")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> Block(int id)
-        {
-            var result = await _userService.BlockAccountAsync(id);
-            if (!result)
-                return NotFound();
-            return NoContent();
         }
 
         [HttpGet("me/profile")]
@@ -91,7 +68,7 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> UpdateStatus(int id, [FromQuery] bool isActive)
         {
-            await _userService.UpdateStatusAsync(id, isActive);
+            await _userService.UpdateActiveStatusAsync(id, isActive);
             return NoContent();
         }
         [HttpPut("{id}")]

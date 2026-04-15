@@ -30,46 +30,19 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize]
         public async Task<ActionResult<AppointmentResponse>> GetById(int id)
         {
             var appointment = await _appointmentService.GetByIdWithDetailsAsync(id);
             return Ok(appointment);
         }
 
-        [HttpGet("me/schedule")]
-        [Authorize(Policy = "StaffOnly")]
-        public async Task<ActionResult<IEnumerable<AppointmentResponse>>> GetMySchedule([FromQuery] DateOnly date)
-        {
-            var schedule = await _appointmentService.GetMyScheduleAsync(date);
-            return Ok(schedule);
-        }
 
-        [HttpGet("me")]
-        [Authorize(Policy = "CustomerOnly")]
-        public async Task<ActionResult<PagedResult<AppointmentResponse>>> GetMyAppointments([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        [HttpPost]
+        [Authorize(Policy = "CustomerOrAdmin")]
+        public async Task<ActionResult> Create([FromBody] CreateAppointmentRequest request)
         {
-            var appointments = await _appointmentService.GetMyAppointmentsAsync(pageNumber,pageSize);
-            return Ok(appointments);
-        }
-
-        [HttpPost("admin")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult> CreateByAdmin([FromBody] CreateAppointmentRequest request)
-        {
-            var id = await _appointmentService.CreateAppointmentByAdminAsync(request);
+            var id = await _appointmentService.CreateAsync(request);
             var appointment = await _appointmentService.GetByIdWithDetailsAsync(id);
-            return CreatedAtAction(nameof(GetById), new { id }, appointment);
-        }
-
-        [HttpPost("me")]
-        [Authorize(Policy = "CustomerOnly")]
-        public async Task<ActionResult> CreateByCustomer([FromBody] CreateAppointmentRequest request)
-        {
-            var id = await _appointmentService.CreateAppointmentByCustomerAsync(request);
-            var appointment = await _appointmentService.GetByIdWithDetailsAsync(id);
-            if(appointment == null)
-                return NotFound();
             return CreatedAtAction(nameof(GetById), new { id }, appointment);
         }
 
@@ -77,12 +50,11 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> Update(int id, [FromBody] UpdateAppointmentRequest request)
         {
-            await _appointmentService.UpdateAppointmentAsync(id, request);
+            await _appointmentService.UpdateAsync(id, request);
             return NoContent();
         }
 
         [HttpPatch("{id}/status")]
-        [Authorize(Policy = "StaffOrAdmin")]
         public async Task<ActionResult> UpdateStatus(int id, [FromBody] AppointmentStatus status)
         {
             await _appointmentService.UpdateStatusAsync(id, status);
@@ -94,16 +66,8 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> Delete(int id)
         {
-           await _appointmentService.DeleteAppointmentAsync(id);
+           await _appointmentService.DeleteAsync(id);
            return NoContent();
-        }
-
-        [HttpDelete("{appointmentId}/cancel")]
-        [Authorize(Policy = "CustomerOnly")]
-        public async Task<ActionResult> CancelByCustomer(int appointmentId)
-        {
-            await _appointmentService.CancelAppointmentByCustomerAsync(appointmentId);
-            return NoContent();
         }
     }
 }

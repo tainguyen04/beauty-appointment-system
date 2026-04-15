@@ -7,22 +7,17 @@ namespace BeautyBooking.Interface.Service
 {
     public interface IUserService
     {
-        //Admin
-        Task<PagedResult<UserResponse>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize);
-        Task<UserResponse?> GetByIdAsync(int id);
-        Task<bool> BlockAccountAsync(int id);
-        Task<bool> UpdateStatusAsync(int id, bool isActive);
+        Task<int> CreateUserAsync(CreateUserRequest request);
+        Task<bool> UpdateProfileByAdminAsync(int id, UpdateUserRequest request);
+        Task<bool> UpdateMyProfileAsync(UpdateUserRequest request);
+        Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request);
+        Task<bool> UpdateActiveStatusAsync(int id, bool isActive);
         Task<bool> ChangeRoleAsync(ChangeRoleRequest request);
         Task<bool> ResetPasswordAsync(int id);
         Task<bool> DeleteAsync(int id);
-        Task<PagedResult<UserResponse>> GetUsersAsync(UserFilter filter);
-        Task<int> CreateUserAsync(CreateUserRequest request);
-        Task<bool> UpdateProfileByAdminAsync(int id,UpdateUserRequest request);
-        //User,Staff
-        Task<bool> UpdateMyProfileAsync(UpdateUserRequest request);
-        Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request);
 
-        //Common
+        Task<UserResponse?> GetByIdAsync(int id);
+        Task<PagedResult<UserResponse>> GetUsersAsync(UserFilter filter);
         Task<bool> IsEmailAvailableAsync(string email);
         Task<UserResponse?> GetMyProfileAsync();
 
