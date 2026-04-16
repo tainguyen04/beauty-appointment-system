@@ -14,6 +14,7 @@ import StaffDayOffManager from './pages/Admin/StaffDayOffManager';
 import WorkScheduleManager from './pages/Admin/WorkScheduleManager';
 import AppointmentManager from './pages/Admin/AppointmentManager';
 import WebLocalizationManager from './pages/Admin/WebLocalizationManager';
+import HelpdeskCatalogManager from './pages/Admin/HelpdeskCatalogManager';
 // 1. Import ProtectedRoute vừa tạo
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -44,8 +45,8 @@ function App() {
             <Route path="day-offs" element={<StaffDayOffManager />} />
             <Route path="work-schedules" element={<WorkScheduleManager />} />
             <Route path="appointments" element={<AppointmentManager />} />
-            <Route path="website-localization" element={<WebLocalizationManager />} />
-
+            <Route path="website-localizations" element={<WebLocalizationManager />} />
+            <Route path="helpdesk-catalogs" element={<HelpdeskCatalogManager />} />
           </Route>
         </Route>
         

@@ -48,7 +48,7 @@ const menuItems = [
     label: 'Quản lý danh mục', 
     children: [
       {
-        key: '/admin/helpdesk-catalog',
+        key: '/admin/helpdesk-catalogs',
         icon: <CustomerServiceOutlined />,
         label: 'Danh mục Helpdesk',
       },
