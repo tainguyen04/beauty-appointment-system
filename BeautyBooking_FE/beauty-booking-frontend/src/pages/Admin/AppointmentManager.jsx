@@ -111,7 +111,6 @@ const AppointmentManager = () => {
         startTime: startMins,
         serviceIds: validServiceIds,
         wardId: wardId, // param truyền cho BE
-        WardId: wardId  // Dự phòng nếu BE yêu cầu PascalCase
       };
 
       const res = await staffApi.getAvailable(payload);

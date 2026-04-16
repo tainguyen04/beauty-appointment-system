@@ -20,7 +20,7 @@ namespace BeautyBooking.Infrastructure.Configurations
                 .IsRequired();
 
             builder.HasOne(ws => ws.Staff)
-                .WithMany()
+                .WithMany(sp => sp.WorkSchedules)
                 .HasForeignKey(ws => ws.StaffId)
                 .OnDelete(DeleteBehavior.Restrict);
 
