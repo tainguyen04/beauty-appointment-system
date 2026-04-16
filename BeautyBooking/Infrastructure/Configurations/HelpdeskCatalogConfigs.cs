@@ -18,7 +18,8 @@ namespace BeautyBooking.Infrastructure.Configurations
                     .IsRequired()
                     .HasMaxLength(64);
             builder.Property(x => x.url)
-                    .HasMaxLength(128);
+                    .HasMaxLength(128)
+                    .IsRequired(false);
             builder.Property(x => x.IsActived)
                    .HasDefaultValue(false);
 
