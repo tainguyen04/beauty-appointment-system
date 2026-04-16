@@ -36,7 +36,7 @@ namespace BeautyBooking.Controllers
             return Ok(ward);
         }
 
-        [HttpPost]
+        [HttpPost("{key}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> Create(string key,[FromBody] CreateWardRequest request)
         {
