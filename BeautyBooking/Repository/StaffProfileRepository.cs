@@ -38,6 +38,7 @@ namespace BeautyBooking.Repository
         public async Task<IEnumerable<StaffProfile>> GetAvailableByTimeSlotAsync(
             DateOnly date, int startTime, int endTime, List<int> serviceIds, int? wardId = null)
         {
+            int distinctServiceCount = serviceIds.Distinct().Count();
             return await _entities
                 .Include(sp => sp.User)
                 .Include(sp => sp.Services)
@@ -53,7 +54,7 @@ namespace BeautyBooking.Repository
                             ws.EndTime >= endTime) &&
 
                         //serviceIds.All(sid => sp.Services.Any(s => s.Id == sid)) &&
-                        sp.Services.Count(s => serviceIds.Contains(s.Id)) == serviceIds.Distinct().Count() &&
+                        sp.Services.Count(s => serviceIds.Contains(s.Id)) == distinctServiceCount &&
 
 
                         !sp.Appointments.Any(a => a.AppointmentDate == date && 

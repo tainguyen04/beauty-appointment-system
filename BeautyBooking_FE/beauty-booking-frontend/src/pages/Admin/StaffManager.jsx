@@ -13,6 +13,7 @@ import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApi
 import staffApi from '../../api/staffApi';
 import userApi from '../../api/userApi';
 import serviceApi from '../../api/serviceApi';
+import wardApi from '../../api/wardApi';
 
 const { Title, Text } = Typography;
 
@@ -30,11 +31,35 @@ const StaffManager = () => {
   const [customers, setCustomers] = useState([]); 
   const [allServices, setAllServices] = useState([]); 
   const [fileList, setFileList] = useState([]);
+
+  const [wards, setWards] = useState([]);
+  const [loadingWards, setLoadingWards] = useState(false);
   
   // LƯU Ý: Đã xóa bỏ submitLoading thủ công
 
   const [form] = Form.useForm();
   const [serviceForm] = Form.useForm();
+
+  useEffect(() => {
+  const fetchWards = async () => {
+    setLoadingWards(true);
+    try {
+      const res = await wardApi.getAll(); // Điều chỉnh tên hàm nếu API của bạn khác (vd: getList)
+      const data = res?.data || res || [];
+      setWards(data);
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách phường:", error);
+    } finally {
+      setLoadingWards(false);
+    }
+  };
+
+  if (isModalOpen) {
+    fetchWards();
+  }
+}, [isModalOpen]);
+
+
 
   const loadInitialData = useCallback(async () => {
     try {
@@ -68,8 +93,8 @@ const StaffManager = () => {
   const handleFinish = async (values) => {
     const formData = new FormData();
     formData.append('Bio', values.bio || '');
+    formData.append('WardId', values.wardId);
     if (!editingId) formData.append('UserId', values.userId);
-
     if (fileList.length > 0 && fileList[0].originFileObj) {
       formData.append('AvatarUrl', fileList[0].originFileObj);
     }
@@ -119,6 +144,20 @@ const StaffManager = () => {
       render: (bio) => <Text type="secondary" style={{ fontSize: '13px' }}>{bio || '...'}</Text>,
     },
     {
+    title: 'Khu vực (Phường/Xã)',
+    dataIndex: 'wardName', // Trỏ thẳng vào wardName do backend trả về
+    key: 'wardName',
+    width: 200,
+    ellipsis: true,
+    render: (wardName) => {
+        return wardName ? (
+          <span style={{ fontWeight: 500 }}>{wardName}</span>
+        ) : (
+          <span style={{ color: '#999' }}>Chưa cập nhật</span>
+        );
+      }
+    },
+    {
       title: 'Dịch vụ đảm nhận',
       dataIndex: 'services', // ĐÃ ĐỔI: từ serviceNames sang services
       key: 'services',
@@ -162,7 +201,8 @@ const StaffManager = () => {
               setSelectedStaff(record);
               form.setFieldsValue({ 
                 userId: record.userId, 
-                bio: record.bio 
+                bio: record.bio ,
+                wardId: record.wardId
               });
               setIsModalOpen(true);
             }
@@ -276,6 +316,21 @@ const StaffManager = () => {
 
           <Form.Item name="bio" label="Tiểu sử">
             <Input.TextArea rows={3} placeholder="Mô tả ngắn về kinh nghiệm..." />
+          </Form.Item>
+          <Form.Item name="wardId" label="Khu vực (Phường/Xã)">
+            <Select
+              showSearch 
+              placeholder="Chọn khu vực"
+              loading={loadingWards}
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={wards.map(w => ({
+                value: w.wardId || w.id, 
+                label: w.fullName || w.name 
+              }))}
+            />
           </Form.Item>
 
           <Form.Item label="Ảnh hồ sơ">
