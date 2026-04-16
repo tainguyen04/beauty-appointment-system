@@ -53,7 +53,7 @@ const menuItems = [
         label: 'Danh mục Helpdesk',
       },
       {
-        key: '/admin/website-localization',
+        key: '/admin/website-localizations',
         icon: <EnvironmentOutlined />,
         label: 'Khu vực & Địa lý', // API Ward, Province của bạn nằm ở đây
       },
