@@ -43,9 +43,21 @@ namespace BeautyBooking.Repository
                 .Include(sp => sp.Services)
                 .AsSplitQuery()
                 .Where(sp => sp.User != null && sp.User.IsActive &&
-                        serviceIds.All(sid => sp.Services.Any(s => s.Id == sid)) &&
-                        !sp.Appointments.Any(a => a.AppointmentDate == date && a.StartTime < endTime && a.EndTime > startTime) &&
-                        sp.WardId == wardId
+                             sp.WardId == wardId &&
+
+                        sp.WorkSchedules.Any(
+                            ws => ws.DayOfWeek == date.DayOfWeek && 
+                            ws.StartTime <= startTime && 
+                            ws.EndTime >= endTime) &&
+
+                        //serviceIds.All(sid => sp.Services.Any(s => s.Id == sid)) &&
+                        sp.Services.Count(s => serviceIds.Contains(s.Id)) == serviceIds.Distinct().Count() &&
+
+
+                        !sp.Appointments.Any(a => a.AppointmentDate == date && 
+                        a.StartTime < endTime && 
+                        a.EndTime > startTime)
+                        
                 )
                 .ToListAsync();
         }

@@ -26,6 +26,11 @@ namespace BeautyBooking.Infrastructure.Configurations
                 .WithMany()
                 .HasForeignKey(s => s.WardId)
                 .OnDelete(DeleteBehavior.Restrict);
+            builder.HasMany(s => s.WorkSchedules)
+                .WithOne(w => w.Staff)
+                .HasForeignKey(w => w.StaffId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasMany(s => s.Services)
                 .WithMany(s => s.StaffProfiles);
             builder.HasMany(s => s.StaffDayOffs)

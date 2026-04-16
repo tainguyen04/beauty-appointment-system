@@ -13,6 +13,7 @@ import { usePagination } from '../../hooks/usePagination';
 import { useApiAction } from '../../hooks/useApiAction'; 
 import { USER_ROLE, getRoleConfig } from '../../utils/apiHelper';
 import userApi from '../../api/userApi';
+import wardApi from '../../api/wardApi';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -26,6 +27,9 @@ const UserManager = () => {
 
   const [openDetail, setOpenDetail] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const [wards, setWards] = useState([]);
+  const [loadingWards, setLoadingWards] = useState(false);
   
   const [form] = Form.useForm();
   const [roleForm] = Form.useForm();
@@ -33,6 +37,25 @@ const UserManager = () => {
   // --- Custom Hooks ---
   const { data, loading, pagination, runFetch, handleTableChange, handleFilterChange } = usePagination(userApi.getAll);
   const { actionLoading, execute } = useApiAction(); 
+
+  useEffect(() => {
+  const fetchWards = async () => {
+    setLoadingWards(true);
+    try {
+      const res = await wardApi.getAll(); // Điều chỉnh tên hàm nếu API của bạn khác (vd: getList)
+      const data = res?.data || res || [];
+      setWards(data);
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách phường:", error);
+    } finally {
+      setLoadingWards(false);
+    }
+  };
+
+  if (isModalOpen) {
+    fetchWards();
+  }
+}, [isModalOpen]);
 
   const fetchData = useCallback(() => {
     runFetch();
@@ -68,6 +91,7 @@ const UserManager = () => {
       const formData = new FormData();
       if (values.name) formData.append('Name', values.name);
       if (values.phone) formData.append('Phone', values.phone);
+      if(values.wardId) formData.append('WardId', values.wardId);
       if (values.avatar?.fileList?.length > 0) {
         formData.append('AvatarUrl', values.avatar.fileList[0].originFileObj);
       }
@@ -165,6 +189,20 @@ const UserManager = () => {
           <Tag color={config.color} style={{ fontWeight: '500' }}>
             {config.label?.toUpperCase()}
           </Tag>
+        );
+      }
+    },
+    {
+    title: 'Khu vực (Phường/Xã)',
+    dataIndex: 'wardName', // Trỏ thẳng vào wardName do backend trả về
+    key: 'wardName',
+    width: 200,
+    ellipsis: true,
+    render: (wardName) => {
+        return wardName ? (
+          <span style={{ fontWeight: 500 }}>{wardName}</span>
+        ) : (
+          <span style={{ color: '#999' }}>Chưa cập nhật</span>
         );
       }
     },
@@ -285,7 +323,7 @@ const UserManager = () => {
         bordered
       />
 
-      {/* MODAL CREATE / UPDATE */}
+{/* MODAL CREATE / UPDATE */}
       <Modal
         title={isEdit ? "Chỉnh sửa tài khoản" : "Tạo tài khoản mới"}
         open={isModalOpen}
@@ -296,6 +334,8 @@ const UserManager = () => {
         destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          
+          {/* DÒNG 1: DÙNG CHUNG CHO CẢ TẠO VÀ SỬA */}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="name" label="Họ tên" rules={[{ required: true, message: 'Nhập họ tên' }]}>
@@ -309,6 +349,7 @@ const UserManager = () => {
             </Col>
           </Row>
 
+          {/* DÒNG 2: CHỈ HIỂN THỊ KHI TẠO MỚI */}
           {!isEdit && (
             <Row gutter={16}>
               <Col span={12}>
@@ -324,35 +365,54 @@ const UserManager = () => {
             </Row>
           )}
 
-          {!isEdit && (
-            <Row gutter={16}>
+          {/* DÒNG 3: KẾT HỢP CÁC TRƯỜNG */}
+          <Row gutter={16}>
+            {/* Vai trò: Chỉ dùng khi tạo mới */}
+            {!isEdit && (
               <Col span={12}>
                 <Form.Item name="role" label="Vai trò" rules={[{ required: true }]}>
                   <Select placeholder="Chọn vai trò">
                     {USER_ROLE.map(role => (
-                      <Option key={role.value} value={role.value}>
+                      <Select.Option key={role.value} value={role.value}>
                         <Tag color={role.color}>{role.label}</Tag>
-                      </Option>
+                      </Select.Option>
                     ))}
                   </Select>
                 </Form.Item>
               </Col>
+            )}
 
+            {/* Khu vực (wardId): Dùng cho cả tạo mới và cập nhật */}
+            <Col span={12}>
+              <Form.Item name="wardId" label="Khu vực (Phường/Xã)">
+                <Select
+                  showSearch 
+                  placeholder="Chọn khu vực"
+                  loading={loadingWards}
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={wards.map(w => ({
+                    value: w.wardId || w.id, 
+                    label: w.fullName || w.name 
+                  }))}
+                />
+              </Form.Item>
+            </Col>
+
+            {/* Avatar: Chỉ dùng khi Cập nhật (ghép chung vào dòng 3 cho đẹp layout) */}
+            {isEdit && (
               <Col span={12}>
-                <Form.Item name="wardId" label="Mã vùng (WardId)">
-                  <Input type="number" />
+                <Form.Item name="avatar" label="Thay đổi ảnh đại diện">
+                  <Upload maxCount={1} beforeUpload={() => false} listType="picture">
+                    <Button icon={<UploadOutlined />}>Chọn file ảnh</Button>
+                  </Upload>
                 </Form.Item>
               </Col>
-            </Row>
-          )}
+            )}
+          </Row>
 
-          {isEdit && (
-            <Form.Item name="avatar" label="Thay đổi ảnh đại diện">
-              <Upload maxCount={1} beforeUpload={() => false} listType="picture">
-                <Button icon={<UploadOutlined />}>Chọn file ảnh</Button>
-              </Upload>
-            </Form.Item>
-          )}
         </Form>
       </Modal>
 
@@ -398,6 +458,13 @@ const UserManager = () => {
             <Descriptions.Item label="Họ tên">{selectedUser?.fullName}</Descriptions.Item>
             <Descriptions.Item label="Email">{selectedUser?.email}</Descriptions.Item>
             <Descriptions.Item label="SĐT">{selectedUser?.phone}</Descriptions.Item>
+            <Descriptions.Item label="Khu vực">
+                {selectedUser?.wardName ? (
+                  <Tag color="blue">{selectedUser.wardName}</Tag>
+                ) : (
+                  <Tag color="default">Chưa cập nhật</Tag>
+                )}
+            </Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
               <Tag color={selectedUser?.isActive ? 'green' : 'red'}>
                 {selectedUser?.isActive ? 'Đang hoạt động' : 'Đã khóa'}

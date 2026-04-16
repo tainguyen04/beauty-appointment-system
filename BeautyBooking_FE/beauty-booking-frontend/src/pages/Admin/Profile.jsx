@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { 
   Card, Tabs, Avatar, Button, Upload, 
-  Form, Input, message, Tag, Row, Col, Typography, Divider 
+  Form, Input, message, Tag, Row, Col, Typography, Divider ,Select
 } from 'antd';
 import { 
   UserOutlined, UploadOutlined, LockOutlined, 
@@ -9,12 +9,15 @@ import {
 } from '@ant-design/icons';
 import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import userApi from '../../api/userApi';
-
+import wardApi from '../../api/wardApi';
 const { Title, Text } = Typography;
 
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+    const [wards, setWards] = useState([]);
+    const [loadingWards, setLoadingWards] = useState(false);
   
   // MỚI: Khởi tạo hook quản lý action
   const { actionLoading, execute } = useApiAction(); 
@@ -31,6 +34,7 @@ const Profile = () => {
       form.setFieldsValue({
         fullName: res.fullName,
         phone: res.phone,
+        wardId: res.wardId
       });
     } catch (error) {
       console.log(error);
@@ -41,6 +45,22 @@ const Profile = () => {
   }, [form]);
 
   useEffect(() => {
+  const fetchWards = async () => {
+    setLoadingWards(true);
+    try {
+      const res = await wardApi.getAll(); // Điều chỉnh tên hàm nếu API của bạn khác (vd: getList)
+      const data = res?.data || res || [];
+      setWards(data);
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách phường:", error);
+    } finally {
+      setLoadingWards(false);
+    }
+  };
+    fetchWards();
+}, []);
+
+  useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
 
@@ -49,6 +69,7 @@ const Profile = () => {
     const formData = new FormData();
     formData.append('FullName', values.fullName);
     formData.append('Phone', values.phone);
+    if(values.wardId) formData.append('WardId', values.wardId);
 
     // Xử lý file từ Ant Design Upload
     if (values.avatarUrl && values.avatarUrl.fileList && values.avatarUrl.fileList.length > 0) {
@@ -120,7 +141,7 @@ const Profile = () => {
                   form={form} 
                   layout="vertical" 
                   onFinish={onUpdateProfile}
-                  initialValues={{ fullName: user?.fullName, phone: user?.phone }}
+                  initialValues={{ fullName: user?.fullName, phone: user?.phone, wardId: user?.wardId }}
                 >
                   <Row gutter={16}>
                     <Col span={12}>
@@ -135,6 +156,23 @@ const Profile = () => {
                     <Col span={12}>
                       <Form.Item name="phone" label="Số điện thoại">
                         <Input placeholder="Nhập số điện thoại" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item name="wardId" label="Khu vực (Phường/Xã)">
+                        <Select
+                          showSearch 
+                          placeholder="Chọn khu vực quản lý"
+                          loading={loadingWards}
+                          optionFilterProp="children"
+                          filterOption={(input, option) =>
+                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                          }
+                          options={wards.map(w => ({
+                            value: w.wardId || w.id, 
+                            label: w.fullName || w.name 
+                          }))}
+                        />
                       </Form.Item>
                     </Col>
                   </Row>
