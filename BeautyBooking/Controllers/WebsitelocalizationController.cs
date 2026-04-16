@@ -45,15 +45,6 @@ namespace BeautyBooking.Controllers
             var created = await _localizationService.GetByIdAsync(key);
             return CreatedAtAction(nameof(GetById), new { id = key }, created);
         }
-        [HttpPost("{key}/wards")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> AddWard(string key, [FromBody] IEnumerable<CreateWardRequest> request)
-        {
-            var added = await _localizationService.AddWardAsync(key, request);
-            if (!added)
-                return NotFound();
-            return NoContent();
-        }
 
         [HttpPut("{key}")]
         [Authorize(Policy = "AdminOnly")]
@@ -65,48 +56,11 @@ namespace BeautyBooking.Controllers
             return NoContent();
         }
 
-        [HttpPut("{key}/wards")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> UpdateWard(string key, [FromBody] IEnumerable<UpdateWardRequest> request)
-        {
-            var updated = await _localizationService.UpdateWardAsync(key, request);
-            if (!updated)
-                return NotFound();
-            return NoContent();
-        }
-        [HttpPatch("{key}/toggle-active")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> Active(string key)
-        {
-            var activated = await _localizationService.ActiveAsync(key);
-            if (!activated)
-                return NotFound();
-            return NoContent();
-        }
-        [HttpPatch("{key}/wards/toggle-active")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> ActiveWard(string key, [FromBody] IEnumerable<int> wardIds)
-        {
-            var activated = await _localizationService.ActiveWardAsync(key, wardIds);
-            if (!activated)
-                return NotFound();
-            return NoContent();
-        }
-
         [HttpDelete("{id}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(string id)
         {
             var deleted = await _localizationService.DeleteAsync(id);
-            if (!deleted)
-                return NotFound();
-            return NoContent();
-        }
-        [HttpDelete("{key}/wards")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> DeleteWard(string key, [FromBody] IEnumerable<int> wardIds)
-        {
-            var deleted = await _localizationService.DeleteWardAsync(key, wardIds);
             if (!deleted)
                 return NotFound();
             return NoContent();

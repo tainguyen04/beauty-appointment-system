@@ -33,41 +33,6 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<bool> ActiveWardAsync(string key, IEnumerable<int> wardIds)
-        {
-            var localization = await _localizationRepo.GetByKeyWithWardAsync(key);
-            if (localization == null)
-                throw new KeyNotFoundException("Localization không tồn tại.");
-            if (localization.WebsiteLocalizationWards == null)
-                return false;
-            var wardsToActivate = localization.WebsiteLocalizationWards
-                        .Where(w => wardIds.Contains(w.WardId))
-                        .ToList();
-            if (!wardsToActivate.Any())
-                return false;
-            foreach (var ward in wardsToActivate)
-            {
-                ward.IsActived = true;
-            }
-            await _wardRepo.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> AddWardAsync(string key, IEnumerable<CreateWardRequest> request)
-        {
-            var localization = await _localizationRepo.GetByKeyWithWardAsync(key);
-            if (localization == null || !localization.IsActived)
-                throw new KeyNotFoundException("Localization không tồn tại");
-            var wards = _mapper.Map<List<WebsiteLocalizationWard>>(request);
-            foreach (var ward in wards)
-            {
-                ward.KeyLocalization = key;
-                localization.WebsiteLocalizationWards.Add(ward);
-            }
-            await _localizationRepo.SaveChangesAsync();
-            return true;
-        }
-
         public async Task<string> CreateAsync(CreateLocalizationRequest request)
         {
             var exist = await _localizationRepo.GetByIdAsync(request.KeyLocalization);

@@ -10,7 +10,6 @@ namespace BeautyBooking.Interface.Service
         Task<int> CreateAsync(CreateCatalogRequest request);
         Task<bool> AddContentAsync(int catalogId, IEnumerable<CreateContentRequest> request);
         Task<bool> UpdateAsync(int id,UpdateCatalogRequest request);
-        Task<bool> ActiveAsync(int id);
         Task<bool> DeleteAsync(int id);
     }
 }
