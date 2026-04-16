@@ -41,6 +41,8 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Include(sp => sp.User)
                 .Include(sp => sp.Services)
+                .Include(sp => sp.WorkSchedules)
+                .Include(sp => sp.Appointments)
                 .AsSplitQuery()
                 .Where(sp => sp.User != null && sp.User.IsActive &&
                              sp.WardId == wardId &&
