@@ -99,5 +99,15 @@ namespace BeautyBooking.Services
             await _catalogRepo.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> UpdateStatusAsync(int id, bool isActived)
+        {
+            var catalog = await _catalogRepo.GetByIdAsync(id);
+            if (catalog == null)
+                return false;
+            catalog.IsActived = isActived;
+            await _catalogRepo.SaveChangesAsync();
+            return true;
+        }
     }
 }

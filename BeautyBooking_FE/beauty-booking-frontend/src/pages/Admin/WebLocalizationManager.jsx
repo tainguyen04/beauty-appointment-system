@@ -106,12 +106,11 @@ const AdminWardForm = ({ editKey, mode, onSuccess, onCancel }) => {
         setIsModalOpen(false);
       } else {
         // Đang ở mode sửa -> Gọi API ngay lập tức
-        payload.keyLocalization = editKey;
         if (editingWard) {
           const res = await execute(() => wardApi.update(editingWard.wardId || editingWard.id, payload), "Cập nhật phường thành công!");
           if (res) { setIsModalOpen(false); fetchData(); }
         } else {
-          const res = await execute(() => wardApi.create(payload), "Thêm phường thành công!");
+          const res = await execute(() => wardApi.create(editKey, payload), "Thêm phường thành công!");
           if (res) { setIsModalOpen(false); fetchData(); }
         }
       }
@@ -343,7 +342,7 @@ const WebLocalizationManager = () => {
             <Descriptions bordered column={2} size="small">
               <Descriptions.Item label="Khu vực">{detailData.localization}</Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
-                <Tag color={detailData.IsActived ? 'green' : 'red'}>{detailData.isActive ? 'Đang hoạt động' : 'Đã khóa'}</Tag>
+                <Tag color={detailData.IsActived ? 'green' : 'red'}>{detailData.IsActived ? 'Đang hoạt động' : 'Đã khóa'}</Tag>
               </Descriptions.Item>
             </Descriptions>
 

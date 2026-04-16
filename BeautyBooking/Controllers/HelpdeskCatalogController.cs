@@ -70,15 +70,6 @@ namespace BeautyBooking.Controllers
                 return StatusCode(500, $"Lỗi máy chủ: {ex.Message}");
             }
         }
-        [HttpPost("{id}/contents")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult> AddContentAsync(int id, [FromBody] IEnumerable<CreateContentRequest> request)
-        {
-            var result = await _catalogService.AddContentAsync(id, request);
-            if (!result)
-                return NotFound($"Không tìm thấy dữ liệu với id {id}");
-            return NoContent();
-        }
         [HttpPut("{id}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> Update(int id, [FromBody] UpdateCatalogRequest request)
@@ -88,6 +79,22 @@ namespace BeautyBooking.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest("Dữ liệu không hợp lệ!");
                 var result = await _catalogService.UpdateAsync(id, request);
+                if (!result)
+                    return NotFound($"Không tìm thấy dữ liệu với id {id}");
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi máy chủ: {ex.Message}");
+            }
+        }
+        [HttpPatch("{id}/status")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<ActionResult> UpdateStatus(int id, [FromQuery] bool isActived)
+        {
+            try
+            {
+                var result = await _catalogService.UpdateStatusAsync(id, isActived);
                 if (!result)
                     return NotFound($"Không tìm thấy dữ liệu với id {id}");
                 return NoContent();

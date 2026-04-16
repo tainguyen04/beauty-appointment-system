@@ -12,8 +12,8 @@ const wardApi = {
   },
 
   // [POST] /api/Ward
-  create: (data) => {
-    return axiosClient.post('/Ward', data);
+  create: (key, data) => {
+    return axiosClient.post(`/Ward/${key}`, data);
   },
 
   // [PUT] /api/Ward/{id}
