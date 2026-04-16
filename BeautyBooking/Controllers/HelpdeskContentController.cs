@@ -9,38 +9,38 @@ namespace BeautyBooking.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class WardController : ControllerBase
+    public class HelpdeskContentController : ControllerBase
     {
-        private readonly IWardSerivce _wardService;
+        private readonly IContentService _contentService;
 
-        public WardController(IWardSerivce wardService)
+        public HelpdeskContentController(IContentService contentService)
         {
-            _wardService = wardService;
+            _contentService = contentService;
         }
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<WardResponse>>> GetAll()
+        public async Task<ActionResult<IEnumerable<HelpdeskContentResponse>>> GetAll()
         {
-            var result = await _wardService.GetAllAsync();
+            var result = await _contentService.GetAllAsync();
             return Ok(result);
         }
 
         [HttpGet("{id}")]
         [AllowAnonymous]
-        public async Task<ActionResult<WardResponse>> GetById(int id)
+        public async Task<ActionResult<HelpdeskContentResponse>> GetById(int id)
         {
-            var ward = await _wardService.GetByIdAsync(id);
-            if (ward == null)
+            var content = await _contentService.GetByIdAsync(id);
+            if (content == null)
                 return NotFound();
-            return Ok(ward);
+            return Ok(content);
         }
 
-        [HttpPost]
+        [HttpPost("{catalogId}")]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult> Create(string key,[FromBody] CreateWardRequest request)
+        public async Task<IActionResult> Create(int catalogId, [FromBody] CreateContentRequest request)
         {
-            var created = await _wardService.CreateAsync(key,request);
+            var created = await _contentService.CreateAsync(catalogId, request);
             if (!created)
                 return BadRequest();
             return NoContent();
@@ -48,9 +48,9 @@ namespace BeautyBooking.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateWardRequest request)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateContentRequest request)
         {
-            var updated = await _wardService.UpdateAsync(id, request);
+            var updated = await _contentService.UpdateAsync(id, request);
             if (!updated)
                 return NotFound();
             return NoContent();
@@ -60,7 +60,7 @@ namespace BeautyBooking.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
-            var deleted = await _wardService.DeleteAsync(id);
+            var deleted = await _contentService.DeleteAsync(id);
             if (!deleted)
                 return NotFound();
             return NoContent();

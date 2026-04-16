@@ -8,8 +8,10 @@ namespace BeautyBooking.Interface.Service
         Task<List<HelpdeskCatalogResponse>> GetAllAsync();
         Task<HelpdeskCatalogResponse?> GetByIdAsync(int id);
         Task<int> CreateAsync(CreateCatalogRequest request);
-        Task<bool> AddContentAsync(int catalogId, IEnumerable<CreateContentRequest> request);
+        
         Task<bool> UpdateAsync(int id,UpdateCatalogRequest request);
+        Task<bool> UpdateStatusAsync(int id, bool isActived);
+        
         Task<bool> DeleteAsync(int id);
     }
 }

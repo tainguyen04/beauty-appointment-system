@@ -6,7 +6,7 @@ namespace BeautyBooking.Interface.Service
 {
     public interface IWardSerivce
     {
-        Task<bool> CreateAsync(CreateWardRequest request);
+        Task<bool> CreateAsync(string key,CreateWardRequest request);
         Task<bool> UpdateAsync(int wardId,UpdateWardRequest request);
         Task<bool> DeleteAsync(int wardId); 
 

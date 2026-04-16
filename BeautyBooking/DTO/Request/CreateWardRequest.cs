@@ -2,7 +2,6 @@
 {
     public class CreateWardRequest
     {
-        public string KeyLocalization { get; set; } = null!;
         public int WardPid { get; set; }
         public string Name { get; set; } = null!;
         public string NameEn { get; set; } = null!;

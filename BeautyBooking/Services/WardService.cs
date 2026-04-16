@@ -17,9 +17,10 @@ namespace BeautyBooking.Services
             _mapper = mapper;
         }
 
-        public async Task<bool> CreateAsync(CreateWardRequest request)
+        public async Task<bool> CreateAsync(string key, CreateWardRequest request)
         {
             var ward = _mapper.Map<WebsiteLocalizationWard>(request);
+            ward.KeyLocalization = key;
             await _wardRepo.CreateAsync(ward);
             await _wardRepo.SaveChangesAsync();
             return true;
