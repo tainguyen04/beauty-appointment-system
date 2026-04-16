@@ -12,6 +12,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import websitelocalizationApi from '../../api/websitelocalizationApi';
+import wardApi from '../../api/wardApi'; 
 import { useApiAction } from '../../hooks/useApiAction';
 
 // Fix Marker Icon Leaflet
@@ -33,7 +34,7 @@ const MapBoundsCompleter = ({ wards }) => {
 };
 
 // ==========================================
-// 1. COMPONENT: ADMIN WARD FORM (SỬA ĐỊA GIỚI & PHƯỜNG)
+// 1. COMPONENT: ADMIN WARD FORM (SỬA/THÊM ĐỊA GIỚI & PHƯỜNG)
 // ==========================================
 const AdminWardForm = ({ editKey, mode, onSuccess, onCancel }) => {
   const [formMain] = Form.useForm();
@@ -43,101 +44,148 @@ const AdminWardForm = ({ editKey, mode, onSuccess, onCancel }) => {
   const [view, setView] = useState('table');
   const [loading, setLoading] = useState(false);
   const [wards, setWards] = useState([]); 
-  const [tempWards, setTempWards] = useState([]); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingWard, setEditingWard] = useState(null); 
 
+  const isCreate = mode === 'create';
   const isEditWardsOnly = mode === 'edit_wards';
   const isEditLocalizationOnly = mode === 'edit_localization';
 
   const fetchData = useCallback(async () => {
+    if (isCreate) {
+      formMain.resetFields();
+      setWards([]);
+      return;
+    }
     setLoading(true);
     try {
       const res = await websitelocalizationApi.getById(editKey);
       const data = Array.isArray(res) ? res[0] : (res?.data || res);
       if (data) {
-        formMain.setFieldsValue({ ...data, isActive: !!data.isActive });
+        formMain.setFieldsValue({ ...data, IsActived: !!data.IsActived });
         setWards(data.wards || []);
       }
     } finally { setLoading(false); }
-  }, [editKey, formMain]);
+  }, [editKey, formMain, isCreate]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Lưu thông tin địa giới (Tên, Trạng thái)
-  const onUpdateLocalization = async () => {
+  // Lưu form chính (Tạo mới hoặc Cập nhật Tỉnh/Thành)
+  const onSaveMain = async () => {
     try {
       const values = await formMain.validateFields();
-      const res = await execute(() => websitelocalizationApi.update(editKey, values), "Cập nhật địa giới thành công!");
-      if (res.success && onSuccess) onSuccess();
-    } catch (err) { console.error(err); }
-  };
-
-  // Lưu hoặc thêm phường vào hàng chờ
-  const handleSaveModal = async () => {
-    try {
-      const values = await formModal.validateFields();
-      if (editingWard) {
-        // Cập nhật phường hiện có qua API updateWards
-        const payload = [{ ...values, wardPid: Number(values.wardPid) }];
-        const res = await execute(() => websitelocalizationApi.updateWards(editKey, payload), "Cập nhật thành công!");
-        if (res.success) { setIsModalOpen(false); fetchData(); }
+      if (isCreate) {
+        // Tạo mới: Gửi kèm danh sách wards đã thêm ở local
+        const payload = { ...values, wards: wards };
+        const res = await execute(() => websitelocalizationApi.create(payload), "Tạo mới địa giới thành công!");
+        if (res) {
+          if (onSuccess) onSuccess();
+          onCancel();
+        }
       } else {
-        // Thêm vào hàng chờ để add batch
-        setTempWards([...tempWards, { ...values, _tempId: Date.now() }]);
-        formModal.resetFields(['wardPid', 'name', 'nameEn', 'fullName', 'fullNameEn', 'latitude', 'longitude']);
+        // Cập nhật Tỉnh/Thành
+        const res = await execute(() => websitelocalizationApi.update(editKey, values), "Cập nhật địa giới thành công!");
+        if (res && onSuccess) onSuccess();
       }
     } catch (err) { console.error(err); }
   };
 
-  const handleConfirmBatchAdd = async () => {
-    const payload = tempWards.map(({  ...rest }) => ({ ...rest, wardPid: Number(rest.wardPid) }));
-    const res = await execute(() => websitelocalizationApi.createWards(editKey, payload), "Thêm mới thành công!");
-    if (res.success) { setTempWards([]); setIsModalOpen(false); fetchData(); }
+  // Lưu phường (Thêm vào local nếu Create, gọi API nếu Edit)
+  const handleSaveModal = async () => {
+    try {
+      const values = await formModal.validateFields();
+      const payload = { ...values, wardPid: Number(values.wardPid) }; 
+
+      if (isCreate) {
+        // Đang ở mode tạo mới -> Chỉ lưu vào state local (chưa gọi API)
+        if (editingWard) {
+          setWards(wards.map(w => w._tempId === editingWard._tempId ? { ...payload, _tempId: w._tempId } : w));
+        } else {
+          setWards([...wards, { ...payload, _tempId: Date.now() }]);
+        }
+        setIsModalOpen(false);
+      } else {
+        // Đang ở mode sửa -> Gọi API ngay lập tức
+        payload.keyLocalization = editKey;
+        if (editingWard) {
+          const res = await execute(() => wardApi.update(editingWard.wardId || editingWard.id, payload), "Cập nhật phường thành công!");
+          if (res) { setIsModalOpen(false); fetchData(); }
+        } else {
+          const res = await execute(() => wardApi.create(payload), "Thêm phường thành công!");
+          if (res) { setIsModalOpen(false); fetchData(); }
+        }
+      }
+    } catch (err) { console.error(err); }
   };
 
   return (
     <Spin spinning={loading || actionLoading}>
       <Card 
-        title={isEditLocalizationOnly ? "Thông tin địa giới" : "Danh sách Phường/Xã"} 
-        extra={<Button icon={<ArrowLeftOutlined />} onClick={onCancel}>Quay lại</Button>}
+        title={isCreate ? "Thêm mới Tỉnh/Thành" : (isEditLocalizationOnly ? "Thông tin địa giới" : "Danh sách Phường/Xã")} 
+        extra={
+          <Space>
+            {(isEditLocalizationOnly || isCreate) && (
+              <Button type="primary" icon={<SaveOutlined />} onClick={onSaveMain}>
+                {isCreate ? 'Lưu tạo mới' : 'Lưu thay đổi'}
+              </Button>
+            )}
+            <Button icon={<ArrowLeftOutlined />} onClick={onCancel}>Quay lại</Button>
+          </Space>
+        }
       >
-        <Form form={formMain} layout="vertical">
+        <Form form={formMain} layout="vertical" initialValues={{ IsActived: true }}>
           <Row gutter={16} align="bottom">
-            <Col span={8}><Form.Item name="localization" label="Tỉnh/Thành" rules={[{required: true}]}><Input disabled={isEditWardsOnly}/></Form.Item></Col>
-            <Col span={6}><Form.Item name="keyLocalization" label="Mã Key"><Input disabled/></Form.Item></Col>
+            <Col span={8}>
+              <Form.Item name="localization" label="Tỉnh/Thành" rules={[{required: true}]}>
+                <Input disabled={isEditWardsOnly}/>
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="keyLocalization" label="Mã Key" rules={[{required: true}]}>
+                {/* Chỉ cho nhập Mã Key khi tạo mới */}
+                <Input disabled={!isCreate}/>
+              </Form.Item>
+            </Col>
             <Col span={4}>
-              <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
+              <Form.Item name="IsActived" label="Trạng thái" valuePropName="checked">
                 <Switch checkedChildren="Mở" unCheckedChildren="Khóa" disabled={isEditWardsOnly} />
               </Form.Item>
             </Col>
-            {isEditLocalizationOnly && (
-              <Col span={6} style={{ paddingBottom: '24px' }}>
-                <Button type="primary" icon={<SaveOutlined />} onClick={onUpdateLocalization} block>Lưu thay đổi</Button>
-              </Col>
-            )}
           </Row>
         </Form>
 
-        {!isEditLocalizationOnly && (
-          <div style={{ marginTop: 24 }}>
+        {/* Hiển thị bảng Phường nếu: Đang ở mode 'edit_wards' 
+          HOẶC đang ở mode 'create' (để cho phép thêm phường cùng lúc tạo mới)
+        */}
+        {(!isEditLocalizationOnly || isCreate) && (
+          <div style={{ marginTop: 24, borderTop: '1px solid #f0f0f0', paddingTop: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <Segmented value={view} onChange={setView} options={[
                 {label:'Bảng', value:'table', icon:<TableOutlined/>}, 
                 {label:'Bản đồ', value:'map', icon:<GlobalOutlined/>}
               ]} />
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingWard(null); setIsModalOpen(true); formModal.resetFields(); }}>Thêm Phường</Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingWard(null); setIsModalOpen(true); formModal.resetFields(); }}>
+                Thêm Phường
+              </Button>
             </div>
 
             {view === 'table' ? (
-              <Table dataSource={wards} rowKey="wardId" bordered size="small" columns={[
+              <Table dataSource={wards} rowKey={r => r.wardId || r._tempId} bordered size="small" columns={[
                 { title: 'PID', dataIndex: 'wardPid', width: 90 },
                 { title: 'Tên VN', dataIndex: 'fullName' },
                 { title: 'Tên EN', dataIndex: 'fullNameEn' },
                 { title: 'Thao tác', align: 'center', width: 120, render: (_, r) => (
                   <Space>
                     <Button type="text" icon={<EditOutlined/>} onClick={() => { setEditingWard(r); formModal.setFieldsValue(r); setIsModalOpen(true); }} />
-                    <Popconfirm title="Xóa phường?" onConfirm={() => execute(() => websitelocalizationApi.deleteWards(editKey, [r.wardId]), "Đã xóa!").then(fetchData)}>
+                    <Popconfirm title="Xóa phường?" onConfirm={() => {
+                      if (isCreate) {
+                        // Nếu tạo mới, xóa khỏi state
+                        setWards(wards.filter(w => w._tempId !== r._tempId));
+                      } else {
+                        // Nếu edit, gọi API
+                        execute(() => wardApi.delete(r.wardId || r.id), "Đã xóa!").then(fetchData);
+                      }
+                    }}>
                       <Button type="text" danger icon={<DeleteOutlined/>} />
                     </Popconfirm>
                   </Space>
@@ -148,7 +196,7 @@ const AdminWardForm = ({ editKey, mode, onSuccess, onCancel }) => {
                 <MapContainer center={[10.7, 106.6]} zoom={11} style={{ height: '100%' }}>
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                   <MapBoundsCompleter wards={wards} />
-                  {wards.map(w => <Marker key={w.wardId} position={[w.latitude, w.longitude]}><Popup>{w.fullName}</Popup></Marker>)}
+                  {wards.map(w => <Marker key={w.wardId || w._tempId} position={[w.latitude, w.longitude]}><Popup>{w.fullName}</Popup></Marker>)}
                 </MapContainer>
               </div>
             )}
@@ -157,12 +205,11 @@ const AdminWardForm = ({ editKey, mode, onSuccess, onCancel }) => {
       </Card>
 
       <Modal 
-        title={editingWard ? "Sửa thông tin phường" : "Thêm hàng chờ phường mới"} 
+        title={editingWard ? "Sửa thông tin phường" : "Thêm phường mới"} 
         open={isModalOpen} width={750} onCancel={() => setIsModalOpen(false)}
         footer={[
           <Button key="c" onClick={() => setIsModalOpen(false)}>Đóng</Button>,
-          editingWard ? <Button key="u" type="primary" onClick={handleSaveModal}>Cập nhật</Button> 
-          : <Button key="s" type="primary" disabled={tempWards.length === 0} onClick={handleConfirmBatchAdd}>Lưu hàng chờ</Button>
+          <Button key="s" type="primary" onClick={handleSaveModal}>{editingWard ? "Cập nhật" : (isCreate ? "Lưu vào danh sách" : "Lưu phường")}</Button> 
         ]}
       >
         <Form form={formModal} layout="vertical">
@@ -179,12 +226,6 @@ const AdminWardForm = ({ editKey, mode, onSuccess, onCancel }) => {
             <Col span={12}><Form.Item name="latitude" label="Vĩ độ"><InputNumber style={{width:'100%'}}/></Form.Item></Col>
             <Col span={12}><Form.Item name="longitude" label="Kinh độ"><InputNumber style={{width:'100%'}}/></Form.Item></Col>
           </Row>
-          {!editingWard && (
-            <>
-              <Button type="dashed" block icon={<PlusOutlined />} onClick={handleSaveModal} style={{marginBottom: 16}}>Thêm vào danh sách chờ</Button>
-              <Table dataSource={tempWards} rowKey="_tempId" size="small" pagination={false} columns={[{title:'PID', dataIndex:'wardPid'}, {title:'Tên', dataIndex:'fullName'}]} />
-            </>
-          )}
         </Form>
       </Modal>
     </Spin>
@@ -214,29 +255,18 @@ const WebLocalizationManager = () => {
 
   useEffect(() => { fetchList(); }, [fetchList]);
 
-  // Hàm Toggle trạng thái nhanh ngay tại bảng
-  const handleToggleActive = async (key) => {
-    const res = await execute(() => websitelocalizationApi.toggleActive(key));
-    if (res.success) fetchList();
-  };
-
   const columns = [
     { title: 'Mã Vùng', dataIndex: 'keyLocalization', width: 100 },
     { title: 'Tỉnh/Thành', dataIndex: 'localization' },
     { 
       title: 'Trạng thái', 
-      dataIndex: 'isActive', 
-      width: 150, 
-      render: (isActive, record) => (
-        <Space>
-          <Switch 
-            size="small" 
-            checked={!!isActive} 
-            onChange={() => handleToggleActive(record.keyLocalization)}
-            loading={actionLoading}
-          />
-          <Tag color={isActive ? 'green' : 'red'}>{isActive ? 'Mở' : 'Khóa'}</Tag>
-        </Space>
+      dataIndex: 'IsActived', 
+      width: 120, 
+      align: 'center',
+      render: (IsActived) => (
+        <Tag color={IsActived ? 'green' : 'red'} style={{ margin: 0 }}>
+          {IsActived ? 'Mở' : 'Khóa'}
+        </Tag>
       )
     },
     { title: 'Thao tác', align: 'center', width: 250, render: (_, r) => (
@@ -273,7 +303,22 @@ const WebLocalizationManager = () => {
   return (
     <div style={{ padding: 24, background: '#f5f5f5', minHeight: '100vh' }}>
       {currentView === 'list' ? (
-        <Card title="Quản lý địa giới hành chính (Website Localization)">
+        <Card 
+          title="Quản lý địa giới hành chính (Website Localization)"
+          extra={
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={() => { 
+                setEditKey(null); 
+                setFormMode('create'); 
+                setCurrentView('form'); 
+              }}
+            >
+              Thêm mới
+            </Button>
+          }
+        >
           <Table 
             dataSource={listData} 
             rowKey="keyLocalization" 
@@ -298,7 +343,7 @@ const WebLocalizationManager = () => {
             <Descriptions bordered column={2} size="small">
               <Descriptions.Item label="Khu vực">{detailData.localization}</Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
-                <Tag color={detailData.isActive ? 'green' : 'red'}>{detailData.isActive ? 'Đang hoạt động' : 'Đã khóa'}</Tag>
+                <Tag color={detailData.IsActived ? 'green' : 'red'}>{detailData.isActive ? 'Đang hoạt động' : 'Đã khóa'}</Tag>
               </Descriptions.Item>
             </Descriptions>
 

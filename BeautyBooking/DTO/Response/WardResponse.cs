@@ -10,6 +10,6 @@
         public string FullNameEn { get; set; } = null!;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public bool isActived { get; set; }
+        public bool IsActived { get; set; }
     }
 }
