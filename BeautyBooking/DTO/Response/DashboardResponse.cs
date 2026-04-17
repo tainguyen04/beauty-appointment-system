@@ -1,4 +1,5 @@
 ﻿using BeautyBooking.Entities;
+using BeautyBooking.Helper;
 
 namespace BeautyBooking.DTO.Response
 {
@@ -15,6 +16,9 @@ namespace BeautyBooking.DTO.Response
         public string StaffName { get; set; }
         public List<string> ServicesName { get; set; }
         public DateOnly AppointmentDate { get; set; }
+        public int StartTime { get; set; }
+        public int EndTime { get; set; }
+        public string TimeRange => TimeHelper.FormatToTimeRange(StartTime, EndTime);
         public AppointmentStatus Status { get; set; }
     }
 }
