@@ -89,5 +89,38 @@ namespace BeautyBooking.Repository
                 .Distinct()
                 .ToListAsync();
         }
+
+        public async Task<int> GetAppointmentsCountByDateAsync(DateTime date)
+        {
+            return await _entities.CountAsync(a => 
+                                a.AppointmentDate == DateOnly.FromDateTime(date) && 
+                                a.AppointmentStatus != AppointmentStatus.Cancelled);
+        }
+
+        public async Task<decimal> GetTotalRevenueByDateAsync(DateTime date)
+        {
+            return await _entities
+                .Where(a => a.AppointmentDate == DateOnly.FromDateTime(date) &&
+                            a.AppointmentStatus != AppointmentStatus.Cancelled)
+                .SelectMany(a => a.AppointmentServices)
+                .SumAsync(a => (decimal?)a.Service.Price) ?? 0;
+        }
+
+        public async Task<IEnumerable<Appointment>> GetTopUpcomingAsync(int count)
+        {
+            return await _entities
+                .Where(a => a.AppointmentDate >= DateOnly.FromDateTime(DateTime.UtcNow) &&
+                            a.AppointmentStatus != AppointmentStatus.Cancelled)
+                .Include(a => a.User)
+                .Include(a => a.Staff)
+                .Include(a => a.AppointmentServices)
+                    .ThenInclude(a => a.Service)
+                .OrderBy(a => a.AppointmentDate)
+                .ThenBy(a => a.StartTime)
+                .Take(count)
+                .AsSplitQuery()
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
 }

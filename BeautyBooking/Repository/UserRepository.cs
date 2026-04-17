@@ -70,5 +70,16 @@ namespace BeautyBooking.Repository
                     .SetProperty(u => u.AvatarUrl, avatarUrl)
                     .SetProperty(u => u.AvatarPublicId, avatarPublicId));
         }
+
+        public async Task<int> GetNewCustomersCountByDateAsync(DateTime date)
+        {
+            var startOfDay = date.Date;
+            var endOfDay = startOfDay.AddDays(1);
+            return await _entities
+                .Where(u => u.Role == UserRole.Customer && 
+                u.CreatedAt.Date >= startOfDay &&
+                u.CreatedAt.Date < endOfDay)
+                .CountAsync();
+        }
     }
 }

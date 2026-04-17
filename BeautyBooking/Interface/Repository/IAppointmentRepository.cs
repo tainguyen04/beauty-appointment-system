@@ -12,5 +12,8 @@ namespace BeautyBooking.Interface.Repository
         Task<IEnumerable<Appointment>> GetAppointmentsByStaffIdAsync(int staffId, DateOnly date);
         Task<PagedResult<Appointment>> GetAppointmentsByUserIdAsync(int userId, int pageNumber, int pageSize);
         Task<Appointment?> GetDetailedByIdAsync(int id);
+        Task<int> GetAppointmentsCountByDateAsync(DateTime date);
+        Task<decimal> GetTotalRevenueByDateAsync(DateTime date);
+        Task<IEnumerable<Appointment>> GetTopUpcomingAsync(int count);
     }
 }
