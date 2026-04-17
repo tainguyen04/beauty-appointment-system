@@ -9,11 +9,11 @@ namespace BeautyBooking.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Policy = "AdminOnly")]
-    public class DashBoardController : ControllerBase
+    public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;
 
-        public DashBoardController(IDashboardService dashboardService)
+        public DashboardController(IDashboardService dashboardService)
         {
             _dashboardService = dashboardService;
         }
@@ -26,6 +26,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("upcoming-appointments")]
+        [Authorize(Policy = "StaffOrAdmin")]
         public async Task<ActionResult<IEnumerable<DashboardAppointmentResponse>>> GetUpcomingAppointments()
         {
             var appointments = await _dashboardService.GetUpcomingAppointments();
