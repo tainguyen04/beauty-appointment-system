@@ -1,61 +1,148 @@
-import { Row, Col, Card, Statistic, Table, Tag } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Row, Col, Card, Statistic, Table, Tag, Spin } from 'antd';
 import { CalendarOutlined, DollarOutlined, UserOutlined } from '@ant-design/icons';
+import dashboardApi from '../../api/dashboardApi';
+import { useApiAction } from '../../hooks/useApiAction';
+import { getStatusConfig } from '../../utils/apiHelper';
 
 const Dashboard = () => {
-  // Dữ liệu giả (Mock data) tạm thời trước khi nối API với Backend C#
-  const recentAppointments = [
-    { key: '1', customer: 'Nguyễn Văn A', service: 'Cắt tóc nam', time: '14:00 - Hôm nay', status: 'Chờ xác nhận' },
-    { key: '2', customer: 'Trần Thị B', service: 'Uốn tóc Hàn Quốc', time: '15:30 - Hôm nay', status: 'Đã xác nhận' },
-    { key: '3', customer: 'Lê Văn C', service: 'Gội đầu dưỡng sinh', time: '16:00 - Hôm nay', status: 'Đã hoàn thành' },
-  ];
+  const { actionLoading, execute } = useApiAction();
 
-  // Cấu hình các cột cho Bảng Ant Design
+  const [summary, setSummary] = useState({
+    newCustomers: 0,
+    todayAppointments: 0,
+    todayRevenue: 0
+  });
+
+  const [recentAppointments, setRecentAppointments] = useState([]);
+
+  // ================= FETCH =================
+  useEffect(() => {
+  const loadData = async () => {
+    const res = await execute(
+      async () => {
+        const [summaryRes, appointmentsRes] = await Promise.all([
+          dashboardApi.getSummary(),
+          dashboardApi.getUpcomingAppointments()
+        ]);
+
+        return { summaryRes, appointmentsRes };
+      },
+      null,
+      "Lỗi tải dashboard"
+    );
+
+    if (res?.success) {
+      const { summaryRes, appointmentsRes } = res.data;
+
+      if (summaryRes?.success) setSummary(summaryRes.data);
+      if (appointmentsRes?.success) setRecentAppointments(appointmentsRes.data);
+    }
+  };
+
+  loadData();
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []); // 👈 QUAN TRỌNG: []
+
+  // ================= COLUMNS =================
   const columns = [
-    { title: 'Khách hàng', dataIndex: 'customer', key: 'customer' },
-    { title: 'Dịch vụ', dataIndex: 'service', key: 'service' },
-    { title: 'Thời gian', dataIndex: 'time', key: 'time' },
-    { 
-      title: 'Trạng thái', 
-      dataIndex: 'status', 
+    {
+      title: 'Khách hàng',
+      key: 'customer',
+      render: (_, record) => (
+        <div>
+          <strong>{record.customerName}</strong><br />
+          <span style={{ fontSize: 12, color: 'gray' }}>
+            Thợ: {record.staffName}
+          </span>
+        </div>
+      )
+    },
+    {
+      title: 'Nhân viên phụ trách',
+      key: 'staff',
+      render: (_, record) => (
+        <div>
+          <strong>{record.staffName}</strong><br />
+          <span style={{ fontSize: 12, color: 'gray' }}>
+            Thợ: {record.staffName}
+          </span>
+        </div>
+      )
+    },
+    {
+      title: 'Dịch vụ',
+      dataIndex: 'servicesName',
+      key: 'servicesName',
+      render: (services = []) => (
+        <>
+          {services.map((s, i) => (
+            <Tag key={i} color="cyan" style={{ marginBottom: 4 }}>
+              {s}
+            </Tag>
+          ))}
+        </>
+      )
+    },
+    {
+      title: 'Thời gian',
+      key: 'time',
+      render: (_, record) => (
+        <div>
+          <span style={{ fontWeight: 500 }}>{record.timeRange}</span><br />
+          <span style={{ fontSize: 12, color: 'gray' }}>
+            {new Date(record.appointmentDate).toLocaleDateString()}
+          </span>
+        </div>
+      )
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
       key: 'status',
       render: (status) => {
-        // Đổi màu Tag dựa theo trạng thái
-        let color = 'orange';
-        if (status === 'Đã xác nhận') color = 'blue';
-        if (status === 'Đã hoàn thành') color = 'green';
-        return <Tag color={color}>{status}</Tag>;
+        const { label, color } = getStatusConfig(status);
+        return <Tag color={color}>{label}</Tag>;
       }
-    },
+    }
   ];
 
+  // ================= UI =================
   return (
-    <div>
-      <h2 style={{ marginBottom: 20 }}>Tổng quan hệ thống</h2>
-      
-      {/* Hàng chứa các thẻ thống kê */}
-      <Row gutter={16} style={{ marginBottom: 20 }}>
-        <Col span={8}>
-          <Card bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Statistic title="Khách hàng mới" value={112} valueStyle={{ color: '#3f8600' }} prefix={<UserOutlined />} />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Statistic title="Lịch hẹn hôm nay" value={15} valueStyle={{ color: '#1890ff' }} prefix={<CalendarOutlined />} />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Statistic title="Doanh thu trong ngày" value={2500000} valueStyle={{ color: '#cf1322' }} prefix={<DollarOutlined />} suffix="VNĐ" />
-          </Card>
-        </Col>
-      </Row>
+    <Spin spinning={actionLoading} tip="Đang tải dữ liệu tổng quan...">
+      <div style={{ padding: 24 }}>
+        <h2 style={{ marginBottom: 20 }}>Tổng quan hệ thống</h2>
 
-      {/* Bảng danh sách lịch hẹn */}
-      <Card title="Lịch hẹn sắp tới" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <Table dataSource={recentAppointments} columns={columns} pagination={false} />
-      </Card>
-    </div>
+        <Row gutter={16} style={{ marginBottom: 20 }}>
+          <Col span={8}>
+            <Card bordered={false}>
+              <Statistic title="Khách hàng mới" value={summary.newCustomers} prefix={<UserOutlined />} />
+            </Card>
+          </Col>
+
+          <Col span={8}>
+            <Card bordered={false}>
+              <Statistic title="Lịch hẹn hôm nay" value={summary.todayAppointments} prefix={<CalendarOutlined />} />
+            </Card>
+          </Col>
+
+          <Col span={8}>
+            <Card bordered={false}>
+              <Statistic title="Doanh thu trong ngày" value={summary.todayRevenue} prefix={<DollarOutlined />} suffix="VNĐ" />
+            </Card>
+          </Col>
+        </Row>
+
+        <Card title="Lịch hẹn sắp tới" bordered={false}>
+          <Table
+            dataSource={recentAppointments}
+            columns={columns}
+            pagination={false}
+            rowKey="id"
+          />
+        </Card>
+      </div>
+    </Spin>
   );
 };
 

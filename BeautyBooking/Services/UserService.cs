@@ -27,9 +27,12 @@ namespace BeautyBooking.Services
         private readonly IPhotoService _photoService;
         private readonly IRepository<WebsiteLocalizationWard,int> _wardRepo;
         private readonly ApplicationDbContext _dbContext;
+        private readonly AvatarDefaultSettings _avatarSettings;
         public UserService(IUserRepository userRepo, IMapper mapper, 
             IStaffProfileService staffProfileService,ApplicationDbContext dbContext, 
-            ICurrentUserService currentUserService, IPhotoService photoService, IRepository<WebsiteLocalizationWard, int> wardRepo)
+            ICurrentUserService currentUserService, IPhotoService photoService, 
+            IRepository<WebsiteLocalizationWard, int> wardRepo,
+            AvatarDefaultSettings avatarDefaultSettings)
         {
             _userRepo = userRepo;   
             _mapper = mapper;
@@ -38,6 +41,7 @@ namespace BeautyBooking.Services
             _currentUserService = currentUserService;
             _photoService = photoService;
             _wardRepo = wardRepo;
+            _avatarSettings = avatarDefaultSettings;
         }
 
         public async Task<bool> BlockAccountAsync(int id)
@@ -135,6 +139,10 @@ namespace BeautyBooking.Services
                     throw new InvalidOperationException("Không thể tạo tài khoản Admin.");
 
                 var user = _mapper.Map<User>(request);
+                string avatarUrl = _avatarSettings.DefaultAvatarUrl;
+                string safeName = Uri.EscapeDataString(user.FullName);
+                user.AvatarUrl = string.Format(avatarUrl, safeName);
+                user.AvatarPublicId = null;
                 var ward = await _wardRepo.GetByIdAsync(request.WardId);
                 if(ward == null)
                     throw new KeyNotFoundException("Phường/xã không tồn tại.");

@@ -1,6 +1,4 @@
-import { axiosClient } from './axiosClient';
-
-
+import axiosClient from './axiosClient';
 const dashboardApi = {
   //GET: /api/Dashboard/summary
   //Dùng chung cho Admin/Staff. Trả về các số liệu thống kê tổng quan như: tổng số khách hàng, số lịch hẹn hôm nay, doanh thu trong ngày...

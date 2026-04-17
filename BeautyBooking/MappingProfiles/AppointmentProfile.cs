@@ -36,8 +36,8 @@ namespace BeautyBooking.MappingProfiles
 
             //Dashboard
             CreateMap<Appointment, DashboardAppointmentResponse>()
-                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : null))
-                .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null && src.Staff.User != null ? src.Staff.User.FullName : null))
+                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src =>src.User.FullName))
+                .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff.User.FullName))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.AppointmentStatus))
                 .ForMember(dest => dest.ServicesName, opt => opt.MapFrom(src => src.AppointmentServices.Select(s => s.Service.Name)));
         }

@@ -113,6 +113,7 @@ namespace BeautyBooking.Repository
                             a.AppointmentStatus != AppointmentStatus.Cancelled)
                 .Include(a => a.User)
                 .Include(a => a.Staff)
+                    .ThenInclude(s => s.User)
                 .Include(a => a.AppointmentServices)
                     .ThenInclude(a => a.Service)
                 .OrderBy(a => a.AppointmentDate)
