@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState } from 'react';
-import { Layout, Menu, theme, Dropdown, Avatar, Space, Typography, message } from 'antd';
+import { Layout, Menu, theme, Dropdown, Avatar, Space, Typography, message ,Spin} from 'antd';
 import { 
   DashboardOutlined, UserOutlined, TeamOutlined, IdcardOutlined,
   CalendarOutlined, LogoutOutlined, DownOutlined, SettingOutlined,
@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import authApi from '../api/AuthApi';
-
+import { useApiAction } from '../hooks/useApiAction'; // MỚI: Import useApiAction
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
@@ -73,6 +73,8 @@ const AdminLayout = () => {
   const location = useLocation();
   const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
+  const { actionLoading, execute } = useApiAction(); // MỚI: Khởi tạo hook quản lý action
+
   // Hàm load user từ localStorage
   const loadUser = useCallback(() => {
     const userString = localStorage.getItem('user');
@@ -99,7 +101,10 @@ const AdminLayout = () => {
 
   const handleLogout = async () => {
     try {
-      await authApi.logout();
+      await execute(
+        () => authApi.logout(), // Gọi API logout nếu có
+        "Đăng xuất thành công!" // Tin nhắn thành công
+      );
     } catch {
       message.error('Có lỗi xảy ra khi đăng xuất.');
     } finally {
@@ -190,6 +195,7 @@ const AdminLayout = () => {
           boxShadow: '0 1px 4px rgba(0,21,41,0.08)',
           zIndex: 1 // Đảm bảo header nằm trên content khi cuộn
         }}>
+          <Spin spinning={actionLoading} size="small" style={{ marginRight: 16 }}>
           <Dropdown menu={userMenuItems} placement="bottomRight" arrow>
             <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '4px', transition: 'all 0.3s' }} className="user-dropdown-hover">
               <Avatar 
@@ -208,6 +214,7 @@ const AdminLayout = () => {
               <DownOutlined style={{ fontSize: '10px', color: '#8c8c8c' }} />
             </Space>
           </Dropdown>
+          </Spin>
         </Header>
 
         <Content style={{ margin: '16px', overflow: 'initial' }}>

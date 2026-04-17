@@ -6,40 +6,46 @@ import { getStatusConfig } from '../../utils/apiHelper';
 
 const Dashboard = () => {
   const [summary, setSummary] = useState({
-    NewCustomers: 0,
-    TodayAppointment: 0,
-    TodayRevenue: 0
+    newCustomers: 0,
+    todayAppointments: 0,
+    todayRevenue: 0,
   });
 
-  const [recentAppointments, setRecentAppointments] = useState([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = localStorage.getItem('user');
   const isAdmin = user ? JSON.parse(user).role === 'Admin' : false;
   // ================= FETCH =================
   useEffect(() => {
     const loadData = async () => {
+      if (isAdmin === undefined) return;
+      setLoading(true);
       try {
-        setLoading(true);
+        if (isAdmin) {
+          const summaryRes = await dashboardApi.getSummary();
+          setSummary(summaryRes);
+        }
 
-        const [summaryRes, appointmentsRes] = await Promise.all([
-          dashboardApi.getSummary(),
-          dashboardApi.getUpcomingAppointments()
-        ]);
-
-        // 👇 đảm bảo không crash nếu API trả khác format
-        setSummary(summaryRes?.data || summaryRes || {});
-        setRecentAppointments(appointmentsRes?.data || appointmentsRes || []);
+        const upcomingRes = await dashboardApi.getUpcomingAppointments();
+        setUpcomingAppointments(upcomingRes);
 
       } catch (error) {
-        console.error("Lỗi tải dashboard:", error);
-        message.error("Không thể tải dữ liệu dashboard");
+        console.log("URL lỗi:", error.response?.config?.url);
+        console.log("Status:", error.response?.status);
+        console.log("Data:", error.response?.data);
+
+        message.error(
+          error.response?.status === 403
+            ? "Bạn không có quyền xem dữ liệu này"
+            : "Lỗi tải dashboard"
+        );
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [isAdmin]);
 
   // ================= COLUMNS =================
   const columns = [
@@ -106,7 +112,7 @@ const Dashboard = () => {
     <Spin spinning={loading} tip="Đang tải dữ liệu tổng quan...">
       <div style={{ padding: 24 }}>
         <h2 style={{ marginBottom: 20 }}>Tổng quan hệ thống</h2>
-      {isAdmin && (
+      {isAdmin && summary && (
         <Row gutter={16} style={{ marginBottom: 20 }}>
           <Col span={8}>
             <Card bordered={false}>
@@ -122,7 +128,7 @@ const Dashboard = () => {
             <Card bordered={false}>
               <Statistic
                 title="Lịch hẹn hôm nay"
-                value={summary.TodayAppointment}
+                value={summary.todayAppointments}
                 prefix={<CalendarOutlined />}
               />
             </Card>
@@ -132,7 +138,7 @@ const Dashboard = () => {
             <Card bordered={false}>
               <Statistic
                 title="Doanh thu trong ngày"
-                value={summary.TodayRevenue}
+                value={summary.todayRevenue}
                 prefix={<DollarOutlined />}
                 suffix="VNĐ"
               />
@@ -142,7 +148,7 @@ const Dashboard = () => {
       )}
         <Card title="Lịch hẹn sắp tới" bordered={false}>
           <Table
-            dataSource={recentAppointments}
+            dataSource={upcomingAppointments}
             columns={columns}
             pagination={false}
             rowKey="id"
