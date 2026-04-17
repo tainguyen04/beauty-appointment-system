@@ -6,15 +6,15 @@ import { getStatusConfig } from '../../utils/apiHelper';
 
 const Dashboard = () => {
   const [summary, setSummary] = useState({
-    newCustomers: 0,
-    todayAppointments: 0,
-    todayRevenue: 0
+    NewCustomers: 0,
+    TodayAppointment: 0,
+    TodayRevenue: 0
   });
 
   const [recentAppointments, setRecentAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const userRole = localStorage.getItem('userRole'); // Lấy role từ localStorage
-
+  const user = localStorage.getItem('user');
+  const isAdmin = user ? JSON.parse(user).role === 'Admin' : false;
   // ================= FETCH =================
   useEffect(() => {
     const loadData = async () => {
@@ -106,7 +106,7 @@ const Dashboard = () => {
     <Spin spinning={loading} tip="Đang tải dữ liệu tổng quan...">
       <div style={{ padding: 24 }}>
         <h2 style={{ marginBottom: 20 }}>Tổng quan hệ thống</h2>
-
+      {isAdmin && (
         <Row gutter={16} style={{ marginBottom: 20 }}>
           <Col span={8}>
             <Card bordered={false}>
@@ -122,7 +122,7 @@ const Dashboard = () => {
             <Card bordered={false}>
               <Statistic
                 title="Lịch hẹn hôm nay"
-                value={summary.todayAppointments}
+                value={summary.TodayAppointment}
                 prefix={<CalendarOutlined />}
               />
             </Card>
@@ -132,14 +132,14 @@ const Dashboard = () => {
             <Card bordered={false}>
               <Statistic
                 title="Doanh thu trong ngày"
-                value={summary.todayRevenue}
+                value={summary.TodayRevenue}
                 prefix={<DollarOutlined />}
                 suffix="VNĐ"
               />
             </Card>
           </Col>
         </Row>
-
+      )}
         <Card title="Lịch hẹn sắp tới" bordered={false}>
           <Table
             dataSource={recentAppointments}

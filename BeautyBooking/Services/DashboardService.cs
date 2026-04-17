@@ -24,8 +24,8 @@ namespace BeautyBooking.Services
             var newCustomersCount = await _userRepository.GetNewCustomersCountByDateAsync(today);
             return new DashboardResponse
             {
-                ToDayAppointments = appointmentsCount,
-                ToDayRevenue = revenue,
+                TodayAppointments = appointmentsCount,
+                TodayRevenue = revenue,
                 NewCustomers = newCustomersCount
             };
         }
