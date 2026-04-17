@@ -6,8 +6,8 @@ namespace BeautyBooking.DTO.Response
     public class DashboardResponse
     {
         public int NewCustomers { get; set; }
-        public int todayAppointments { get; set; }
-        public decimal todayRevenue { get; set; }
+        public int TodayAppointments { get; set; }
+        public decimal TodayRevenue { get; set; }
     }
     public class DashboardAppointmentResponse
     {

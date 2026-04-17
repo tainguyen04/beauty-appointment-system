@@ -13,6 +13,7 @@ const Dashboard = () => {
 
   const [recentAppointments, setRecentAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const userRole = localStorage.getItem('userRole'); // Lấy role từ localStorage
 
   // ================= FETCH =================
   useEffect(() => {
