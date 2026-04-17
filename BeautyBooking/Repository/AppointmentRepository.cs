@@ -106,11 +106,12 @@ namespace BeautyBooking.Repository
                 .SumAsync(a => (decimal?)a.Service.Price) ?? 0;
         }
 
-        public async Task<IEnumerable<Appointment>> GetTopUpcomingAsync(int count)
+        public async Task<IEnumerable<Appointment>> GetTopUpcomingAsync(int count, int? staffId = null)
         {
             return await _entities
                 .Where(a => a.AppointmentDate >= DateOnly.FromDateTime(DateTime.UtcNow) &&
-                            a.AppointmentStatus != AppointmentStatus.Cancelled)
+                            a.AppointmentStatus != AppointmentStatus.Cancelled &&
+                            (!staffId.HasValue || a.StaffId == staffId.Value))
                 .Include(a => a.User)
                 .Include(a => a.Staff)
                     .ThenInclude(s => s.User)

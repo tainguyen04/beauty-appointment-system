@@ -15,21 +15,13 @@ import workScheduleApi from '../../api/workScheduleApi';
 import staffApi from '../../api/staffApi';
 import { usePagination } from '../../hooks/usePagination';
 import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import custom hook
+import { GetUser } from '../../api/axiosClient'; // MỚI: Import hàm lấy user từ storage
 
 const { Title, Text } = Typography;
 
 const WorkScheduleManager = () => {
-  const userStr = localStorage.getItem('user');
-  let userRole = null;
-  if (userStr) {
-    try {
-      const userObj = JSON.parse(userStr);
-      userRole = userObj.role; 
-    } catch (error) {
-      console.error('Lỗi parse thông tin user từ localStorage:', error);
-    }
-  }
-  const isAdmin = userRole === 'Admin'; 
+  const user = GetUser();
+  const isAdmin = user ? user.role === 'Admin' : false;
 
   // --- 1. ĐỊNH NGHĨA HÀM FETCH CHO HOOK ---
   const fetchSchedulesApi = useCallback(async (params) => {

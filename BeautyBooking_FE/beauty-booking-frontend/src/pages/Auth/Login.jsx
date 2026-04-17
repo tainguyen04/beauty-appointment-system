@@ -1,15 +1,22 @@
-import { Form, Input, Button, Card, Typography } from 'antd';
+import { Form, Input, Button, Card, Typography,Checkbox } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import authApi from '../../api/AuthApi';
+import { useEffect } from 'react';
 
 const { Title } = Typography;
 
 const Login = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+      form.setFieldsValue({ email: rememberedEmail, remember: true });
+    }
+  }, [form]);
+
   // MỚI: Khởi tạo hook quản lý action
   const { actionLoading, execute } = useApiAction();
 
@@ -27,10 +34,16 @@ const Login = () => {
     if (success && response) {
       const token = response.token;
       const userInfo = response.user; // Thay bằng đúng tên trường BE trả về nếu khác
-
       // Lưu vào LocalStorage
-      localStorage.setItem('token', token); 
-      localStorage.setItem('user', JSON.stringify(userInfo));
+      if(values.remember) {
+        localStorage.setItem('token', token); 
+        localStorage.setItem('user', JSON.stringify(userInfo));
+        localStorage.setItem('rememberedEmail', values.email); // Lưu email để tự động điền lần sau
+      }else {
+        sessionStorage.setItem('token', token); 
+        sessionStorage.setItem('user', JSON.stringify(userInfo));
+        localStorage.removeItem('rememberedEmail'); // Xóa email đã lưu nếu không nhớ đăng nhập
+      }
 
       // 3. CHUYỂN HƯỚNG THÔNG MINH DỰA VÀO QUYỀN (ROLE)
       if (userInfo.role === 'Admin' || userInfo.role === 'Staff') {
@@ -49,24 +62,31 @@ const Login = () => {
           <p style={{ color: 'gray', marginTop: 8 }}>Hệ thống EcoBeauty</p>
         </div>
 
-        <Form form={form} name="login_form" onFinish={onFinish} layout="vertical" size="large">
+        <Form form={form} 
+        name="login_form" 
+        onFinish={onFinish} 
+        layout="vertical" 
+        size="large"
+        initialValues={{remember: true}}>
           <Form.Item
-            name="email"
+            name="email"  
             rules={[
               { required: true, message: 'Vui lòng nhập Email!' },
               { type: 'email', message: 'Email không đúng định dạng!' }
             ]}
           >
-            <Input prefix={<UserOutlined />} placeholder="Email của bạn" />
+            <Input prefix={<UserOutlined />} placeholder="Email của bạn" autoComplete='username'/>
           </Form.Item>
 
           <Form.Item
             name="password"
             rules={[{ required: true, message: 'Vui lòng nhập Mật khẩu!' }]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" />
+            <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" autoComplete='current-password' />
           </Form.Item>
-
+            <Form.Item name="remember" valuePropName="checked">
+            <Checkbox>Nhớ đăng nhập của tôi</Checkbox>
+          </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block loading={actionLoading}>
               Đăng nhập

@@ -14,12 +14,13 @@ import { usePagination } from '../../hooks/usePagination';
 import staffDayOffApi from '../../api/staffDayOffApi';
 import staffApi from '../../api/staffApi';
 import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
+import { GetUser } from '../../api/axiosClient';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const StaffDayOffManager = () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = GetUser();
   const isAdmin = user.role === 'Admin';
   
   const [viewMode, setViewMode] = useState('table');

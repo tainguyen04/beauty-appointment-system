@@ -3,6 +3,7 @@ import { Row, Col, Card, Statistic, Table, Tag, Spin, message } from 'antd';
 import { CalendarOutlined, DollarOutlined, UserOutlined } from '@ant-design/icons';
 import dashboardApi from '../../api/dashboardApi';
 import { getStatusConfig } from '../../utils/apiHelper';
+import { GetUser } from '../../api/axiosClient';
 
 const Dashboard = () => {
   const [summary, setSummary] = useState({
@@ -13,8 +14,8 @@ const Dashboard = () => {
 
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const user = localStorage.getItem('user');
-  const isAdmin = user ? JSON.parse(user).role === 'Admin' : false;
+  const user = GetUser(); // Lấy thông tin user từ LocalStorage/SessionStorage để xác định role
+  const isAdmin = user ? user.role === 'Admin' : false;
   // ================= FETCH =================
   useEffect(() => {
     const loadData = async () => {

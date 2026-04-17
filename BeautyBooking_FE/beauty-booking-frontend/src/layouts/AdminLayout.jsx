@@ -9,6 +9,7 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import authApi from '../api/AuthApi';
 import { useApiAction } from '../hooks/useApiAction'; // MỚI: Import useApiAction
+import { GetUser } from '../api/axiosClient';
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
@@ -77,14 +78,14 @@ const AdminLayout = () => {
 
   // Hàm load user từ localStorage
   const loadUser = useCallback(() => {
-    const userString = localStorage.getItem('user');
-    if (!userString) {
+    const user = GetUser();
+    if (!user) {
       setUser(null);
       navigate('/login', { replace: true });
       return;
     }
     try {
-      const userData = JSON.parse(userString);
+      const userData = user; // Nếu GetUser đã xử lý parse, ta chỉ việc dùng luôn
       setUser(userData);
     } catch {
       localStorage.removeItem('user');
@@ -109,6 +110,7 @@ const AdminLayout = () => {
       message.error('Có lỗi xảy ra khi đăng xuất.');
     } finally {
       localStorage.clear();
+      sessionStorage.clear();
       navigate('/login', { replace: true });
     }
   };

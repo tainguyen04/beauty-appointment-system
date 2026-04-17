@@ -10,11 +10,13 @@ namespace BeautyBooking.Services
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
-        public DashboardService(IAppointmentRepository appointmentRepo, IUserRepository userRepo, IMapper mapper)
+        private readonly ICurrentUserService _currentUserService;
+        public DashboardService(IAppointmentRepository appointmentRepo, IUserRepository userRepo, IMapper mapper, ICurrentUserService currentUserService)
         {
             _appointmentRepository = appointmentRepo;
             _userRepository = userRepo;
             _mapper = mapper;
+            _currentUserService = currentUserService;
         }
         public async Task<DashboardResponse> GetSummary()
         {
@@ -32,7 +34,8 @@ namespace BeautyBooking.Services
 
         public async Task<IEnumerable<DashboardAppointmentResponse>> GetUpcomingAppointments()
         {
-            var appointments = await _appointmentRepository.GetTopUpcomingAsync(5);
+            var staffId = _currentUserService.StaffId;
+            var appointments = await _appointmentRepository.GetTopUpcomingAsync(5, staffId);
             return _mapper.Map<IEnumerable<DashboardAppointmentResponse>>(appointments);
         }
     }

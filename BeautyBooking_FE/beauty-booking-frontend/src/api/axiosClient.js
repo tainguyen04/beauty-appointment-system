@@ -13,7 +13,7 @@ const axiosClient = axios.create({
 // Interceptor cho Request: Trực chờ ở cửa, thấy ai ra là nhét Token vào tay
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = GetToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -44,5 +44,21 @@ axiosClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const GetToken = () => {
+  return localStorage.getItem('token') || sessionStorage.getItem('token');
+};
+
+export const GetUser = () => {
+  const userString = localStorage.getItem('user') || sessionStorage.getItem('user');
+  if (!userString) return null;
+  try {
+    return JSON.parse(userString);
+  }catch {
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
+    return null;
+  }
+};
 
 export default axiosClient;

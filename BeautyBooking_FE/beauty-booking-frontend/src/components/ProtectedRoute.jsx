@@ -1,10 +1,10 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { message } from 'antd';
+import { GetToken, GetUser } from '../api/axiosClient';
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const token = localStorage.getItem('token');
-  const userString = localStorage.getItem('user');
-  const user = userString ? JSON.parse(userString) : null;
+  const token = GetToken(); // Lấy token từ LocalStorage hoặc SessionStorage
+  const user = GetUser(); // Lấy thông tin user từ LocalStorage hoặc SessionStorage
 
   // 1. Chốt chặn 1: Chưa đăng nhập (Không có Token)
   if (!token || !user) {
