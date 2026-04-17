@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, Table, Tag, Spin } from 'antd';
+import { Row, Col, Card, Statistic, Table, Tag, Spin, message } from 'antd';
 import { CalendarOutlined, DollarOutlined, UserOutlined } from '@ant-design/icons';
 import dashboardApi from '../../api/dashboardApi';
-import { useApiAction } from '../../hooks/useApiAction';
 import { getStatusConfig } from '../../utils/apiHelper';
 
 const Dashboard = () => {
-  const { actionLoading, execute } = useApiAction();
-
   const [summary, setSummary] = useState({
     newCustomers: 0,
     todayAppointments: 0,
@@ -15,58 +12,53 @@ const Dashboard = () => {
   });
 
   const [recentAppointments, setRecentAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // ================= FETCH =================
   useEffect(() => {
-  const loadData = async () => {
-    const res = await execute(
-      async () => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
         const [summaryRes, appointmentsRes] = await Promise.all([
           dashboardApi.getSummary(),
           dashboardApi.getUpcomingAppointments()
         ]);
 
-        return { summaryRes, appointmentsRes };
-      },
-      null,
-      "Lỗi tải dashboard"
-    );
+        // 👇 đảm bảo không crash nếu API trả khác format
+        setSummary(summaryRes?.data || summaryRes || {});
+        setRecentAppointments(appointmentsRes?.data || appointmentsRes || []);
 
-    if (res?.success) {
-      const { summaryRes, appointmentsRes } = res.data;
+      } catch (error) {
+        console.error("Lỗi tải dashboard:", error);
+        message.error("Không thể tải dữ liệu dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      if (summaryRes?.success) setSummary(summaryRes.data);
-      if (appointmentsRes?.success) setRecentAppointments(appointmentsRes.data);
-    }
-  };
-
-  loadData();
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, []); // 👈 QUAN TRỌNG: []
+    loadData();
+  }, []);
 
   // ================= COLUMNS =================
   const columns = [
     {
       title: 'Khách hàng',
+      width: 120,
       key: 'customer',
       render: (_, record) => (
         <div>
-          <strong>{record.customerName}</strong><br />
-          <span style={{ fontSize: 12, color: 'gray' }}>
-            Thợ: {record.staffName}
-          </span>
+          <strong>{record.customerName}</strong>
         </div>
       )
     },
     {
       title: 'Nhân viên phụ trách',
+      width: 120,
       key: 'staff',
       render: (_, record) => (
         <div>
-          <strong>{record.staffName}</strong><br />
-          <span style={{ fontSize: 12, color: 'gray' }}>
-            Thợ: {record.staffName}
-          </span>
+          <strong>{record.staffName || "Chưa phân công"}</strong>
         </div>
       )
     },
@@ -86,6 +78,7 @@ const Dashboard = () => {
     },
     {
       title: 'Thời gian',
+      width: 120,
       key: 'time',
       render: (_, record) => (
         <div>
@@ -109,26 +102,39 @@ const Dashboard = () => {
 
   // ================= UI =================
   return (
-    <Spin spinning={actionLoading} tip="Đang tải dữ liệu tổng quan...">
+    <Spin spinning={loading} tip="Đang tải dữ liệu tổng quan...">
       <div style={{ padding: 24 }}>
         <h2 style={{ marginBottom: 20 }}>Tổng quan hệ thống</h2>
 
         <Row gutter={16} style={{ marginBottom: 20 }}>
           <Col span={8}>
             <Card bordered={false}>
-              <Statistic title="Khách hàng mới" value={summary.newCustomers} prefix={<UserOutlined />} />
+              <Statistic
+                title="Khách hàng mới"
+                value={summary.newCustomers}
+                prefix={<UserOutlined />}
+              />
             </Card>
           </Col>
 
           <Col span={8}>
             <Card bordered={false}>
-              <Statistic title="Lịch hẹn hôm nay" value={summary.todayAppointments} prefix={<CalendarOutlined />} />
+              <Statistic
+                title="Lịch hẹn hôm nay"
+                value={summary.todayAppointments}
+                prefix={<CalendarOutlined />}
+              />
             </Card>
           </Col>
 
           <Col span={8}>
             <Card bordered={false}>
-              <Statistic title="Doanh thu trong ngày" value={summary.todayRevenue} prefix={<DollarOutlined />} suffix="VNĐ" />
+              <Statistic
+                title="Doanh thu trong ngày"
+                value={summary.todayRevenue}
+                prefix={<DollarOutlined />}
+                suffix="VNĐ"
+              />
             </Card>
           </Col>
         </Row>
@@ -147,3 +153,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
