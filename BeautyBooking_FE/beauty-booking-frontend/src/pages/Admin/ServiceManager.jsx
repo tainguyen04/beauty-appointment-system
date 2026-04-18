@@ -49,13 +49,31 @@ const ServiceManager = () => {
     initData();
   }, [runFetch]);
 
+// 1. MỚI: Khi mở Modal để sửa, cần set lại giá trị cho form
+  useEffect(() => {
+  if (editingService && categories.length > 0) {
+    form.setFieldsValue({
+      name: editingService.name,
+      price: editingService.price,
+      duration: editingService.duration,
+      categoryId: Number(editingService.categoryId), // 👈 FIX CHÍNH
+      imageFile: editingService.imageUrl
+        ? [{
+            uid: '-1',
+            name: 'current_image',
+            status: 'done',
+            url: editingService.imageUrl
+          }]
+        : []
+    });
+  }
+}, [editingService, categories, form]);
   // 2. MỚI: Cấu trúc lại xử lý Thêm/Sửa bằng execute
   const handleFinish = async (values) => {
     const formData = new FormData();
     formData.append('Name', values.name);
     formData.append('Price', values.price);
     formData.append('Duration', values.duration);
-    formData.append('CategoryId', values.categoryId);
 
     if (values.imageFile && values.imageFile[0]?.originFileObj) {
       formData.append('ImageUrl', values.imageFile[0].originFileObj);
@@ -159,10 +177,6 @@ const ServiceManager = () => {
             icon={<EditOutlined />} 
             onClick={() => {
               setEditingService(record);
-              form.setFieldsValue({
-                ...record,
-                imageFile: record.imageUrl ? [{ url: record.imageUrl, name: 'current_image' }] : []
-              });
               setIsModalOpen(true);
             }} 
           />
@@ -239,7 +253,7 @@ const ServiceManager = () => {
             label="Danh mục dịch vụ" 
             rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}
           >
-            <Select placeholder="Chọn danh mục">
+            <Select placeholder="Chọn danh mục" disabled={!!editingService}>
               {categories.map(c => (
                 <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
               ))}

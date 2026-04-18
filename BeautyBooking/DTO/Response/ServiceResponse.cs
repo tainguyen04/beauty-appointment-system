@@ -8,6 +8,7 @@
         public int Duration { get; set; }
         public bool IsActive { get; set; }
         public string? ImageUrl { get; set; }
+        public int CategoryId { get; set; }
         public string? CategoryName { get; set; }
     }
 }
