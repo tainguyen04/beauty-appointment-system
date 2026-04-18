@@ -1,24 +1,30 @@
 import React from 'react';
-import { Card, Button, Typography, Tag, Space } from 'antd';
-import { ClockCircleOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { Card, Typography, Tag, Space } from 'antd';
+import { ClockCircleOutlined, CheckCircleFilled } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
-const ServiceCard = ({ service, onBookNow }) => {
-  // Ảnh dự phòng khi ảnh từ Server bị lỗi hoặc không tồn tại
+const ServiceCard = ({ service, isSelected, onSelect }) => {
   const fallbackImage = "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=500";
 
   return (
     <Card
       hoverable
+      // Khi click vào bất kỳ đâu trên Card đều sẽ chọn/bỏ chọn
+      onClick={() => onSelect(service)}
       style={{ 
         borderRadius: 24, 
         overflow: 'hidden', 
-        border: 'none', 
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 10px 20px rgba(0,0,0,0.04)',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        // Đổi màu viền khi được chọn
+        border: isSelected ? '2px solid #eb2f96' : '2px solid transparent',
+        boxShadow: isSelected 
+          ? '0 10px 25px rgba(235, 47, 150, 0.2)' 
+          : '0 10px 20px rgba(0,0,0,0.04)',
+        transform: isSelected ? 'translateY(-5px)' : 'none',
       }}
       bodyStyle={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}
       cover={
@@ -27,8 +33,28 @@ const ServiceCard = ({ service, onBookNow }) => {
             alt={service.name}
             src={service.imageUrl || fallbackImage}
             onError={(e) => { e.target.src = fallbackImage }}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'cover',
+                opacity: isSelected ? 0.6 : 1, // Làm mờ ảnh nhẹ khi đã chọn để hiện Icon check
+                transition: 'opacity 0.3s'
+            }}
           />
+          
+          {/* Overlay dấu tích khi dịch vụ được chọn */}
+          {isSelected && (
+            <div style={{ 
+              position: 'absolute', 
+              top: '50%', 
+              left: '50%', 
+              transform: 'translate(-50%, -50%)',
+              zIndex: 2
+            }}>
+              <CheckCircleFilled style={{ fontSize: '50px', color: '#eb2f96' }} />
+            </div>
+          )}
+
           {service.categoryName && (
             <Tag style={{ 
               position: 'absolute', top: 12, left: 12, borderRadius: '20px', 
@@ -48,7 +74,8 @@ const ServiceCard = ({ service, onBookNow }) => {
             margin: '0 0 10px 0', 
             fontSize: '17px', 
             fontWeight: 700,
-            height: '48px', // Giữ các card đều nhau
+            height: '48px',
+            color: isSelected ? '#eb2f96' : '#262626' // Đổi màu chữ tiêu đề khi chọn
           }} 
           ellipsis={{ rows: 2 }}
         >
@@ -56,7 +83,7 @@ const ServiceCard = ({ service, onBookNow }) => {
         </Title>
 
         <Space style={{ color: '#8c8c8c', fontSize: '14px', marginBottom: '20px' }}>
-          <ClockCircleOutlined style={{ color: '#eb2f96' }} />
+          <ClockCircleOutlined style={{ color: isSelected ? '#eb2f96' : '#bfbfbf' }} />
           <span>{service.duration || 60} phút</span>
         </Space>
       </div>
@@ -65,7 +92,7 @@ const ServiceCard = ({ service, onBookNow }) => {
         marginTop: 'auto', 
         display: 'flex', 
         justifyContent: 'space-between', 
-        alignItems: 'center', 
+        alignItems: 'flex-end',
         paddingTop: '16px', 
         borderTop: '1px solid #f5f5f5' 
       }}>
@@ -75,24 +102,8 @@ const ServiceCard = ({ service, onBookNow }) => {
             {service.price ? `${service.price.toLocaleString('vi-VN')}đ` : 'Liên hệ'}
           </Text>
         </div>
-
-        {/* Nút chỉ có Icon, tuyệt đối không có text */}
-        <Button 
-          type="primary" 
-          shape="circle" 
-          icon={<ArrowRightOutlined />} 
-          onClick={() => onBookNow(service)}
-          style={{ 
-            background: '#eb2f96', 
-            borderColor: '#eb2f96', 
-            width: '45px', 
-            height: '45px',
-            boxShadow: '0 4px 12px rgba(235, 47, 150, 0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        />
+        
+        {/* Nút tròn cũ đã xóa để khách click chọn cả Card */}
       </div>
     </Card>
   );

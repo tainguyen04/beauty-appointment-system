@@ -84,8 +84,9 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Where(a => a.AppointmentDate == date &&
                             a.AppointmentStatus != AppointmentStatus.Cancelled &&
-                            ((startTime < a.EndTime && endTime > a.StartTime)))
-                .Select(a => a.StaffId)
+                            a.StaffId.HasValue &&
+                            startTime < a.EndTime && endTime > a.StartTime)
+                .Select(a => a.StaffId!.Value)
                 .Distinct()
                 .ToListAsync();
         }

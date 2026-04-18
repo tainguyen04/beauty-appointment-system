@@ -61,13 +61,15 @@ namespace BeautyBooking.Services
             appointment.EndTime = request.StartTime + totalDuration;
 
             ApplyServicesToAppointment(appointment, services);
-
-            await ValidateAsync(
-                appointment.StaffId,
+            if(appointment.StaffId.HasValue && appointment.StaffId > 0)
+            {
+                await ValidateAsync(
+                appointment.StaffId.Value,
                 appointment.AppointmentDate,
                 appointment.StartTime,
                 appointment.EndTime,
                 request.ServiceIds);
+            }
 
             await _appointmentRepository.CreateAsync(appointment);
             await _appointmentRepository.SaveChangesAsync();
@@ -115,7 +117,7 @@ namespace BeautyBooking.Services
 
             if (!string.IsNullOrWhiteSpace(keyword))
                 query = query.Where(a => a.User.FullName.Contains(keyword) ||
-                                         a.Staff.User.FullName.Contains(keyword));
+                                         (a.Staff != null && a.Staff.User.FullName.Contains(keyword)));
 
             if (filter.FromDate.HasValue)
                 query = query.Where(a => a.AppointmentDate >= filter.FromDate.Value);
@@ -172,14 +174,16 @@ namespace BeautyBooking.Services
             int newtotalDuration = services.Sum(s => s.Duration);
             appointment.StartTime = request.StartTime;
             appointment.EndTime = request.StartTime + newtotalDuration;
-
-            await ValidateAsync(
-                appointment.StaffId,
+            if (appointment.StaffId.HasValue && appointment.StaffId > 0)
+            {
+                await ValidateAsync(
+                appointment.StaffId.Value,
                 appointment.AppointmentDate,
                 appointment.StartTime,
                 appointment.EndTime,
                 request.ServiceIds,
                 appointment.Id);
+            }
 
             ApplyServicesToAppointment(appointment, services);
             await _appointmentRepository.SaveChangesAsync();

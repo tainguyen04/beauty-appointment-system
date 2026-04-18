@@ -10,7 +10,8 @@ import {
   Pagination, 
   Space, 
   ConfigProvider ,
-  Tag
+  Tag,
+  message
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -35,6 +36,8 @@ const Home = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [searchVal, setSearchVal] = useState('');
+  //Khai báo state lưu danh sách đã chọn
+  const [selectedServices, setSelectedServices] = useState([]);
 
   // 1. Sử dụng Hook phân trang đã viết
   // Khởi tạo với pageSize = 8 (2 hàng x 4 cột trên Desktop)
@@ -46,16 +49,34 @@ const Home = () => {
     handleFilterChange 
   } = usePagination(serviceApi.getAll, 8);
 
+  //Hàm xử lý khi click vào Card (Toggle chọn/bỏ chọn)
+  const toggleSelectService = (service) => {
+    setSelectedServices(prev => {
+      const isExisted = prev.find(item => item.id === service.id);
+      if (isExisted) {
+        // Nếu chọn rồi thì bỏ chọn
+        return prev.filter(item => item.id !== service.id);
+      } else {
+        // Nếu chưa chọn thì thêm vào danh sách
+        return [...prev, service];
+      }
+    });
+  };
 
- // Hàm xử lý khi người dùng clicktrên card dịch vụ
-  const handleBookNow = (service) => {
-  navigate('/booking', { 
-    state: { 
-      selectedService: service, // Truyền nguyên object service
-      autoNext: true            // Cờ để báo hiệu cho trang Booking biết cần nhảy bước
-    } 
-  });
-};
+  //Hàm khi nhấn nút "ĐẶT LỊCH NGAY" (Floating Button)
+  const handleFinalBooking = () => {
+    if (selectedServices.length === 0) {
+      return message.warning("Vui lòng chọn ít nhất một dịch vụ!");
+    }
+    
+    navigate('/booking', { 
+      state: { 
+        selectedList: selectedServices, // Gửi nguyên mảng đi
+        autoNext: true 
+      } 
+    });
+  };
+
   // 2. Load dữ liệu danh mục ban đầu
   useEffect(() => {
     const loadStaticData = async () => {
@@ -213,7 +234,8 @@ const Home = () => {
                   <Col xs={24} sm={12} md={8} lg={6} key={service.id}>
                     <ServiceCard 
                       service={service} 
-                      onBookNow={handleBookNow}
+                      isSelected={selectedServices.some(item => item.id === service.id)}
+                      onSelect={() => toggleSelectService(service)}
                     />
                   </Col>
                 ))}
@@ -244,7 +266,7 @@ const Home = () => {
           type="primary"
           size="large"
           icon={<RocketOutlined />}
-          onClick={() => navigate('/booking')}
+          onClick={handleFinalBooking}
           style={floatingBtnStyle}
         >
           ĐẶT LỊCH NGAY

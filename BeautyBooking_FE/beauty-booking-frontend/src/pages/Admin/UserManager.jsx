@@ -184,7 +184,7 @@ const UserManager = () => {
     },
     { title: 'Email', dataIndex: 'email' ,width: 100, ellipsis: true},
     { title: 'Số điện thoại', dataIndex: 'phone' },
-    {title: 'Địa chỉ', dataIndex: 'address', width: 200, ellipsis: true},
+    {title: 'Địa chỉ', dataIndex: 'address', width: 100, ellipsis: true},
     {
       title: 'Vai trò',
       dataIndex: 'role',

@@ -18,6 +18,7 @@ import wardApi from '../../api/wardApi';
 import staffApi from '../../api/staffApi';
 import appointmentApi from '../../api/appointmentApi';
 import { useApiAction } from '../../hooks/useApiAction'; // Import hook của bạn
+import BookingSummary from '../../components/BookingSummary';
 
 const { Title, Text } = Typography;
 
@@ -63,23 +64,33 @@ const Booking = () => {
   const [availableStaffs, setAvailableStaffs] = useState([]);
 
  // ================== 1. XỬ LÝ DỮ LIỆU KHỞI TẠO VÀ TRUYỀN DỮ LIỆU GIỮA CÁC TRANG ==================
-  useEffect(() => {
-    // Kiểm tra xem có dữ liệu từ Home gửi sang không
-    if (location.state?.selectedService) {
-      const { selectedService, autoNext } = location.state;
-      
-      // 1. Cập nhật dữ liệu đặt lịch
-      setBookingData(prev => ({
-        ...prev,
-        serviceId: selectedService.id
-      }));
+    useEffect(() => {
+      // 1. Kiểm tra dữ liệu (selectedList nếu chọn nhiều, hoặc selectedService nếu chọn 1)
+      const serviceFromHome = location.state?.selectedService || location.state?.selectedList;
+      const shouldAutoNext = location.state?.autoNext;
 
-      // 2. Nếu có cờ autoNext, nhảy thẳng sang bước tiếp theo
-      if (autoNext) {
-        setCurrentStep(1); // Bước 0 là Dịch vụ, Bước 1 là Chi nhánh/Thời gian
+      if (serviceFromHome) {
+        // 2. Cập nhật dữ liệu vào Booking Data
+        setBookingData(prev => ({
+          ...prev,
+          // Nếu là mảng (nhiều dịch vụ) thì lưu mảng, nếu là đơn lẻ thì lưu ID
+          serviceIds: Array.isArray(serviceFromHome) 
+            ? serviceFromHome.map(s => s.id) 
+            : serviceFromHome.id
+        }));
+
+        // 3. Nhảy bước (Dùng setTimeout 0ms là mẹo để thoát khỏi luồng render hiện tại, fix lỗi React)
+        if (shouldAutoNext && currentStep === 0) {
+          setTimeout(() => {
+            setCurrentStep(1);
+          }, 0);
+        }
+
+        // 4. Quan trọng: Xóa state của location để khi F5 trang không bị nhảy bước vô lý
+        window.history.replaceState({}, document.title);
       }
-    }
-  }, [location.state]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Chỉ chạy 1 lần khi trang Booking vừa load xong
 
 
   const handleViewProfile = (e, staff) => {
@@ -515,6 +526,7 @@ const Booking = () => {
     { title: 'Chi nhánh', content: <WardStep /> },
     { title: 'Thời gian', content: <TimeStep /> },
     { title: 'Nhân viên', content: <StaffStep /> },
+    { title: 'Xác nhận', content: <BookingSummary data={bookingData}/> },
   ];
 
   if (isSuccess) {
