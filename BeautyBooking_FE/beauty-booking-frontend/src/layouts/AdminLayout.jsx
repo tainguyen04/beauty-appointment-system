@@ -16,7 +16,10 @@ const isAdmin = GetUser()?.role === 'Admin' ? true : false;
 const menuItems = [
   { key: '/admin', icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/admin/appointments', icon: <CalendarOutlined />, label: 'Quản lý Lịch hẹn' },
+  
+  ...isAdmin ? [
   { key: '/admin/services', icon: <ScissorOutlined />, label: 'Quản lý Dịch vụ'},
+  ] : [],
   {
     key: 'sub-scheduling',
     icon: <CalendarOutlined />,
@@ -39,7 +42,9 @@ const menuItems = [
     icon: <TeamOutlined />,
     label: 'Quản lý Tài khoản',
     children: [
+      ...isAdmin ? [
       { key: '/admin/users', icon: <UserOutlined />, label: 'Khách hàng' },
+      ] : [],
       { key: '/admin/staffs', icon: <IdcardOutlined />, label: 'Nhân viên' },
     ],
   },
