@@ -8,82 +8,64 @@ const CategoryCard = ({
   name, 
   isActive, 
   onClick, 
-  icon, 
-  imageUrl, 
   isAll = false 
 }) => {
-  // Giao diện đặc biệt cho nút "Tất cả"
+  const colorActive = '#eb2f96'; // Màu hồng đậm khi được chọn
+  const colorInactive = '#555';  // Màu xám khi chưa chọn
+
+  // 1. Nút "Tất cả"
   if (isAll) {
     return (
       <div 
-        onClick={onClick}
-        style={{
-          width: '100%', // Dàn đều trong ô lưới
-          height: '100%', // Các card bằng chiều cao nhau
-          padding: '16px',
-          borderRadius: '16px',
-          background: isActive ? '#111' : '#f5f5f5',
-          color: isActive ? '#fff' : '#333',
-          cursor: 'pointer',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.3s ease',
-          border: isActive ? '2px solid #111' : '2px solid transparent',
-        }}
+        onClick={onClick} 
+        style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
       >
-        <AppstoreOutlined style={{ fontSize: '28px', marginBottom: '8px' }} />
-        <Text style={{ color: 'inherit', fontWeight: 600, textAlign: 'center' }}>{name}</Text>
+        <div style={{
+          width: '60px', height: '60px', borderRadius: '50%',
+          background: isActive ? '#fff0f6' : '#f5f5f5',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: isActive ? `2px solid ${colorActive}` : '2px solid transparent',
+          transition: 'all 0.3s ease'
+        }}>
+          <AppstoreOutlined style={{ fontSize: '24px', color: isActive ? colorActive : colorInactive }} />
+        </div>
+        <Text style={{ 
+          color: isActive ? colorActive : colorInactive, 
+          fontWeight: isActive ? 600 : 400, 
+          fontSize: '13px', textAlign: 'center' 
+        }}>
+          {name}
+        </Text>
       </div>
     );
   }
 
-  // Giao diện cho các danh mục bình thường từ API
-  const bgGradient = `linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)`; 
+  // 2. Các danh mục từ API
+  const firstLetter = name ? name.charAt(0).toUpperCase() : '✨';
 
   return (
     <div 
-      onClick={onClick}
-      style={{
-        width: '100%',
-        height: '100%',
-        padding: '16px',
-        borderRadius: '16px',
-        background: isActive ? '#fff0f6' : bgGradient,
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.3s ease',
-        border: isActive ? '2px solid #ff85c0' : '2px solid transparent',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-      }}
+      onClick={onClick} 
+      style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
     >
-      <div style={{ 
-        width: '50px', 
-        height: '50px', 
-        borderRadius: '50%', 
-        background: isActive ? '#ffadd2' : '#e6f7ff', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        marginBottom: '10px',
-        fontSize: '20px',
-        overflow: 'hidden'
+      <div style={{
+        width: '60px', height: '60px', borderRadius: '50%',
+        background: isActive ? '#fff0f6' : '#f9f9f9',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        border: isActive ? `2px solid ${colorActive}` : '2px solid transparent',
+        transition: 'all 0.3s ease',
+        color: isActive ? colorActive : colorInactive,
+        fontSize: '22px', fontWeight: 'bold'
       }}>
-        {imageUrl ? (
-          <img src={imageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          icon || '✨'
-        )}
+        {firstLetter}
       </div>
       <Text style={{ 
-        color: isActive ? '#eb2f96' : '#333', 
-        fontWeight: isActive ? 700 : 500,
+        color: isActive ? colorActive : colorInactive, 
+        fontWeight: isActive ? 600 : 400, 
+        fontSize: '13px', 
         textAlign: 'center',
-        fontSize: '14px'
+        lineHeight: '1.4',
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
       }}>
         {name}
       </Text>

@@ -117,7 +117,7 @@ namespace BeautyBooking.Repository
                     .ThenInclude(s => s.User)
                 .Include(a => a.AppointmentServices)
                     .ThenInclude(a => a.Service)
-                .OrderBy(a => a.AppointmentDate)
+                .OrderByDescending(a => a.AppointmentDate)
                 .ThenBy(a => a.StartTime)
                 .Take(count)
                 .AsSplitQuery()

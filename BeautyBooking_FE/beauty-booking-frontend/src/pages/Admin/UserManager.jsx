@@ -177,7 +177,7 @@ const UserManager = () => {
         </Space>
       ),
     },
-    { title: 'Email', dataIndex: 'email' },
+    { title: 'Email', dataIndex: 'email' ,width: 100, ellipsis: true},
     { title: 'Số điện thoại', dataIndex: 'phone' },
     {
       title: 'Vai trò',
