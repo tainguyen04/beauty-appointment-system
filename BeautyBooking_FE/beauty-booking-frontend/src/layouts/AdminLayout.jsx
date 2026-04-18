@@ -12,7 +12,7 @@ import { useApiAction } from '../hooks/useApiAction'; // MỚI: Import useApiAct
 import { GetUser } from '../api/axiosClient';
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
-
+const isAdmin = GetUser()?.role === 'Admin' ? true : false;
 const menuItems = [
   { key: '/admin', icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/admin/appointments', icon: <CalendarOutlined />, label: 'Quản lý Lịch hẹn' },
@@ -43,6 +43,7 @@ const menuItems = [
       { key: '/admin/staffs', icon: <IdcardOutlined />, label: 'Nhân viên' },
     ],
   },
+  ...(isAdmin ? [
   {
     key: 'catalogs',
     icon: <AppstoreOutlined />, // Icon bánh răng siêu hợp
@@ -65,6 +66,7 @@ const menuItems = [
       },
     ],
   },
+] : []),
 ];
 
 const AdminLayout = () => {
