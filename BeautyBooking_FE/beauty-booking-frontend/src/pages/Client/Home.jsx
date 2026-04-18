@@ -33,7 +33,7 @@ import serviceApi from '../../api/serviceApi';
 import categoryApi from '../../api/categoryApi';
 
 // Import Components & Hooks
-import ServiceCard from '../../components/ServiceCard.jsx';
+import ServiceCard from '../../components/tempCard';
 import { usePagination } from '../../hooks/usePagination';
 import HeroSearch from '../../components/HeroSearch';
 import { useApiAction } from '../../hooks/useApiAction';
