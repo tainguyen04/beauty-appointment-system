@@ -10,6 +10,7 @@ namespace BeautyBooking.DTO.Response
         public string? Phone { get; set; }
         public UserRole Role { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? Address { get; set; }
         public int? WardId { get; set; }
         public string? WardName { get; set; }
         public int? StaffId { get; set; }
