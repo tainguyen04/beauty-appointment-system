@@ -79,6 +79,8 @@ const UserManager = () => {
     form.setFieldsValue({
       name: record.fullName,
       phone: record.phone,
+      address: record.address,
+      wardId: record.wardId || null,
     });
     setIsModalOpen(true);
   };
@@ -92,6 +94,7 @@ const UserManager = () => {
       if (values.name) formData.append('Name', values.name);
       if (values.phone) formData.append('Phone', values.phone);
       if(values.wardId) formData.append('WardId', values.wardId);
+      if(values.address) formData.append('Address', values.address);
       if (values.avatar?.fileList?.length > 0) {
         formData.append('AvatarUrl', values.avatar.fileList[0].originFileObj);
       }
@@ -104,6 +107,8 @@ const UserManager = () => {
         email: values.email,
         password: values.password,
         role: values.role,
+        phone: values.phone,
+        address: values.address,
         wardId: values.wardId ? parseInt(values.wardId) : null
       };
 
@@ -348,6 +353,11 @@ const UserManager = () => {
                 <Input placeholder="090..." />
               </Form.Item>
             </Col>
+            <Col span={24}>
+              <Form.Item name="address" label="Địa chỉ cụ thể">
+                <Input placeholder="Số nhà, tên đường..." />
+              </Form.Item>
+            </Col>
           </Row>
 
           {/* DÒNG 2: CHỈ HIỂN THỊ KHI TẠO MỚI */}
@@ -459,6 +469,9 @@ const UserManager = () => {
             <Descriptions.Item label="Họ tên">{selectedUser?.fullName}</Descriptions.Item>
             <Descriptions.Item label="Email">{selectedUser?.email}</Descriptions.Item>
             <Descriptions.Item label="SĐT">{selectedUser?.phone}</Descriptions.Item>
+            <Descriptions.Item label="Địa chỉ">
+              {selectedUser?.address || 'Chưa cập nhật'}
+            </Descriptions.Item>
             <Descriptions.Item label="Khu vực">
                 {selectedUser?.wardName ? (
                   <Tag color="blue">{selectedUser.wardName}</Tag>
