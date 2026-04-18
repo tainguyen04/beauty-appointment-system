@@ -50,47 +50,54 @@ const ServiceManager = () => {
   }, [runFetch]);
 
 // 1. MỚI: Khi mở Modal để sửa, cần set lại giá trị cho form
-  useEffect(() => {
-  if (editingService && categories.length > 0) {
-    form.setFieldsValue({
-      name: editingService.name,
-      price: editingService.price,
-      duration: editingService.duration,
-      categoryId: Number(editingService.categoryId), // 👈 FIX CHÍNH
-      imageFile: editingService.imageUrl
-        ? [{
-            uid: '-1',
-            name: 'current_image',
-            status: 'done',
-            url: editingService.imageUrl
-          }]
-        : []
-    });
-  }
-}, [editingService, categories, form]);
-  // 2. MỚI: Cấu trúc lại xử lý Thêm/Sửa bằng execute
-  const handleFinish = async (values) => {
+    useEffect(() => {
+    if (editingService && categories.length > 0) {
+      form.setFieldsValue({
+        name: editingService.name,
+        price: editingService.price,
+        duration: editingService.duration,
+        description: editingService.description,
+        categoryId: Number(editingService.categoryId), // 👈 FIX CHÍNH
+        imageFile: editingService.imageUrl
+          ? [{
+              uid: '-1',
+              name: 'current_image',
+              status: 'done',
+              url: editingService.imageUrl
+            }]
+          : []
+      });
+    }
+  }, [editingService, categories, form]);
+    // 2. MỚI: Cấu trúc lại xử lý Thêm/Sửa bằng execute
+    const handleFinish = async (values) => {
     const formData = new FormData();
+
     formData.append('Name', values.name);
     formData.append('Price', values.price);
     formData.append('Duration', values.duration);
+    formData.append('Description', values.description || '');
 
     if (values.imageFile && values.imageFile[0]?.originFileObj) {
       formData.append('ImageUrl', values.imageFile[0].originFileObj);
     }
 
-    const apiCall = editingService
-      ? () => serviceApi.update(editingService.id, formData)
-      : () => serviceApi.create(formData);
-      
-    const msg = editingService ? "Cập nhật dịch vụ thành công!" : "Thêm dịch vụ mới thành công!";
+    let apiCall;
+    let msg;
 
-    // Thực thi API thông qua hook
+    if (editingService) {
+      apiCall = () => serviceApi.update(editingService.id, formData);
+      msg = "Cập nhật dịch vụ thành công!";
+    } else {  
+      formData.append('CategoryId', values.categoryId);
+      apiCall = () => serviceApi.create(formData);
+      msg = "Thêm dịch vụ mới thành công!";
+    }
+
     const { success } = await execute(apiCall, msg);
 
     if (success) {
       setIsModalOpen(false);
-      // Gọi lại trang hiện tại sau khi thao tác xong
       runFetch(pagination.current, pagination.pageSize);
     }
   };
@@ -134,6 +141,15 @@ const ServiceManager = () => {
       )
     },
     { title: 'Tên dịch vụ', dataIndex: 'name', key: 'name', render: (t) => <Text strong>{t}</Text> },
+    {
+      title: 'Mô tả',
+      dataIndex: 'description',
+      render: (text) => (
+        <Text ellipsis={{ tooltip: text }}>
+          {text || '—'}
+        </Text>
+      )
+    },
     { 
       title: 'Danh mục', 
       dataIndex: 'categoryName', 
@@ -266,6 +282,18 @@ const ServiceManager = () => {
             rules={[{ required: true, message: 'Vui lòng nhập tên dịch vụ' }]}
           >
             <Input />
+          </Form.Item>
+
+          <Form.Item 
+            name="description" 
+            label="Mô tả dịch vụ"
+          >
+            <Input.TextArea 
+              rows={4} 
+              placeholder="Nhập mô tả dịch vụ..." 
+              maxLength={500}
+              showCount
+            />
           </Form.Item>
           
           <Space size="large" style={{ display: 'flex' }}>
