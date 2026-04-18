@@ -2,7 +2,7 @@ import { Form, Input, Button, Card, Typography } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import custom hook
-import authApi from '../../api/AuthApi'; // MỚI: Import api
+import authApi from '../../api/authApi'; // MỚI: Import api
 
 const { Title } = Typography;
 

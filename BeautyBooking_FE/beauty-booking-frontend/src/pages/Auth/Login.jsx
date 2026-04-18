@@ -2,7 +2,7 @@ import { Form, Input, Button, Card, Typography,Checkbox } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
-import authApi from '../../api/AuthApi';
+import authApi from '../../api/authApi';
 import { useEffect } from 'react';
 
 const { Title } = Typography;
