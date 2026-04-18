@@ -7,7 +7,7 @@ import {
   ,ScissorOutlined ,TagOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import authApi from '../api/AuthApi';
+import authApi from '../api/authApi';
 import { useApiAction } from '../hooks/useApiAction'; // MỚI: Import useApiAction
 import { GetUser } from '../api/axiosClient';
 const { Header, Sider, Content } = Layout;

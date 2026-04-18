@@ -3,7 +3,7 @@ import { GetUser } from '../api/axiosClient';
 import { Button, Avatar, Dropdown, Space,message, Spin} from 'antd';
 import { UserOutlined, LogoutOutlined, DashboardOutlined } from '@ant-design/icons';
 import { useApiAction } from '../hooks/useApiAction';
-import authApi from '../api/AuthApi';
+import authApi from '../api/authApi';
 const ClientLayout = () => {
   const navigate = useNavigate();
   const user = GetUser(); // Lấy thông tin đã lưu ở Local/Session
