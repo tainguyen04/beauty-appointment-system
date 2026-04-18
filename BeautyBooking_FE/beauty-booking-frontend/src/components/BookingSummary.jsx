@@ -1,5 +1,10 @@
+import { Alert, Col, Row, Space, Tag, Typography } from 'antd';
+import { convertMinutesToTimeStr } from '../utils/apiHelper';
+const { Title, Text } = Typography;
 const BookingSummary = ({ data }) => {
-  // Logic xử lý hiển thị nhân viên
+    console.log("BookingSummary data:", data); // Debug: Kiểm tra dữ liệu nhận vào
+  // data ở đây nên chứa: { selectedServices: [], branchName, date, time, staffId, staffName }
+
   const renderStaff = () => {
     if (!data.staffId || data.staffId === 0) {
       return (
@@ -9,8 +14,11 @@ const BookingSummary = ({ data }) => {
         </Space>
       );
     }
-    return <Text strong>{data.staffName || "Đã chọn nhân viên"}</Text>;
+    return <Text strong>{data.staffName || "Đã chọn kỹ thuật viên"}</Text>;
   };
+
+  // Tính tổng tiền từ mảng dịch vụ
+  const totalAmount = data.selectedServices?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
 
   return (
     <div style={{ padding: '10px 0' }}>
@@ -21,23 +29,39 @@ const BookingSummary = ({ data }) => {
         style={{ marginBottom: 20 }}
       />
       
-      <div style={{ background: '#fff0f6', padding: '20px', borderRadius: '12px', border: '1px solid #ffadd2' }}>
+      <div style={{ background: '#fefaff', padding: '20px', borderRadius: '12px', border: '1px solid #ffadd2' }}>
         <Title level={4} style={{ marginBottom: 20, color: '#c41d7f' }}>Tóm tắt lịch hẹn</Title>
         
         <Row gutter={[0, 16]}>
+          {/* HIỂN THỊ DANH SÁCH DỊCH VỤ */}
+          <Col span={24}>
+            <Text type="secondary" block style={{ marginBottom: 8 }}>Dịch vụ đã chọn:</Text>
+            <div style={{ background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #fff0f6' }}>
+              {data.selectedServices && data.selectedServices.length > 0 ? (
+                data.selectedServices.map((svc, index) => (
+                  <div key={index} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Text>• {svc.name}</Text>
+                    <Text type="secondary">{svc.price?.toLocaleString()}đ</Text>
+                  </div>
+                ))
+              ) : (
+                <Text type="danger">Chưa chọn dịch vụ</Text>
+              )}
+            </div>
+          </Col>
           <Col span={24} style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Text type="secondary">Dịch vụ:</Text>
-            <Text strong>{data.serviceName || "Chưa chọn"}</Text>
+            <Text type="secondary">Thời lượng:</Text>
+            <Text strong>{data.duration || 0} phút</Text>
           </Col>
           
           <Col span={24} style={{ display: 'flex', justifyContent: 'space-between' }}>
             <Text type="secondary">Chi nhánh:</Text>
-            <Text strong>{data.branchName || "Chưa chọn"}</Text>
+            <Text strong>{data.wardName || "Chưa chọn chi nhánh"}</Text>
           </Col>
 
           <Col span={24} style={{ display: 'flex', justifyContent: 'space-between' }}>
             <Text type="secondary">Ngày giờ:</Text>
-            <Text strong>{data.date} lúc {data.time}</Text>
+            <Text strong>{data.appointmentDate || "---"} lúc {convertMinutesToTimeStr(data.startTime) || "---"}</Text>
           </Col>
 
           <Col span={24} style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -45,11 +69,12 @@ const BookingSummary = ({ data }) => {
             {renderStaff()}
           </Col>
 
+          {/* TỔNG TIỀN THANH TOÁN */}
           <Col span={24}>
-             <div style={{ borderTop: '1px dashed #ffadd2', margin: '10px 0', paddingTop: '10px', display: 'flex', justifyContent: 'space-between' }}>
+             <div style={{ borderTop: '2px dashed #ffadd2', margin: '15px 0 0', paddingTop: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text strong style={{ fontSize: '16px' }}>Tổng thanh toán:</Text>
-                <Text style={{ fontSize: '20px', color: '#eb2f96', fontWeight: 'bold' }}>
-                  {data.price?.toLocaleString()}đ
+                <Text style={{ fontSize: '22px', color: '#eb2f96', fontWeight: 'bold' }}>
+                  {totalAmount.toLocaleString()}đ
                 </Text>
              </div>
           </Col>

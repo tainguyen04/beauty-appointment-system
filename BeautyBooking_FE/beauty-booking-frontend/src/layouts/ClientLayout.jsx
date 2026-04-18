@@ -32,6 +32,9 @@ const ClientLayout = () => {
       ? [{ key: 'admin', label: 'Vào Quản trị', icon: <DashboardOutlined />, onClick: () => navigate('/admin') }] 
       : []),
     {key: 'appointments', label: 'Lịch hẹn của tôi', icon: <DashboardOutlined />, onClick: () => navigate('/my-appointments')},
+    {
+      type: 'divider',
+    },
     { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, onClick: handleLogout },
   ];
 
@@ -57,7 +60,6 @@ const ClientLayout = () => {
           
           <Space size="large">
             <Link to="/" style={{ color: '#333' }}>Trang chủ</Link>
-            <Link to="/services" style={{ color: '#333' }}>Dịch vụ</Link>
             <Link to="/booking" style={{ color: '#333' }}>Đặt lịch</Link>
             
             {user ? (

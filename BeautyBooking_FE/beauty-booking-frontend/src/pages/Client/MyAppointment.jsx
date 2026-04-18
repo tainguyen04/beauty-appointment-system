@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Table, Tag, Card, Typography, Space, Button, Modal, 
-  Descriptions, Tooltip, Radio, Input, Calendar, Badge 
+  Descriptions, Tooltip, Radio, Input, Calendar, Badge , message,Popconfirm,Drawer,Spin
 } from 'antd';
 import { 
   ClockCircleOutlined, EyeOutlined, ExclamationCircleOutlined,
-  TableOutlined, CalendarOutlined, SearchOutlined 
+  TableOutlined, CalendarOutlined, SearchOutlined ,CloseCircleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -14,6 +14,7 @@ import appointmentApi from '../../api/appointmentApi';
 import { usePagination } from '../../hooks/usePagination';
 import { useApiAction } from '../../hooks/useApiAction';
 import { getStatusConfig } from '../../utils/apiHelper'; 
+import { APPOINTMENT_STATUS } from '../../utils/apiHelper';
 
 const { Title, Text } = Typography;
 
@@ -21,7 +22,7 @@ const MyAppointment = () => {
   // --- 1. STATE QUẢN LÝ GIAO DIỆN ---
   const [viewMode, setViewMode] = useState('table'); // 'table' hoặc 'calendar'
   const [searchText, setSearchText] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState(null);
 
   // --- 2. HÀM BỌC API (Để khớp với Object params của usePagination) ---
@@ -74,13 +75,43 @@ const MyAppointment = () => {
   }, [appointments, searchText]);
 
   // Hàm lấy chi tiết
-  const handleViewDetail = async (id) => {
-    const result = await execute(() => appointmentApi.getById(id));
+  const handleViewDetail = async (record) => {
+  // 1. Mở Drawer ra ngay lập tức để hiện hiệu ứng loading (Spin)
+  setIsDrawerOpen(true);
+  setSelectedDetail(null); // Xóa dữ liệu cũ để tránh hiện nhầm lịch cũ
+
+  try {
+    const result = await execute(() => appointmentApi.getById(record.id));
     if (result) {
-      setSelectedDetail(result.data || result);
-      setIsModalOpen(true);
+      const apiData = result.data || result;
+      
+      // 2. Gộp dữ liệu: Lấy chi tiết dịch vụ từ API, lấy tên từ record của bảng
+      setSelectedDetail({
+        ...apiData,
+      });
     }
-  };
+  } catch (error) {
+    console.log("Lỗi khi tải chi tiết lịch hẹn:", error);
+    message.error("Không thể tải chi tiết lịch hẹn");
+    setIsDrawerOpen(false); // Lỗi thì đóng drawer
+  }
+};
+
+  const handleCancelAppointment = async (id) => {
+  try {
+    // Lấy giá trị 'Cancelled' từ mảng config đã có của bạn
+    const cancelValue = APPOINTMENT_STATUS.find(s => s.label === 'Đã hủy')?.value || 'Cancelled';
+
+    // Gọi API updateStatus
+    // Lưu ý: Nếu BE nhận số (0, 1, 2, 3) mà value của bạn là chữ, hãy truyền số 3
+    execute(() => appointmentApi.updateStatus(id, cancelValue), "Lịch hẹn đã được hủy thành công!");
+    // Refresh lại dữ liệu bảng/lịch
+    runFetch(pagination.current, pagination.pageSize);
+  } catch (error) {
+    console.error("Lỗi khi hủy lịch:", error);
+    message.error('Không thể hủy lịch lúc này. Vui lòng thử lại sau!');
+  }
+};
 
   // --- 6. RENDER CALENDAR CELLS ---
   const dateCellRender = (value) => {
@@ -147,18 +178,49 @@ const MyAppointment = () => {
       } 
     },
     {
-      title: 'Thao tác',
-      key: 'action',
-      align: 'center',
-      render: (_, record) => (
+  title: 'Thao tác',
+  key: 'action',
+  align: 'center',
+  width: 200, // Tùy chỉnh độ rộng cột đủ để chứa 2 nút (khoảng 200px là đẹp)
+  render: (_, record) => {
+    // Chỉ hiện nút hủy khi trạng thái là Pending hoặc Confirmed
+    const canCancel = record.appointmentStatus === 'Pending' || record.appointmentStatus === 'Confirmed';
+
+    return (
+      // Dùng Space để tạo khoảng cách đều giữa các nút, ngăn chúng dính vào nhau
+      <Space size="small">
         <Button 
-          type="primary" ghost icon={<EyeOutlined />} 
-          onClick={() => handleViewDetail(record.id)}
+          type="primary" 
+          ghost 
+          size="small" // Dùng size small để nút thanh mảnh hơn, vừa vặn với table
+          icon={<EyeOutlined />} 
+          onClick={() => handleViewDetail(record)}
         >
           Chi tiết
         </Button>
-      ),
-    },
+
+        {canCancel && (
+          <Popconfirm
+            title="Xác nhận hủy"
+            description="Bạn có chắc chắn muốn hủy lịch hẹn này?"
+            onConfirm={() => handleCancelAppointment(record.id)}
+            okText="Có"
+            cancelText="Không"
+            placement="topRight"
+          >
+            <Button 
+              danger 
+              size="small" // Dùng size small cho đồng bộ
+              icon={<CloseCircleOutlined />}
+            >
+              Hủy
+            </Button>
+          </Popconfirm>
+        )}
+      </Space>
+    );
+  },
+}
   ];
 
   return (
@@ -220,41 +282,47 @@ const MyAppointment = () => {
         )}
       </Card>
 
-      {/* MODAL CHI TIẾT */}
-      <Modal
-        title={<Title level={4}>Chi tiết lịch đặt #{selectedDetail?.id}</Title>}
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        loading={actionLoading}
-        footer={[<Button key="close" type="primary" onClick={() => setIsModalOpen(false)}>Đóng</Button>]}
-        width={650}
-      >
-        {selectedDetail && (
-          <Descriptions bordered column={1} size="small" style={{ marginTop: 10 }}>
-            <Descriptions.Item label="Khách hàng">{selectedDetail.userName}</Descriptions.Item>
-            <Descriptions.Item label="Nhân viên">{selectedDetail.staffName}</Descriptions.Item>
-            <Descriptions.Item label="Thời gian">
-              {dayjs(selectedDetail.appointmentDate).format('DD/MM/YYYY')} ({selectedDetail.timeRange})
-            </Descriptions.Item>
-            <Descriptions.Item label="Chi nhánh">{selectedDetail.wardName}</Descriptions.Item>
-            <Descriptions.Item label="Dịch vụ">
-              <ul style={{ paddingLeft: 20, marginBottom: 0 }}>
-                {selectedDetail.appointmentServices?.map((item, index) => (
-                  <li key={index}>
-                    <Text strong>{item.serviceName}</Text> - 
-                    <Text type="danger"> {item.priceAtBooking?.toLocaleString()}đ</Text>
-                  </li>
-                ))}
-              </ul>
-            </Descriptions.Item>
-            <Descriptions.Item label="Tổng hóa đơn">
-               <Text strong style={{ fontSize: 18, color: '#eb2f96' }}>
-                  {selectedDetail.totalPrice?.toLocaleString()}đ
-               </Text>
-            </Descriptions.Item>
-          </Descriptions>
-        )}
-      </Modal>
+      <Drawer
+  title={`Chi tiết lịch đặt #${selectedDetail?.id || ''}`}
+  placement="right"
+  width={600}
+  onClose={() => setIsDrawerOpen(false)} // Quan trọng: Phải có hàm đóng
+  open={isDrawerOpen} // Kiểm tra đúng tên biến state này
+>
+  <Spin spinning={actionLoading}>
+    {selectedDetail ? (
+      <Descriptions bordered column={1} size="small">
+        <Descriptions.Item label="Nhân viên">
+          {selectedDetail.staffName}
+        </Descriptions.Item>
+        <Descriptions.Item label="Chi nhánh">
+          {selectedDetail.wardName}
+        </Descriptions.Item>
+        <Descriptions.Item label="Thời gian">
+          {dayjs(selectedDetail.appointmentDate).format('DD/MM/YYYY')} ({selectedDetail.timeRange})
+        </Descriptions.Item>
+        <Descriptions.Item label="Dịch vụ">
+          <ul style={{ paddingLeft: 20 }}>
+            {selectedDetail.appointmentServices?.map((item, index) => (
+              <li key={index}>
+                {item.serviceName} - {item.priceAtBooking?.toLocaleString()}đ
+              </li>
+            ))}
+          </ul>
+        </Descriptions.Item>
+        <Descriptions.Item label="Tổng hóa đơn">
+           <Text strong type="danger" style={{ fontSize: 18 }}>
+              {selectedDetail.totalPrice?.toLocaleString()}đ
+           </Text>
+        </Descriptions.Item>
+      </Descriptions>
+    ) : (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+         {!actionLoading && "Không có dữ liệu"}
+      </div>
+    )}
+  </Spin>
+</Drawer>
 
       <div style={{ marginTop: 20 }}>
         <Space>

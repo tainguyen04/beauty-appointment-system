@@ -52,11 +52,16 @@ const Booking = () => {
   const [bookingData, setBookingData] = useState({
     userId: currentUser ? currentUser.id : null,
     serviceIds: [],
+    selectedServices: [], // Mảng lưu trữ chi tiết dịch vụ đã chọn
     wardId: null,
+    wardName: null,
     appointmentDate: null, 
-    startTime: null,       
+    startTime: null,
+    duration: null,
+    previewEndTime: null,       
     startTimeObj: null,    
-    staffId: null,         
+    staffId: null,
+    staffName: null,         
   });
 
   const [serviceData, setServiceData] = useState([]);
@@ -65,18 +70,30 @@ const Booking = () => {
 
  // ================== 1. XỬ LÝ DỮ LIỆU KHỞI TẠO VÀ TRUYỀN DỮ LIỆU GIỮA CÁC TRANG ==================
     useEffect(() => {
+      console.log("Toàn bộ State nhận được:", location.state);
       // 1. Kiểm tra dữ liệu (selectedList nếu chọn nhiều, hoặc selectedService nếu chọn 1)
       const serviceFromHome = location.state?.selectedService || location.state?.selectedList;
       const shouldAutoNext = location.state?.autoNext;
 
       if (serviceFromHome) {
+        // Đảm bảo dữ liệu luôn là mảng để dễ xử lý (nếu từ Home chỉ gửi 1 cái thì bọc nó vào [])
+        const servicesArray = Array.isArray(serviceFromHome) ? serviceFromHome : [serviceFromHome];
+
+        // Tính toán tổng thời gian liệu trình (duration)
+        const totalDuration = servicesArray.reduce((sum, s) => sum + (s.duration || 0), 0);
+
         // 2. Cập nhật dữ liệu vào Booking Data
         setBookingData(prev => ({
           ...prev,
-          // Nếu là mảng (nhiều dịch vụ) thì lưu mảng, nếu là đơn lẻ thì lưu ID
-          serviceIds: Array.isArray(serviceFromHome) 
-            ? serviceFromHome.map(s => s.id) 
-            : serviceFromHome.id
+          // 1. Lưu danh sách ID để gửi API sau này
+          serviceIds: servicesArray.map(s => s.id),
+          
+          // 2. Lưu nguyên mảng Object để lấy Tên, Giá hiển thị ở Summary
+          selectedServices: servicesArray, 
+          
+          // 3. Lưu tổng thời gian để lát nữa tính previewEndTime
+          duration: totalDuration
+
         }));
 
         // 3. Nhảy bước (Dùng setTimeout 0ms là mẹo để thoát khỏi luồng render hiện tại, fix lỗi React)
@@ -90,7 +107,7 @@ const Booking = () => {
         window.history.replaceState({}, document.title);
       }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Chỉ chạy 1 lần khi trang Booking vừa load xong
+    }, [location.state]); // Chỉ chạy 1 lần khi trang Booking vừa load xong
 
 
   const handleViewProfile = (e, staff) => {
@@ -126,12 +143,21 @@ const Booking = () => {
   const previewEndTime = bookingData.startTimeObj && totalTime > 0
     ? bookingData.startTimeObj.add(totalTime, 'minute')
     : null;
-
   const handleServiceChange = (id) => {
+
     const newIds = bookingData.serviceIds.includes(id)
       ? bookingData.serviceIds.filter(item => item !== id)
       : [...bookingData.serviceIds, id];
-    setBookingData({ ...bookingData, serviceIds: newIds });
+
+    const newSelectedObjects = serviceData.filter(s => newIds.includes(s.id));
+    // 3. Tính toán các thông số từ danh sách mới
+    const newTotalDuration = newSelectedObjects.reduce((sum, s) => sum + (s.duration || 0), 0);
+
+    setBookingData({ ...bookingData, 
+      serviceIds: newIds,
+      selectedServices: newSelectedObjects,
+      duration: newTotalDuration
+     });
   };
 
   const fetchAvailableStaffForStep4 = async () => {
@@ -165,7 +191,6 @@ const Booking = () => {
     // 4. Lưu dữ liệu vào state (đề phòng các trường hợp bọc data khác nhau của API)
     const staffList = res?.items || res?.data || res || [];
     setAvailableStaffs(staffList);
-
     if (staffList.length === 0) {
       message.info("Không có chuyên viên nào rảnh vào khung giờ này.");
     }
@@ -327,7 +352,7 @@ const Booking = () => {
           <Col xs={24} sm={12} key={id}>
             <Card
               hoverable
-              onClick={() => setBookingData({ ...bookingData, wardId: id })}
+              onClick={() => setBookingData({ ...bookingData, wardId: id,wardName: ward.name || ward.wardName })}
               style={{
                 borderRadius: '12px',
                 transition: 'all 0.3s',
@@ -455,7 +480,7 @@ const Booking = () => {
           <Col xs={24} sm={12} md={8} key={staff.id}>
             <Card 
               hoverable 
-              onClick={() => setBookingData({ ...bookingData, staffId: staff.id })}
+              onClick={() => setBookingData({ ...bookingData, staffId: staff.id ,staffName: staff.fullName})}
               style={{ 
                 borderColor: isSelected ? '#eb2f96' : '#f0f0f0', 
                 background: isSelected ? '#fff0f6' : '#fff', 

@@ -136,7 +136,7 @@ namespace BeautyBooking.Services
 
         public async Task<AppointmentResponse?> GetByIdWithDetailsAsync(int id)
         {
-            var appointment = await _appointmentRepository.GetByIdAsync(id);
+            var appointment = await _appointmentRepository.GetDetailedByIdAsync(id);
             if (appointment == null)
                 throw new InvalidOperationException("Không tìm thấy lịch hẹn");
 
