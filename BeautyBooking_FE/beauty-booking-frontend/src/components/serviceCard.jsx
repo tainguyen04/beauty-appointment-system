@@ -1,10 +1,10 @@
 import React from 'react';
-import { Card, Typography, Tag, Space } from 'antd';
-import { ClockCircleOutlined, CheckCircleFilled } from '@ant-design/icons';
+import { Card, Typography, Tag, Space,Button } from 'antd';
+import { ClockCircleOutlined, CheckCircleFilled,EyeOutlined  } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
-const ServiceCard = ({ service, isSelected, onSelect }) => {
+const ServiceCard = ({ service, isSelected, onSelect, onViewDetail }) => {
   const fallbackImage = "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=500";
 
   return (
@@ -81,8 +81,19 @@ const ServiceCard = ({ service, isSelected, onSelect }) => {
         >
           {service.name}
         </Title>
-
-        <Space style={{ color: '#8c8c8c', fontSize: '14px', marginBottom: '20px' }}>
+          {/* 👇 DESCRIPTION */}
+          <Text
+            style={{
+              fontSize: '13px',
+              color: '#8c8c8c',
+              display: 'block',
+              height: '36px'
+            }}
+            ellipsis={{ rows: 2 }}
+          >
+            {service.description || 'Không có mô tả'}
+          </Text>
+        <Space style={{ color: '#8c8c8c', fontSize: '14px', marginBottom: '10px' }}>
           <ClockCircleOutlined style={{ color: isSelected ? '#eb2f96' : '#bfbfbf' }} />
           <span>{service.duration || 60} phút</span>
         </Space>
@@ -97,11 +108,23 @@ const ServiceCard = ({ service, isSelected, onSelect }) => {
         borderTop: '1px solid #f5f5f5' 
       }}>
         <div>
-          <div style={{ fontSize: '11px', color: '#bfbfbf', textTransform: 'uppercase' }}>Giá liệu trình</div>
+          <div style={{ fontSize: '11px', color: '#bfbfbf', textTransform: 'uppercase'}}>Giá liệu trình</div>
           <Text style={{ fontSize: '19px', fontWeight: '800', color: '#eb2f96' }}>
             {service.price ? `${service.price.toLocaleString('vi-VN')}đ` : 'Liên hệ'}
           </Text>
         </div>
+        {/* NÚT XEM CHI TIẾT RIÊNG BIỆT */}
+          <Button 
+            type="text" 
+            icon={<EyeOutlined />} 
+            onClick={(e) => {
+              e.stopPropagation(); // QUAN TRỌNG: Để không bị dính lệnh onSelect của Card cha
+              onViewDetail(); // Gọi hàm mở Modal
+            }}
+            style={{ color: '#8c8c8c' }}
+          >
+            Chi tiết
+          </Button>
         
         {/* Nút tròn cũ đã xóa để khách click chọn cả Card */}
       </div>

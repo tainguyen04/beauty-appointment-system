@@ -5,11 +5,11 @@ import {
 } from 'antd';
 import { 
   UserOutlined, UploadOutlined, LockOutlined, 
-  MailOutlined, PhoneOutlined, SafetyCertificateOutlined 
+  MailOutlined, PhoneOutlined, SafetyCertificateOutlined , EnvironmentOutlined 
 } from '@ant-design/icons';
-import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
-import userApi from '../../api/userApi';
-import wardApi from '../../api/wardApi';
+import { useApiAction } from '../hooks/useApiAction'; // MỚI: Import useApiAction
+import userApi from '../api/userApi';
+import wardApi from '../api/wardApi';
 const { Title, Text } = Typography;
 
 const Profile = () => {
@@ -34,7 +34,8 @@ const Profile = () => {
       form.setFieldsValue({
         fullName: res.fullName,
         phone: res.phone,
-        wardId: res.wardId
+        wardId: res.wardId,
+        address: res.address
       });
     } catch (error) {
       console.log(error);
@@ -70,6 +71,7 @@ const Profile = () => {
     formData.append('FullName', values.fullName);
     formData.append('Phone', values.phone);
     if(values.wardId) formData.append('WardId', values.wardId);
+    if(values.address) formData.append('Address', values.address);
 
     // Xử lý file từ Ant Design Upload
     if (values.avatarUrl && values.avatarUrl.fileList && values.avatarUrl.fileList.length > 0) {
@@ -127,6 +129,7 @@ const Profile = () => {
             <div style={{ textAlign: 'left' }}>
               <p><MailOutlined /> <Text strong> Email:</Text> {user?.email}</p>
               <p><PhoneOutlined /> <Text strong> SĐT:</Text> {user?.phone || user?.phoneNumber || 'N/A'}</p>
+              <p><EnvironmentOutlined /> <Text strong> Địa chỉ:</Text> {user?.address || 'N/A'}</p>
               <p><SafetyCertificateOutlined /> <Text strong> Trạng thái:</Text> <Tag color="green">Hoạt động</Tag></p>
             </div>
           </Card>
@@ -141,7 +144,7 @@ const Profile = () => {
                   form={form} 
                   layout="vertical" 
                   onFinish={onUpdateProfile}
-                  initialValues={{ fullName: user?.fullName, phone: user?.phone, wardId: user?.wardId }}
+                  initialValues={{ fullName: user?.fullName, phone: user?.phone, wardId: user?.wardId, address: user?.address }}
                 >
                   <Row gutter={16}>
                     <Col span={12}>
@@ -156,6 +159,11 @@ const Profile = () => {
                     <Col span={12}>
                       <Form.Item name="phone" label="Số điện thoại">
                         <Input placeholder="Nhập số điện thoại" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item name="address" label="Địa chỉ">
+                        <Input placeholder="Nhập địa chỉ" />
                       </Form.Item>
                     </Col>
                     <Col span={12}>

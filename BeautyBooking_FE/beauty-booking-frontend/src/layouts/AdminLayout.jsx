@@ -119,6 +119,7 @@ const AdminLayout = () => {
   const handleUserMenuClick = async ({ key }) => {
     switch (key) {
       case 'profile':
+        // trang profile nẳm ở components/Profile.jsx, nên ta sẽ navigate đến đó
         navigate('/admin/profile');
         break;
       case 'logout':
