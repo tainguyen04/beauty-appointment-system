@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Steps, Button, Typography, Card, List, Checkbox, 
   Badge, Row, Col, message, Divider, Space, Spin, 
@@ -30,8 +31,7 @@ const convertDayjsToMinutes = (timeObj) => {
 };
 
 const Booking = () => {
-    const user = GetUser();
-    console.log(user);
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false); 
 
@@ -62,6 +62,24 @@ const Booking = () => {
   const [wardData, setWardData] = useState([]);
   const [availableStaffs, setAvailableStaffs] = useState([]);
 
+ // ================== 1. XỬ LÝ DỮ LIỆU KHỞI TẠO VÀ TRUYỀN DỮ LIỆU GIỮA CÁC TRANG ==================
+  useEffect(() => {
+    // Kiểm tra xem có dữ liệu từ Home gửi sang không
+    if (location.state?.selectedService) {
+      const { selectedService, autoNext } = location.state;
+      
+      // 1. Cập nhật dữ liệu đặt lịch
+      setBookingData(prev => ({
+        ...prev,
+        serviceId: selectedService.id
+      }));
+
+      // 2. Nếu có cờ autoNext, nhảy thẳng sang bước tiếp theo
+      if (autoNext) {
+        setCurrentStep(1); // Bước 0 là Dịch vụ, Bước 1 là Chi nhánh/Thời gian
+      }
+    }
+  }, [location.state]);
 
 
   const handleViewProfile = (e, staff) => {
@@ -514,34 +532,86 @@ const Booking = () => {
   }
 
   return (
-    <div style={{ maxWidth: '900px', margin: '40px auto', padding: '0 20px' }}>
-      <Title level={3} style={{ textAlign: 'center', marginBottom: '30px', color: '#eb2f96' }}>ĐẶT LỊCH HẸN</Title>
-      
-      <Steps current={currentStep} items={steps.map(s => ({ title: s.title }))} style={{ marginBottom: '30px' }} />
-      
-      <Card style={{ borderRadius: '12px', minHeight: '400px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-        {steps[currentStep].content}
-      </Card>
-      
-      <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between' }}>
-        {currentStep > 0 ? <Button size="large" onClick={prev}>Quay lại</Button> : <div />}
+    <div style={{ maxWidth: '900px', margin: '20px auto', padding: '0 20px' }}>
+        <Title level={3} style={{ textAlign: 'center', marginBottom: '20px', color: '#eb2f96' }}>
+        ĐẶT LỊCH HẸN
+        </Title>
         
-        {currentStep < steps.length - 1 && (
-          <Button type="primary" size="large" onClick={next} style={{ marginLeft: 'auto', background: '#eb2f96' }}>Tiếp tục</Button>
-        )}
+        <Steps 
+        current={currentStep} 
+        items={steps.map(s => ({ title: s.title }))} 
+        style={{ marginBottom: '20px' }} 
+        size="small"
+        />
         
-        {currentStep === steps.length - 1 && (
-          <Button 
-            type="primary" size="large" onClick={handleSubmitBooking} 
-            loading={actionLoading} // Áp dụng loading từ useApiAction
-            style={{ marginLeft: 'auto', background: '#52c41a' }}
-          >
-            Xác nhận Đặt lịch
-          </Button>
-        )}
-      </div>
+        <Card 
+        style={{ 
+            borderRadius: '12px', 
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            overflow: 'hidden', // Quan trọng để bo góc không bị vỡ
+            display: 'flex',
+            flexDirection: 'column',
+            height: '70vh', // Chiếm 70% chiều cao màn hình (có thể chỉnh thành 600px nếu muốn cố định)
+        }}
+        bodyStyle={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: '100%', 
+            padding: 0 // Xóa padding mặc định để tự chia vùng
+        }}
+        >
+        {/* VÙNG 1: NỘI DUNG CÓ THỂ CUỘN (Scrollable) */}
+        <div style={{ 
+            flex: 1, 
+            overflowY: 'auto', 
+            padding: '24px',
+            background: '#fff' 
+        }}>
+            {steps[currentStep].content}
+        </div>
+
+        {/* VÙNG 2: THANH ĐIỀU HƯỚNG CỐ ĐỊNH (Sticky Footer) */}
+        <div style={{ 
+            padding: '16px 24px', 
+            borderTop: '1px solid #f0f0f0', 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#fff',
+            boxShadow: '0 -4px 10px rgba(0,0,0,0.03)' // Đổ bóng nhẹ lên trên
+        }}>
+            {currentStep > 0 ? (
+            <Button size="large" onClick={prev}>Quay lại</Button>
+            ) : (
+            <div /> 
+            )}
+            
+            {currentStep < steps.length - 1 && (
+            <Button 
+                type="primary" 
+                size="large" 
+                onClick={next} 
+                style={{ background: '#eb2f96', borderColor: '#eb2f96', minWidth: '120px' }}
+            >
+                Tiếp tục
+            </Button>
+            )}
+            
+            {currentStep === steps.length - 1 && (
+            <Button 
+                type="primary" 
+                size="large" 
+                onClick={handleSubmitBooking} 
+                loading={actionLoading}
+                style={{ background: '#52c41a', borderColor: '#52c41a', minWidth: '150px' }}
+            >
+                Xác nhận Đặt lịch
+            </Button>
+            )}
+        </div>
+        </Card>
     </div>
-  );
+    );
 };
 
 export default Booking;

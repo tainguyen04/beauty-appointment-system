@@ -54,7 +54,7 @@ const ClientLayout = () => {
                 </Space>
               </Dropdown>
             ) : (
-              <Button type="primary" shape="round" onClick={() => navigate('/login')}>
+              <Button type="primary" shape="round" onClick={() => navigate('/login')} style={{ background: '#eb2f96', border: 'none' }}>
                 Đăng nhập
               </Button>
             )}
