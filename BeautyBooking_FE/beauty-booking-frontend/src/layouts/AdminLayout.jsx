@@ -12,7 +12,19 @@ import { useApiAction } from '../hooks/useApiAction'; // MỚI: Import useApiAct
 import { GetUser } from '../api/axiosClient';
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
-const isAdmin = GetUser()?.role === 'Admin' ? true : false;
+
+
+
+const AdminLayout = () => {
+  const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
+  const isAdmin = user?.role === 'Admin'; // Kiểm tra role ngay trong layout để điều chỉnh menu
+  const { actionLoading, execute } = useApiAction(); // MỚI: Khởi tạo hook quản lý action
+
+
 const menuItems = [
   { key: '/admin', icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/admin/appointments', icon: <CalendarOutlined />, label: 'Quản lý Lịch hẹn' },
@@ -74,14 +86,7 @@ const menuItems = [
 ] : []),
 ];
 
-const AdminLayout = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [user, setUser] = useState(null);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
-  const { actionLoading, execute } = useApiAction(); // MỚI: Khởi tạo hook quản lý action
 
   // Hàm load user từ localStorage
   const loadUser = useCallback(() => {

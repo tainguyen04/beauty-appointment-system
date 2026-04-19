@@ -282,6 +282,7 @@ const AppointmentManager = () => {
       width: 100,
       align: 'center',
       render: (_, record) => {
+        const staffAllowStatus = ['Completed', 'Confirmed'];
         const items = [
           { key: 'view', label: 'Xem chi tiết', icon: <EyeOutlined style={{ color: '#1890ff' }}/>, onClick: () => { setRecordDetails(record); setIsDrawerOpen(true); } },
           (isAdmin) && {
@@ -292,9 +293,10 @@ const AppointmentManager = () => {
           },
           { type: 'divider' },
           { 
+            
             key: 'status', label: 'Đổi trạng thái', icon: <SwapOutlined />,
             children: APPOINTMENT_STATUS
-            .filter(s => isAdmin || s.value === 'Completed')
+            .filter(s => isAdmin || staffAllowStatus.includes(s.value))
             .map(s => ({
               key: `s_${s.value}`,
               label: s.label,
