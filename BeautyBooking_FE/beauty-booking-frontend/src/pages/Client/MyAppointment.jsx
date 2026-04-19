@@ -13,15 +13,18 @@ import dayjs from 'dayjs';
 import appointmentApi from '../../api/appointmentApi';
 import { usePagination } from '../../hooks/usePagination';
 import { useApiAction } from '../../hooks/useApiAction';
-import { getStatusConfig } from '../../utils/apiHelper'; 
+import { getStatusConfig,convertMinutesToTimeStr } from '../../utils/apiHelper'; 
 
 const { Title, Text } = Typography;
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+};
 
 const MyAppointment = () => {
   // --- 1. STATE QUẢN LÝ GIAO DIỆN ---
   const [viewMode, setViewMode] = useState('table'); // 'table' hoặc 'calendar'
   const [searchText, setSearchText] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState(null);
 
   // --- 2. HÀM BỌC API (Để khớp với Object params của usePagination) ---
@@ -78,7 +81,7 @@ const MyAppointment = () => {
     const result = await execute(() => appointmentApi.getById(id));
     if (result) {
       setSelectedDetail(result.data || result);
-      setIsModalOpen(true);
+      setIsDrawerOpen(true);
     }
   };
 
@@ -88,23 +91,33 @@ const MyAppointment = () => {
       dayjs(item.appointmentDate).isSame(value, 'day')
     );
 
-    return (
+        return (
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {dayAppointments.map((item) => {
           const config = getStatusConfig(item.appointmentStatus);
           return (
-            <li key={item.id} style={{ marginBottom: '2px' }}>
-              <Tooltip title={`${item.timeRange}: ${item.staffName}`}>
-                <Badge 
-                  status={config?.color === 'green' ? 'success' : 'processing'} 
-                  text={
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>
-                      {item.timeRange.split(' - ')[0]} {item.staffName.split(' ').pop()}
-                    </span>
-                  } 
-                />
-              </Tooltip>
-            </li>
+            <Popover 
+              key={item.id} title={`Lịch hẹn #${item.id}`}
+              content={
+                <div style={{ maxWidth: 220 }}>
+                  <p><b>Khách:</b> {item.userName || 'N/A'}</p>
+                  <p><b>Khu vực:</b> {item.wardName || 'N/A'}</p>
+                  <p><b>Giờ:</b> {item.timeRange || ''}</p>
+                  <p><b>Tổng:</b> {formatCurrency(item.totalPrice)}</p>
+                  <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                    <Button size="small" onClick={(e) => { e.stopPropagation(); setSelectedDetail(item); setIsDrawerOpen(true); }}>Chi tiết</Button>
+                  </Space>
+                </div>
+              }
+            >
+                <li style={{ marginBottom: '2px', cursor: 'pointer' }}>
+                  <Badge 
+                    status={config?.color || 'default'} 
+                    text={<span style={{ fontSize: '11px' }}>{convertMinutesToTimeStr(item.startTime)} - {item.userName || 'Khách'}</span>} 
+                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
+                  />
+                </li>
+            </Popover>
           );
         })}
       </ul>
@@ -220,41 +233,51 @@ const MyAppointment = () => {
         )}
       </Card>
 
-      {/* MODAL CHI TIẾT */}
-      <Modal
-        title={<Title level={4}>Chi tiết lịch đặt #{selectedDetail?.id}</Title>}
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        loading={actionLoading}
-        footer={[<Button key="close" type="primary" onClick={() => setIsModalOpen(false)}>Đóng</Button>]}
-        width={650}
-      >
-        {selectedDetail && (
-          <Descriptions bordered column={1} size="small" style={{ marginTop: 10 }}>
-            <Descriptions.Item label="Khách hàng">{selectedDetail.userName}</Descriptions.Item>
-            <Descriptions.Item label="Nhân viên">{selectedDetail.staffName}</Descriptions.Item>
-            <Descriptions.Item label="Thời gian">
-              {dayjs(selectedDetail.appointmentDate).format('DD/MM/YYYY')} ({selectedDetail.timeRange})
-            </Descriptions.Item>
-            <Descriptions.Item label="Chi nhánh">{selectedDetail.wardName}</Descriptions.Item>
-            <Descriptions.Item label="Dịch vụ">
-              <ul style={{ paddingLeft: 20, marginBottom: 0 }}>
-                {selectedDetail.appointmentServices?.map((item, index) => (
-                  <li key={index}>
-                    <Text strong>{item.serviceName}</Text> - 
-                    <Text type="danger"> {item.priceAtBooking?.toLocaleString()}đ</Text>
-                  </li>
-                ))}
-              </ul>
-            </Descriptions.Item>
-            <Descriptions.Item label="Tổng hóa đơn">
-               <Text strong style={{ fontSize: 18, color: '#eb2f96' }}>
-                  {selectedDetail.totalPrice?.toLocaleString()}đ
-               </Text>
-            </Descriptions.Item>
-          </Descriptions>
-        )}
-      </Modal>
+      <Drawer
+  title={<Title level={4}>Chi tiết lịch đặt #{selectedDetail?.id}</Title>}
+  open={isDrawerOpen}
+  onClose={() => setIsDrawerOpen(false)}
+  width={500}   // Drawer thường hẹp hơn modal
+  placement="right"
+  loading={actionLoading}
+>
+  {selectedDetail && (
+    <Descriptions bordered column={1} size="small" style={{ marginTop: 10 }}>
+      <Descriptions.Item label="Khách hàng">
+        {selectedDetail.userName}
+      </Descriptions.Item>
+
+      <Descriptions.Item label="Nhân viên">
+        {selectedDetail.staffName}
+      </Descriptions.Item>
+
+      <Descriptions.Item label="Thời gian">
+        {dayjs(selectedDetail.appointmentDate).format('DD/MM/YYYY')} ({selectedDetail.timeRange})
+      </Descriptions.Item>
+
+      <Descriptions.Item label="Chi nhánh">
+        {selectedDetail.wardName}
+      </Descriptions.Item>
+
+      <Descriptions.Item label="Dịch vụ">
+        <ul style={{ paddingLeft: 20, marginBottom: 0 }}>
+          {selectedDetail.appointmentServices?.map((item, index) => (
+            <li key={index}>
+              <Text strong>{item.serviceName}</Text> - 
+              <Text type="danger"> {item.priceAtBooking?.toLocaleString()}đ</Text>
+            </li>
+          ))}
+        </ul>
+      </Descriptions.Item>
+
+      <Descriptions.Item label="Tổng hóa đơn">
+        <Text strong style={{ fontSize: 18, color: '#eb2f96' }}>
+          {selectedDetail.totalPrice?.toLocaleString()}đ
+        </Text>
+      </Descriptions.Item>
+    </Descriptions>
+  )}
+</Drawer>
 
       <div style={{ marginTop: 20 }}>
         <Space>
