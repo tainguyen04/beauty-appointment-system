@@ -44,19 +44,6 @@ namespace BeautyBooking.Services
             _avatarSettings = avatarDefaultSettings;
         }
 
-        public async Task<bool> BlockAccountAsync(int id)
-        {
-            var currentUserId = _currentUserService.UserId;
-            if(!currentUserId.HasValue)
-                throw new UnauthorizedAccessException("Người dùng chưa đăng nhập.");
-            var user = await _userRepo.GetByIdAsync(currentUserId.Value);
-            if (user == null || user.IsDeleted)
-                throw new KeyNotFoundException("Tài khoản không tồn tại.");
-            user.IsActive = false;
-            await _userRepo.SaveChangesAsync();
-            return true;
-        }
-
         public async Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request)
         {
             var userId = _currentUserService.UserId;
@@ -182,12 +169,6 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<PagedResult<UserResponse>> GetAllAsync(int pageNumber, int pageSize)
-        {
-            var users = await _userRepo.GetPagedWithProfileAsync(pageNumber, pageSize);
-            return users.ToPagedResult<User, UserResponse>(_mapper);
-        }
-
         public async Task<UserResponse?> GetByIdAsync(int id)
         {
             return _mapper.Map<UserResponse?>(await _userRepo.GetWithProfileByIdAsync(id));
@@ -217,15 +198,6 @@ namespace BeautyBooking.Services
                 .OrderBy(u => u.FullName)
                 .ProjectTo<UserResponse>(_mapper.ConfigurationProvider)
                 .ToPagedResultAsync(filter.PageNumber, filter.PageSize);
-        }
-
-        public async Task<PagedResult<UserResponse>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)
-        {
-            var currentRole = _currentUserService.Role;
-            if (currentRole != UserRole.Admin)
-                throw new UnauthorizedAccessException("Chỉ Admin mới có quyền truy cập.");
-            var users = await _userRepo.GetUsersByRoleAsync(role, pageNumber, pageSize);
-            return users.ToPagedResult<User,UserResponse>(_mapper);
         }
 
         public async Task<bool> IsEmailAvailableAsync(string email)
