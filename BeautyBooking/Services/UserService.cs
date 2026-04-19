@@ -82,15 +82,14 @@ namespace BeautyBooking.Services
             try
             {
                 var user = await _userRepo.GetByIdAsync(id);
-                if (user == null || user.IsDeleted)
-                    return false;
+                if (user == null || !user.IsActive)
+                    throw new KeyNotFoundException("Tài khoản không tồn tại hoặc đã bị khóa.");
                 
-
-                user.Role = request.NewRole;
-                await _userRepo.SaveChangesAsync();
                 if (request.NewRole == UserRole.Admin)
                     throw new InvalidOperationException("Không thể gán vai trò Admin.");
-
+                user.Role = request.NewRole;
+                await _userRepo.SaveChangesAsync();
+                
                 if (request.NewRole == UserRole.Staff)
                 {
                     var existingProfile = await _staffProfileService.GetByUserIdAsync(id);
