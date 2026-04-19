@@ -222,7 +222,12 @@ namespace BeautyBooking.Services
                 if (appointment.UserId != userId)
                     throw new UnauthorizedAccessException("Bạn không có quyền cập nhật lịch hẹn này.");
                 if (status != AppointmentStatus.Cancelled)
-                    throw new InvalidOperationException("Khách hàng chỉ có thể hủy lịch hẹn.");
+                    throw new InvalidOperationException("Khách hàng chỉ có thể hủy lịch hẹn không bị hủy.");
+                if (appointment.AppointmentStatus == AppointmentStatus.Cancelled)
+                    throw new InvalidOperationException("Lịch hẹn đã bị hủy.");
+                    var ExpiryDate = appointment.AppointmentDate.AddDays(-1);
+                    if (DateOnly.FromDateTime(DateTime.UtcNow) > ExpiryDate)
+                        throw new InvalidOperationException("Chỉ có thể hủy lịch hẹn trước 24 giờ.");
                 appointment.AppointmentStatus = AppointmentStatus.Cancelled;
             }
             else
