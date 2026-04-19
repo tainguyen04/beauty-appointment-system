@@ -76,14 +76,6 @@ const MyAppointment = () => {
     );
   }, [appointments, searchText]);
 
-  // Hàm lấy chi tiết
-  const handleViewDetail = async (id) => {
-    const result = await execute(() => appointmentApi.getById(id));
-    if (result) {
-      setSelectedDetail(result.data || result);
-      setIsDrawerOpen(true);
-    }
-  };
 
   const canCancelAppointment = (record) => {
   if (!record?.appointmentDate) return false;
@@ -191,6 +183,7 @@ const handleCancel = async (record) => {
   title: 'Thao tác',
   key: 'action',
   align: 'center',
+  width: 200,
   render: (_, record) => {
     const canCancel = canCancelAppointment(record);
 
@@ -200,7 +193,10 @@ const handleCancel = async (record) => {
           type="primary" 
           ghost 
           icon={<EyeOutlined />} 
-          onClick={() => handleViewDetail(record.id)}
+          onClick={() => {
+            setSelectedDetail(record);
+            setIsDrawerOpen(true);
+          }}
         >
           Chi tiết
         </Button>
