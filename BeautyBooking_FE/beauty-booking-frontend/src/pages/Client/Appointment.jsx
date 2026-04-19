@@ -31,7 +31,7 @@ const convertDayjsToMinutes = (timeObj) => {
   return timeObj.hour() * 60 + timeObj.minute();
 };
 
-const Booking = () => {
+const Appointment = () => {
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false); 
@@ -651,4 +651,4 @@ const Booking = () => {
     );
 };
 
-export default Booking;
+export default Appointment;
