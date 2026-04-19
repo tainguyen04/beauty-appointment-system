@@ -211,10 +211,18 @@ namespace BeautyBooking.Services
             {
                 if (appointment.StaffId != staffId)
                     throw new UnauthorizedAccessException("Bạn không có quyền cập nhật lịch hẹn này.");
-                if(status != AppointmentStatus.Confirmed && 
-                    status != AppointmentStatus.Completed && 
-                    status != AppointmentStatus.Cancelled)
-                    throw new InvalidOperationException("Chỉ có thể xác nhận lịch hẹn đang ở trạng thái chờ.");
+                if(status != AppointmentStatus.Confirmed && status != AppointmentStatus.Completed)
+                    throw new InvalidOperationException("Bạn chỉ có thể xác nhận hoặc hoàn thành lịch hẹn.");
+                if (status == AppointmentStatus.Confirmed)
+                {
+                    if (appointment.AppointmentStatus != AppointmentStatus.Pending)
+                        throw new InvalidOperationException("Chỉ xác nhận từ trạng thái chờ.");
+                }
+                else if (status == AppointmentStatus.Completed)
+                {
+                    if (appointment.AppointmentStatus != AppointmentStatus.Confirmed)
+                        throw new InvalidOperationException("Chỉ hoàn thành khi đã xác nhận.");
+                }
                 appointment.AppointmentStatus = status;
             }
             else if(userRole == UserRole.Customer)
@@ -222,12 +230,12 @@ namespace BeautyBooking.Services
                 if (appointment.UserId != userId)
                     throw new UnauthorizedAccessException("Bạn không có quyền cập nhật lịch hẹn này.");
                 if (status != AppointmentStatus.Cancelled)
-                    throw new InvalidOperationException("Khách hàng chỉ có thể hủy lịch hẹn không bị hủy.");
-                if (appointment.AppointmentStatus == AppointmentStatus.Cancelled)
-                    throw new InvalidOperationException("Lịch hẹn đã bị hủy.");
+                    throw new InvalidOperationException("Bạn chỉ có thể hủy lịch hẹn.");
+                if (appointment.AppointmentStatus != AppointmentStatus.Pending)
+                    throw new InvalidOperationException("Chỉ có thể hủy lịch hẹn đang ở trạng thái chờ.");
                     var ExpiryDate = appointment.AppointmentDate.AddDays(-1);
                     if (DateOnly.FromDateTime(DateTime.UtcNow) > ExpiryDate)
-                        throw new InvalidOperationException("Chỉ có thể hủy lịch hẹn trước 24 giờ.");
+                        throw new InvalidOperationException("Chỉ có thể hủy lịch hẹn trước 1 ngày.");
                 appointment.AppointmentStatus = AppointmentStatus.Cancelled;
             }
             else

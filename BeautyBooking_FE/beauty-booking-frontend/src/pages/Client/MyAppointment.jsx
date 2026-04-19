@@ -85,6 +85,34 @@ const MyAppointment = () => {
     }
   };
 
+  const canCancelAppointment = (record) => {
+  if (!record?.appointmentDate) return false;
+
+  const now = dayjs();
+
+  // Ngày + giờ bắt đầu
+  const appointmentDateTime = dayjs(record.appointmentDate)
+    .hour(Math.floor(record.startTime / 60))
+    .minute(record.startTime % 60);
+
+  const diffHours = appointmentDateTime.diff(now, 'hour');
+
+  // Điều kiện:
+  // 1. Chưa tới ngày
+  // 2. Còn hơn 24h
+  return diffHours >= 24;
+};
+
+const handleCancel = async (record) => {
+  try {
+    await execute(() => appointmentApi.updateStatus(record.id, 'Cancelled'));
+    // Sau khi hủy thành công, làm mới lại danh sách
+    runFetch(pagination.current, pagination.pageSize);
+  } catch (error) {
+    // Lỗi đã được handle trong useApiAction, có thể thêm xử lý riêng nếu cần
+    console.log('Lỗi khi hủy lịch:', error);
+  }
+};
   // --- 6. RENDER CALENDAR CELLS ---
   const dateCellRender = (value) => {
     const dayAppointments = filteredData.filter(item => 
@@ -160,18 +188,34 @@ const MyAppointment = () => {
       } 
     },
     {
-      title: 'Thao tác',
-      key: 'action',
-      align: 'center',
-      render: (_, record) => (
+  title: 'Thao tác',
+  key: 'action',
+  align: 'center',
+  render: (_, record) => {
+    const canCancel = canCancelAppointment(record);
+
+    return (
+      <Space>
         <Button 
-          type="primary" ghost icon={<EyeOutlined />} 
+          type="primary" 
+          ghost 
+          icon={<EyeOutlined />} 
           onClick={() => handleViewDetail(record.id)}
         >
           Chi tiết
         </Button>
-      ),
-    },
+
+        <Button
+          danger
+          disabled={!canCancel}
+          onClick={() => handleCancel(record)}
+        >
+          Hủy
+        </Button>
+      </Space>
+    );
+  },
+}
   ];
 
   return (
