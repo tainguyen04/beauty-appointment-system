@@ -13,7 +13,7 @@ import dayjs from 'dayjs';
 import appointmentApi from '../../api/appointmentApi';
 import { usePagination } from '../../hooks/usePagination';
 import { useApiAction } from '../../hooks/useApiAction';
-import { getStatusConfig,convertMinutesToTimeStr } from '../../utils/apiHelper'; 
+import { getStatusConfig,convertMinutesToTimeStr,APPOINTMENT_STATUS } from '../../utils/apiHelper'; 
 
 const { Title, Text } = Typography;
 const formatCurrency = (amount) => {
@@ -26,6 +26,7 @@ const MyAppointment = () => {
   const [searchText, setSearchText] = useState('');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('All');
 
   // --- 2. HÀM BỌC API (Để khớp với Object params của usePagination) ---
   const fetchAppointments = useCallback(async ({ pageNumber, pageSize }) => {
@@ -180,38 +181,40 @@ const handleCancel = async (record) => {
       } 
     },
     {
-  title: 'Thao tác',
-  key: 'action',
-  align: 'center',
-  width: 200,
-  render: (_, record) => {
-    const canCancel = canCancelAppointment(record);
+      title: 'Thao tác',
+      key: 'action',
+      align: 'center',
+      width: 200,
+      render: (_, record) => {
+        const canCancel = canCancelAppointment(record);
 
-    return (
-      <Space>
-        <Button 
-          type="primary" 
-          ghost 
-          icon={<EyeOutlined />} 
-          onClick={() => {
-            setSelectedDetail(record);
-            setIsDrawerOpen(true);
-          }}
-        >
-          Chi tiết
-        </Button>
+        return (
+          <Space>
+            <Button 
+              type="primary" 
+              ghost 
+              icon={<EyeOutlined />} 
+              onClick={() => {
+                setSelectedDetail(record);
+                setIsDrawerOpen(true);
+              }}
+              size="small"
+            >
+              Chi tiết
+            </Button>
 
-        <Button
-          danger
-          disabled={!canCancel}
-          onClick={() => handleCancel(record)}
-        >
-          Hủy
-        </Button>
-      </Space>
-    );
-  },
-}
+            <Button
+              danger
+              disabled={!canCancel}
+              onClick={() => handleCancel(record)}
+              size="small"
+            >
+              Hủy
+            </Button>
+          </Space>
+        );
+      },
+    }
   ];
 
   return (
@@ -222,7 +225,17 @@ const handleCancel = async (record) => {
           <ClockCircleOutlined style={{ marginRight: 10, color: '#eb2f96' }} />
           Lịch sử hẹn của tôi
         </Title>
-        
+        <Row gutter={[16, 16]} align="middle" style={{ marginTop: '16px' }}>
+            <Col><Space><Text>Tìm kiếm:</Text><Input.Search placeholder="Tên khách, SĐT..." onSearch={(v) => handleFilterChange({ Keyword: v })} allowClear style={{ width: 200 }} /></Space></Col>
+            <Col><Space><Text>Thời gian:</Text><RangePicker format="DD/MM/YYYY" onChange={(dates) => handleFilterChange({ FromDate: dates ? dates[0].format('YYYY-MM-DD') : undefined, ToDate: dates ? dates[1].format('YYYY-MM-DD') : undefined })} /></Space></Col>
+            <Col><Space><Text>Trạng thái:</Text>
+            <Select value={filterStatus} 
+            style={{ width: 150 }} 
+            options={[{ label: 'Chọn trạng thái', value: 'All' }, 
+            ...APPOINTMENT_STATUS.map(s => ({ label: s.label, value: s.value }))]} 
+            onChange={(v) => { setFilterStatus(v); 
+            handleFilterChange({ Status: v === 'All' ? undefined : v }); }} /></Space></Col>
+          </Row>
         <Space size="middle">
           <Input 
             placeholder="Tìm mã lịch hoặc nhân viên..." 
