@@ -238,7 +238,7 @@ namespace BeautyBooking.Services
                 query = query.Where(s =>s.Services.Select(x => x.Id).Contains(filter.ServiceId.Value));
             }
                 
-
+            
             if (currentRole == UserRole.Staff && currentStaffId.HasValue)
                 query = query.Where(s => s.Id == currentStaffId.Value);
 

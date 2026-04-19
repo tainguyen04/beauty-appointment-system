@@ -92,7 +92,9 @@ namespace BeautyBooking.Services
             var keyword = filter.Keyword?.Trim();
             if (!string.IsNullOrWhiteSpace(keyword))
                 query = query.Where(s => s.Name.Contains(keyword) ||
-                                         s.Category.Name.Contains(keyword));
+                                         s.Category.Name.Contains(keyword) ||
+                                         s.StaffProfiles.Any(sp => 
+                                                        sp.User.FullName.Contains(keyword)));
             if(filter.CategoryId.HasValue)
                 query = query.Where(s => s.CategoryId == filter.CategoryId.Value);
             return await query
