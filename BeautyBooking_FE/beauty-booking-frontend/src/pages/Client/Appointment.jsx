@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Steps, Button, Typography, Card, List, Checkbox, 
   Badge, Row, Col, message, Divider, Space, Spin, 
@@ -33,6 +33,7 @@ const convertDayjsToMinutes = (timeObj) => {
 
 const Appointment = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false); 
 
@@ -561,8 +562,8 @@ const Appointment = () => {
         title="Đặt lịch thành công!"
         subTitle="Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi. Vui lòng đến đúng giờ để có trải nghiệm tốt nhất."
         extra={[
-          <Button type="primary" key="home" onClick={() => window.location.href = '/'}>Về trang chủ</Button>,
-          <Button key="history" onClick={() => window.location.href = '/my-appointments'}>Xem lịch hẹn</Button>
+          <Button type="primary" key="home" onClick={() => navigate('/')}>Về trang chủ</Button>,
+          <Button key="history" onClick={() => navigate('/my-appointments')}>Xem lịch hẹn</Button>
         ]}
       />
     );

@@ -281,7 +281,7 @@ const Home = () => {
                   size="large" 
                   block 
                   style={{ background: '#eb2f96', height: '50px', borderRadius: '25px', fontWeight: 'bold', fontSize: '16px' }}
-                  onClick={() => window.location.href = '/appointments'}
+                  onClick={() => navigate('/appointments')}
                 >
                   ĐẶT LỊCH NGAY
                 </Button>
