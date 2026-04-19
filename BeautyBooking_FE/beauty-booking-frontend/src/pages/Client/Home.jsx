@@ -87,7 +87,7 @@ const Home = () => {
       return message.warning("Vui lòng chọn ít nhất một dịch vụ!");
     }
     
-    navigate('/appointment', { 
+    navigate('/appointments', { 
       state: { 
         selectedList: selectedServices, // Gửi nguyên mảng đi
         autoNext: true 
@@ -281,7 +281,7 @@ const Home = () => {
                   size="large" 
                   block 
                   style={{ background: '#eb2f96', height: '50px', borderRadius: '25px', fontWeight: 'bold', fontSize: '16px' }}
-                  onClick={() => window.location.href = '/appointment'}
+                  onClick={() => window.location.href = '/appointments'}
                 >
                   ĐẶT LỊCH NGAY
                 </Button>
