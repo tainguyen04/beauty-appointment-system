@@ -34,7 +34,7 @@ function App() {
           <Route index element={<Home />} />
           {/* Nếu muốn khách phải đăng nhập mới được đặt lịch, dùng ProtectedRoute ở đây */}
           <Route element={<ProtectedRoute allowedRoles={['Customer', 'Admin', 'Staff']} />}>
-            <Route path="booking" element={<Appointment />} />
+            <Route path="appointments" element={<Appointment />} />
             <Route path="profile" element={<Profile />} />
             <Route path="my-appointments" element={<MyAppointment />} />
           </Route>
