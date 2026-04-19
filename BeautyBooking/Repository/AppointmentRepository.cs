@@ -60,8 +60,10 @@ namespace BeautyBooking.Repository
                 .Where(a => a.Id == id && !a.IsDeleted)
                 .Include(a => a.User)
                 .Include(a => a.Staff)
+                    .ThenInclude(a => a.User)
                 .Include(a => a.AppointmentServices)
                     .ThenInclude(a => a.Service)
+                .Include(a => a.Ward)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync();
         }
@@ -71,6 +73,7 @@ namespace BeautyBooking.Repository
             return await _entities
                 .Include(a => a.User)
                 .Include(a => a.Staff)
+                    .ThenInclude(a => a.User)
                 .Include(a => a.AppointmentServices)
                     .ThenInclude(a => a.Service)
                 .OrderByDescending(a => a.AppointmentDate)
