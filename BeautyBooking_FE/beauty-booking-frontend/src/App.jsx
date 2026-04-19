@@ -27,14 +27,14 @@ function App() {
         {/* LUỒNG AUTH (Ai cũng vào được) */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
+        <Route path="appointments" element={<Appointment />} />
 
         {/* LUỒNG 1: KHÁCH HÀNG (Tạm thời ai cũng vào được) */}
         <Route path="/" element={<ClientLayout />}>
           <Route index element={<Home />} />
           {/* Nếu muốn khách phải đăng nhập mới được đặt lịch, dùng ProtectedRoute ở đây */}
           <Route element={<ProtectedRoute allowedRoles={['Customer', 'Admin', 'Staff']} />}>
-            <Route path="appointments" element={<Appointment />} />
+
             <Route path="profile" element={<Profile />} />
             <Route path="my-appointments" element={<MyAppointment />} />
           </Route>
