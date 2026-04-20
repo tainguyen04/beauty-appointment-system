@@ -117,7 +117,7 @@ namespace BeautyBooking.Services
         {
             var currentRole = _currentUserService.Role;
             var currentStaffId = _currentUserService.StaffId;
-            if (currentRole != UserRole.Admin  && currentStaffId != id)
+            if (currentRole == UserRole.Staff  && currentStaffId != id)
                 throw new UnauthorizedAccessException("Bạn không có quyền truy cập thông tin của nhân viên khác.");
             var staffProfile =  await _staffProfileRepository
                                 .Query()
