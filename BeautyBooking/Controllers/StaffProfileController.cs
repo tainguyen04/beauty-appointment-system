@@ -32,7 +32,7 @@ namespace BeautyBooking.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "AdminOnly")]
+        [AllowAnonymous]
         public async Task<ActionResult<StaffProfileResponse>> GetById(int id)
         {
             var staff = await _staffProfileService.GetByIdAsync(id);

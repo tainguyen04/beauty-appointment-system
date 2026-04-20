@@ -1,128 +1,131 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
-  Row, 
-  Col, 
-  Typography, 
-  Input, 
-  Spin, 
-  Empty, 
-  Button, 
-  Pagination, 
-  Space, 
-  Modal,
-  ConfigProvider ,
-  Tag,
-  message, 
-  Divider,
-  Button as AntdButton
+  Row, Col, Typography, Input, Spin, Empty, Button, 
+  Pagination, Space, Modal, ConfigProvider, Tag, message, Divider 
 } from 'antd';
 import { 
-  SearchOutlined, 
-  RocketOutlined, 
-  HeartOutlined, 
-  StarOutlined, 
-  FireOutlined,
-  ClockCircleOutlined,
-  DollarOutlined
+  SearchOutlined, RocketOutlined, HeartOutlined, StarOutlined, 
+  ClockCircleOutlined, DollarOutlined, TeamOutlined, EnvironmentOutlined, ToolOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 
 // Import APIs
 import serviceApi from '../../api/serviceApi';
 import categoryApi from '../../api/categoryApi';
+import staffApi from '../../api/staffApi'; // 👈 Import staffApi bạn vừa tạo
 
 // Import Components & Hooks
 import ServiceCard from '../../components/ServiceCard';
-import { usePagination } from '../../hooks/usePagination';
+import StaffProfileCard from '../../components/StaffProfileCard'; // 👈 Import StaffCard
 import HeroSearch from '../../components/HeroSearch';
+import { usePagination } from '../../hooks/usePagination';
 import { useApiAction } from '../../hooks/useApiAction';
+
 const { Title, Text, Paragraph } = Typography;
 
 const Home = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  // 3. Hook quản lý hành động lấy chi tiết dịch vụ (GetById)
-  const { actionLoading, execute } = useApiAction(); 
-  const handleHomeSearch = (value) => {
-   // Cập nhật URL để đồng bộ thanh địa chỉ
-    setSearchParams(value ? { Keyword: value } : {});
-    // Thực hiện lọc dữ liệu
-    handleFilterChange({ Keyword: value });
-  };
   const querySearch = searchParams.get('Keyword') || "";
+  
+  const { actionLoading, execute } = useApiAction(); 
+
+  // --- STATE DỊCH VỤ ---
   const [categories, setCategories] = useState([]);
-  //Khai báo state lưu danh sách đã chọn
   const [selectedServices, setSelectedServices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
 
-  // 1. Sử dụng Hook phân trang đã viết
-  // Khởi tạo với pageSize = 8 (2 hàng x 4 cột trên Desktop)
+  // --- STATE NHÂN VIÊN (MỚI) ---
+  const [staffs, setStaffs] = useState([]); // Chứa danh sách nhân viên load lên Home
+  const [selectedStaff, setSelectedStaff] = useState(null); // Chỉ chọn 1 thợ
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [selectedStaffDetail, setSelectedStaffDetail] = useState(null);
+
+  // Hook phân trang cho Dịch vụ
   const { 
-    data: services, 
-    loading, 
-    pagination, 
-    runFetch, 
-    handleFilterChange 
+    data: services, loading, pagination, runFetch, handleFilterChange 
   } = usePagination(serviceApi.getAll, 8);
 
-  //Hàm xử lý khi click vào Card (Toggle chọn/bỏ chọn)
+  const handleHomeSearch = (value) => {
+    setSearchParams(value ? { Keyword: value } : {});
+    handleFilterChange({ Keyword: value });
+  };
+
+  // --- XỬ LÝ CHỌN CARD ---
   const toggleSelectService = (service) => {
     setSelectedServices(prev => {
       const isExisted = prev.find(item => item.id === service.id);
-      if (isExisted) {
-        // Nếu chọn rồi thì bỏ chọn
-        return prev.filter(item => item.id !== service.id);
-      } else {
-        // Nếu chưa chọn thì thêm vào danh sách
-        return [...prev, service];
-      }
+      return isExisted 
+        ? prev.filter(item => item.id !== service.id) 
+        : [...prev, service];
     });
   };
 
-  //Hàm khi nhấn nút "ĐẶT LỊCH NGAY" (Floating Button)
+  // 👈 Xử lý chọn Nhân viên
+  const handleSelectStaff = (staff) => {
+    // Nếu click lại đúng nhân viên đang chọn thì bỏ chọn, ngược lại thì thay thế bằng nhân viên mới
+    if (selectedStaff?.id === staff.id) {
+      setSelectedStaff(null);
+    } else {
+      setSelectedStaff(staff);
+    }
+  };
+
+  // --- XỬ LÝ NÚT ĐẶT LỊCH ---
   const handleFinalBooking = () => {
-    if (selectedServices.length === 0) {
-      return message.warning("Vui lòng chọn ít nhất một dịch vụ!");
+    if (selectedServices.length === 0 && !selectedStaff) {
+      return message.warning("Vui lòng chọn ít nhất một dịch vụ hoặc chuyên viên để đặt lịch!");
     }
     
     navigate('/appointments', { 
       state: { 
-        selectedList: selectedServices, // Gửi nguyên mảng đi
+        selectedList: selectedServices, // Gửi mảng dịch vụ
+        selectedStaff: selectedStaff,   // 👈 Gửi thêm thợ đã chọn
         autoNext: true 
       } 
     });
   };
 
-  // 2. Load dữ liệu danh mục ban đầu
+  // --- LOAD DỮ LIỆU BAN ĐẦU ---
   useEffect(() => {
     const loadStaticData = async () => {
       try {
-        const res = await categoryApi.getAll();
-        setCategories(res.items || res.data || res || []);
+        // 👈 Gọi song song 2 API lấy Category và Staff (Top 8 nhân viên nổi bật)
+        const [catRes, staffRes] = await Promise.all([
+          categoryApi.getAll(),
+          staffApi.getAll({ isActive: true, pageSize: 8 }) 
+        ]);
+        
+        setCategories(catRes.items || catRes.data || catRes || []);
+        setStaffs(staffRes.items || staffRes.data || staffRes || []);
       } catch (error) {
-        console.error("Lỗi tải danh mục:", error);
+        console.error("Lỗi tải dữ liệu ban đầu:", error);
       }
     };
-    loadStaticData();
     
-    // Gọi fetch dịch vụ lần đầu (Trang 1, Filter rỗng)
+    loadStaticData();
     runFetch(1, 8, { isActive: true, Keyword: querySearch });
   }, [runFetch, querySearch]);
 
-  // 7. Hàm xử lý khi click vào một dịch vụ để xem chi tiết
-    const handleViewDetail = async (serviceId) => {
-      const result = await execute(
-        () => serviceApi.getById(serviceId),
-        null 
-      );
-      if (result) {
-        setSelectedService(result.data || result);
-        setIsModalOpen(true);
-      }
-    };
-  // 4. Xử lý đổi danh mục
+  // --- XEM CHI TIẾT ---
+  const handleViewDetail = async (serviceId) => {
+    const result = await execute(() => serviceApi.getById(serviceId), null);
+    if (result) {
+      setSelectedService(result.data || result);
+      setIsModalOpen(true);
+    }
+  };
+
+  // 👈 Xem chi tiết hồ sơ Nhân viên
+  const handleViewStaffDetail = async (staff) => {
+    const result = await execute(() => staffApi.getById(staff.id), null);
+    if (result) {
+      setSelectedStaffDetail(result.data || result);
+      setIsStaffModalOpen(true);
+    }
+  };
+
   const onCategoryChange = (categoryId) => {
     const filter = categoryId === 'all' 
       ? { CategoryId: undefined, isActive: true } 
@@ -132,112 +135,101 @@ const Home = () => {
 
   return (
     <>
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: '#eb2f96',
-            borderRadius: 12,
-          },
-        }}
-      >
+      <ConfigProvider theme={{ token: { colorPrimary: '#eb2f96', borderRadius: 12 } }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
         
-        {/* ===== PHẦN 1: HERO & THANH TÌM KIẾM SANG TRỌNG ===== */}
         <HeroSearch 
           title="Eco Beauty"
           subTitle="Đánh thức vẻ đẹp tiềm ẩn • Trải nghiệm dịch vụ 5 sao"
-          categories={categories} // Lấy từ API
+          categories={categories}
           onSearch={handleHomeSearch}
           placeholder="Bạn muốn làm đẹp gì hôm nay?"
         />
 
-        {/* ===== PHẦN 2: DANH MỤC DỊCH VỤ ===== */}
+        {/* ... PHẦN DANH MỤC DỊCH VỤ (Giữ nguyên) ... */}
         <div style={{ marginBottom: '40px' }}>
           <div style={sectionHeaderStyle}>
             <HeartOutlined style={{ color: '#eb2f96', fontSize: '20px' }} />
             <Title level={4} style={{ margin: 0 }}>Danh mục dịch vụ</Title>
           </div>
-
           <div style={categoryGridStyle}>
-            <div 
-              onClick={() => onCategoryChange('all')}
-              style={categoryBtnStyle(!pagination.currentFilters?.CategoryId)}
-            >
-              Tất cả
-            </div>
+            <div onClick={() => onCategoryChange('all')} style={categoryBtnStyle(!pagination.currentFilters?.CategoryId)}>Tất cả</div>
             {categories.map(cat => (
-              <div 
-                key={cat.id}
-                onClick={() => onCategoryChange(cat.id)}
-                style={categoryBtnStyle(pagination.currentFilters?.CategoryId === cat.id)}
-              >
+              <div key={cat.id} onClick={() => onCategoryChange(cat.id)} style={categoryBtnStyle(pagination.currentFilters?.CategoryId === cat.id)}>
                 {cat.name}
               </div>
             ))}
           </div>
         </div>
 
-        {/* ===== PHẦN 3: DANH SÁCH DỊCH VỤ & PHÂN TRANG ===== */}
-        <div style={sectionHeaderStyle}>
-          <StarOutlined style={{ color: '#faad14', fontSize: '20px' }} />
-          <Title level={4} style={{ margin: 0 }}>Liệu trình dành cho bạn</Title>
+        {/* ===== DANH SÁCH DỊCH VỤ ===== */}
+        <div style={{ marginBottom: '60px' }}>
+            <div style={sectionHeaderStyle}>
+              <StarOutlined style={{ color: '#faad14', fontSize: '20px' }} />
+              <Title level={4} style={{ margin: 0 }}>Liệu trình dành cho bạn</Title>
+            </div>
+
+            <Spin spinning={loading} tip="Đang tải dữ liệu...">
+              {services.length > 0 ? (
+                <div>
+                  <Row gutter={[24, 24]}>
+                    {services.map(service => (
+                      <Col xs={24} sm={12} md={8} lg={6} key={service.id}>
+                        <ServiceCard 
+                          service={service} 
+                          isSelected={selectedServices.some(item => item.id === service.id)}
+                          onSelect={() => toggleSelectService(service)}
+                          onViewDetail={() => handleViewDetail(service.id)}
+                        />
+                      </Col>
+                    ))}
+                  </Row>
+                  <div style={paginationContainerStyle}>
+                    <Pagination 
+                      current={pagination.current} pageSize={pagination.pageSize} total={pagination.total} showSizeChanger={false}
+                      onChange={(page) => runFetch(page, pagination.pageSize, { ...pagination.currentFilters, Keyword: querySearch })}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <Empty description="Không tìm thấy dịch vụ nào" style={{ padding: '80px 0' }} />
+              )}
+            </Spin>
         </div>
 
-        <Spin spinning={loading} tip="Đang tải dữ liệu...">
-          {services.length > 0 ? (
-            <div style={{ minHeight: '400px' }}>
-              <Row gutter={[24, 24]}>
-                {services.map(service => (
-                  <Col xs={24} sm={12} md={8} lg={6} key={service.id}>
-                    <ServiceCard 
-                      service={service} 
-                      isSelected={selectedServices.some(item => item.id === service.id)}
-                      onSelect={() => toggleSelectService(service)}
-                      onViewDetail={() => handleViewDetail(service.id)}
-                    />
-                  </Col>
-                ))}
-              </Row>
-
-              {/* PHÂN TRANG CĂN GIỮA */}
-              <div style={paginationContainerStyle}>
-                <Pagination 
-                  current={pagination.current}
-                  pageSize={pagination.pageSize}
-                  total={pagination.total}
-                  onChange={(page) => 
-                    runFetch(page, pagination.pageSize, {
-                      ...pagination.currentFilters,
-                      Keyword: querySearch
-                    })
-                  }
-                  showSizeChanger={false}
+        {/* ===== 👈 PHẦN MỚI: ĐỘI NGŨ CHUYÊN GIA ===== */}
+        <div style={{ marginBottom: '40px' }}>
+          <div style={sectionHeaderStyle}>
+            <TeamOutlined style={{ color: '#eb2f96', fontSize: '20px' }} />
+            <Title level={4} style={{ margin: 0 }}>Đội ngũ chuyên gia</Title>
+          </div>
+          
+          <Row gutter={[24, 24]}>
+            {staffs.map(staff => (
+              <Col xs={24} sm={12} md={8} lg={6} key={staff.id}>
+                <StaffProfileCard 
+                  staff={staff} 
+                  isSelected={selectedStaff?.id === staff.id}
+                  onSelect={handleSelectStaff}
+                  onViewDetail={() => handleViewStaffDetail(staff)}
                 />
-              </div>
-            </div>
-          ) : (
-            <Empty 
-              image={Empty.PRESENTED_IMAGE_SIMPLE} 
-              description="Không tìm thấy dịch vụ nào" 
-              style={{ padding: '80px 0' }}
-            />
-          )}
-        </Spin>
+              </Col>
+            ))}
+          </Row>
+        </div>
 
-        {/* Nút Đặt lịch nhanh nổi lên (Floating Action Button) */}
+        {/* Nút Đặt lịch */}
         <Button
-          type="primary"
-          size="large"
-          icon={<RocketOutlined />}
-          onClick={handleFinalBooking}
-          style={floatingBtnStyle}
+          type="primary" size="large" icon={<RocketOutlined />}
+          onClick={handleFinalBooking} style={floatingBtnStyle}
         >
           ĐẶT LỊCH NGAY
         </Button>
 
-          <div style={{ height: '100px' }} />
+        <div style={{ height: '100px' }} />
         </div>
       </ConfigProvider>
+
       {/* MODAL CHI TIẾT DỊCH VỤ */}
       <Modal
         open={isModalOpen}
@@ -284,6 +276,71 @@ const Home = () => {
                   onClick={() => navigate('/appointments')}
                 >
                   ĐẶT LỊCH NGAY
+                </Button>
+              </Col>
+            </Row>
+          </div>
+        )}
+      </Modal>
+
+      {/* 👈 MODAL CHI TIẾT NHÂN VIÊN */}
+      <Modal
+        open={isStaffModalOpen}
+        onCancel={() => setIsStaffModalOpen(false)}
+        footer={null}
+        width={700}
+        centered
+        destroyOnClose
+      >
+        {actionLoading ? (
+          <div style={{ padding: '50px', textAlign: 'center' }}><Spin /></div>
+        ) : selectedStaffDetail && (
+          <div style={{ padding: '15px' }}>
+            <Row gutter={[32, 24]}>
+              <Col xs={24} md={10}>
+                <img 
+                  src={selectedStaffDetail.avatarUrl || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500'} 
+                  alt={selectedStaffDetail.fullName}
+                  style={{ width: '100%', borderRadius: '16px', objectFit: 'cover', boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
+                />
+              </Col>
+              <Col xs={24} md={14}>
+                <Title level={3} style={{ color: '#eb2f96', marginTop: 0 }}>{selectedStaffDetail.fullName}</Title>
+                
+                <Space style={{ marginBottom: 20 }}>
+                  <Tag icon={<EnvironmentOutlined />} color="magenta">
+                    {selectedStaffDetail.wardName || 'Chi nhánh trung tâm'}
+                  </Tag>
+                </Space>
+
+                <div style={{ background: '#fefaff', padding: '15px', borderRadius: '12px', marginBottom: 25, border: '1px solid #fff0f6' }}>
+                  <Text strong>Tiểu sử chuyên môn:</Text>
+                  <Paragraph style={{ marginTop: 8, color: '#595959', textAlign: 'justify' }}>
+                    {selectedStaffDetail.bio || "Chuyên gia tận tâm với nhiều năm kinh nghiệm trong lĩnh vực làm đẹp."}
+                  </Paragraph>
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <Text strong><ToolOutlined /> Dịch vụ đảm nhận ({selectedStaffDetail.services?.length || 0}):</Text>
+                  <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {selectedStaffDetail.services?.map(srv => (
+                      <Tag key={srv.id} style={{ borderRadius: '16px', padding: '4px 10px' }}>
+                        {srv.name}
+                      </Tag>
+                    ))}
+                  </div>
+                </div>
+
+                <Button 
+                  type="primary" size="large" block 
+                  style={{ background: '#eb2f96', height: '50px', borderRadius: '25px', fontWeight: 'bold' }}
+                  onClick={() => {
+                    handleSelectStaff(selectedStaffDetail); // Tự động chọn thợ này
+                    setIsStaffModalOpen(false); // Đóng modal
+                    message.success(`Đã chọn chuyên viên ${selectedStaffDetail.fullName}`);
+                  }}
+                >
+                  CHỌN CHUYÊN VIÊN NÀY
                 </Button>
               </Col>
             </Row>

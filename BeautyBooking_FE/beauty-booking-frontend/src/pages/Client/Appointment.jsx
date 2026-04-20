@@ -1,12 +1,280 @@
+// import React, { useState, useEffect } from 'react';
+// import { useLocation, useNavigate } from 'react-router-dom';
+// import { 
+//   Steps, Button, Typography, Card, List, Checkbox, 
+//   Badge, Row, Col, message, Divider, Space, Spin, 
+//   DatePicker, TimePicker, Avatar, Result ,Modal, Tag
+// } from 'antd';
+// import { 
+//   EnvironmentOutlined, ClockCircleOutlined, DollarOutlined, 
+//   UserOutlined, CheckCircleOutlined, SmileOutlined 
+// } from '@ant-design/icons';
+// import dayjs from 'dayjs';
+
+// // --- Imports API & Hooks ---
+// import { GetUser } from '../../api/axiosClient';
+// import serviceApi from '../../api/serviceApi';
+// import wardApi from '../../api/wardApi';
+// import staffApi from '../../api/staffApi';
+// import appointmentApi from '../../api/appointmentApi';
+// import { useApiAction } from '../../hooks/useApiAction'; // Import hook của bạn
+// import BookingSummary from '../../components/BookingSummary';
+
+// const { Title, Text } = Typography;
+
+// const formatCurrency = (amount) => {
+//   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+// };
+
+// const convertDayjsToMinutes = (timeObj) => {
+//   if (!timeObj) return null;
+//   return timeObj.hour() * 60 + timeObj.minute();
+// };
+
+// const Appointment = () => {
+//   const location = useLocation();
+//   const navigate = useNavigate();
+//   const [currentStep, setCurrentStep] = useState(0);
+//   const [isSuccess, setIsSuccess] = useState(false); 
+
+//   // 1. Cập nhật state và hàm mở Profile (trong Component chính)
+//   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
+//   const [viewingStaff, setViewingStaff] = useState(null);
+  
+//   // State quản lý Loading
+//   const [loadingInitial, setLoadingInitial] = useState(false);
+//   const [loadingStaff, setLoadingStaff] = useState(false);
+
+//   // Khởi tạo useApiAction cho thao tác Submit
+//   const { actionLoading, execute } = useApiAction();
+
+//   // State lưu trữ Form đặt lịch
+//   const currentUser = GetUser();
+//   const [bookingData, setBookingData] = useState({
+//     userId: currentUser ? currentUser.id : null,
+//     serviceIds: [],
+//     selectedServices: [], // Mảng lưu trữ chi tiết dịch vụ đã chọn
+//     wardId: null,
+//     wardName: null,
+//     appointmentDate: null, 
+//     startTime: null,
+//     duration: null,
+//     previewEndTime: null,       
+//     startTimeObj: null,    
+//     staffId: null,
+//     staffName: null,         
+//   });
+
+//   const [serviceData, setServiceData] = useState([]);
+//   const [wardData, setWardData] = useState([]);
+//   const [availableStaffs, setAvailableStaffs] = useState([]);
+
+//  // ================== 1. XỬ LÝ DỮ LIỆU KHỞI TẠO VÀ TRUYỀN DỮ LIỆU GIỮA CÁC TRANG ==================
+//     useEffect(() => {
+//       console.log("Toàn bộ State nhận được:", location.state);
+//       // 1. Kiểm tra dữ liệu (selectedList nếu chọn nhiều, hoặc selectedService nếu chọn 1)
+//       const serviceFromHome = location.state?.selectedService || location.state?.selectedList;
+//       const shouldAutoNext = location.state?.autoNext;
+
+//       if (serviceFromHome) {
+//         // Đảm bảo dữ liệu luôn là mảng để dễ xử lý (nếu từ Home chỉ gửi 1 cái thì bọc nó vào [])
+//         const servicesArray = Array.isArray(serviceFromHome) ? serviceFromHome : [serviceFromHome];
+
+//         // Tính toán tổng thời gian liệu trình (duration)
+//         const totalDuration = servicesArray.reduce((sum, s) => sum + (s.duration || 0), 0);
+
+//         // 2. Cập nhật dữ liệu vào Booking Data
+//         setBookingData(prev => ({
+//           ...prev,
+//           // 1. Lưu danh sách ID để gửi API sau này
+//           serviceIds: servicesArray.map(s => s.id),
+          
+//           // 2. Lưu nguyên mảng Object để lấy Tên, Giá hiển thị ở Summary
+//           selectedServices: servicesArray, 
+          
+//           // 3. Lưu tổng thời gian để lát nữa tính previewEndTime
+//           duration: totalDuration
+
+//         }));
+
+//         // 3. Nhảy bước (Dùng setTimeout 0ms là mẹo để thoát khỏi luồng render hiện tại, fix lỗi React)
+//         if (shouldAutoNext && currentStep === 0) {
+//           setTimeout(() => {
+//             setCurrentStep(1);
+//           }, 0);
+//         }
+
+//         // 4. Quan trọng: Xóa state của location để khi F5 trang không bị nhảy bước vô lý
+//         window.history.replaceState({}, document.title);
+//       }
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//     }, [location.state]); // Chỉ chạy 1 lần khi trang Booking vừa load xong
+
+
+//   const handleViewProfile = (e, staff) => {
+//     e.stopPropagation(); // Không cho chọn nhân viên khi chỉ muốn xem profile
+//     setViewingStaff(staff);
+//     setIsProfileModalVisible(true);
+// };
+//   // --- 1. Gọi API Lấy Danh sách ban đầu ---
+//   useEffect(() => {
+//     const fetchInitialData = async () => {
+//       setLoadingInitial(true);
+//       try {
+//         const [serviceRes, wardRes] = await Promise.all([
+//           serviceApi.getAll({ pageSize: 100 }),
+//           wardApi.getAll()
+//         ]);
+//         if (serviceRes && serviceRes.items) setServiceData(serviceRes.items);
+//         if (Array.isArray(wardRes)) setWardData(wardRes);
+//         else if (wardRes?.items) setWardData(wardRes.items);
+//       } catch (error) {
+//         console.log(error);
+//         message.error('Lỗi khi tải dữ liệu. Vui lòng thử lại!');
+//       } finally {
+//         setLoadingInitial(false);
+//       }
+//     };
+//     fetchInitialData();
+//   }, []);
+
+//   const selectedServices = serviceData.filter(s => bookingData.serviceIds.includes(s.id));
+//   const totalMoney = selectedServices.reduce((sum, s) => sum + s.price, 0);
+//   const totalTime = selectedServices.reduce((sum, s) => sum + s.duration, 0);
+//   const previewEndTime = bookingData.startTimeObj && totalTime > 0
+//     ? bookingData.startTimeObj.add(totalTime, 'minute')
+//     : null;
+//   const handleServiceChange = (id) => {
+
+//     const newIds = bookingData.serviceIds.includes(id)
+//       ? bookingData.serviceIds.filter(item => item !== id)
+//       : [...bookingData.serviceIds, id];
+
+//     const newSelectedObjects = serviceData.filter(s => newIds.includes(s.id));
+//     // 3. Tính toán các thông số từ danh sách mới
+//     const newTotalDuration = newSelectedObjects.reduce((sum, s) => sum + (s.duration || 0), 0);
+
+//     setBookingData({ ...bookingData, 
+//       serviceIds: newIds,
+//       selectedServices: newSelectedObjects,
+//       duration: newTotalDuration
+//      });
+//   };
+
+//   const fetchAvailableStaffForStep4 = async () => {
+//   // 1. Kiểm tra nhanh xem người dùng đã chọn đủ thông tin chưa
+//   if (!bookingData.appointmentDate || !bookingData.startTime || !bookingData.wardId) {
+//     message.warning("Vui lòng chọn đầy đủ ngày, giờ và chi nhánh!");
+//     return;
+//   }
+
+//   if (bookingData.serviceIds.length === 0) {
+//     message.warning("Vui lòng chọn ít nhất một dịch vụ!");
+//     return;
+//   }
+
+//   setLoadingStaff(true);
+//   try {
+//     // 2. Chuẩn bị Params đúng chuẩn Swagger yêu cầu
+//     const params = {
+//       date: bookingData.appointmentDate, // Định dạng YYYY-MM-DD
+//       startTime: Number(bookingData.startTime),
+//       wardId: Number(bookingData.wardId),
+//       // Mảng serviceIds sẽ được staffApi.js xử lý qua paramsSerializer
+//       serviceIds: bookingData.serviceIds.map(id => Number(id)), 
+//     };
+
+//     console.log("🔍 Đang gọi API Staff với Params:", params);
+
+//     // 3. Gọi API (Kết quả sẽ được tự động xử lý mảng nhờ config của bạn)
+//     const res = await staffApi.getAvailable(params);
+    
+//     // 4. Lưu dữ liệu vào state (đề phòng các trường hợp bọc data khác nhau của API)
+//     const staffList = res?.items || res?.data || res || [];
+//     setAvailableStaffs(staffList);
+//     if (staffList.length === 0) {
+//       message.info("Không có chuyên viên nào rảnh vào khung giờ này.");
+//     }
+
+//   } catch (error) {
+//     console.error("❌ Lỗi khi lấy danh sách nhân viên:", error);
+//     // Log chi tiết lỗi từ server để dễ debug
+//     if (error.response) {
+//       console.log("Chi tiết lỗi từ Backend:", error.response.data);
+//     }
+//     message.error("Không thể tải danh sách nhân viên. Vui lòng thử lại!");
+//   } finally {
+//     setLoadingStaff(false);
+//   }
+// };
+
+//   const next = async () => {
+//     if (!bookingData.userId) return message.error('Vui lòng đăng nhập để đặt lịch!');
+
+//     if (currentStep === 0 && bookingData.serviceIds.length === 0) return message.warning('Chọn ít nhất 1 dịch vụ');
+//     if (currentStep === 1 && !bookingData.wardId) return message.warning('Chọn chi nhánh');
+//     if (currentStep === 2) {
+//       if (!bookingData.appointmentDate || !bookingData.startTimeObj) {
+//         return message.warning('Vui lòng chọn đầy đủ Ngày và Giờ!');
+//       }
+//       await fetchAvailableStaffForStep4();
+//     }
+//     setCurrentStep(currentStep + 1);
+//   };
+
+//   const prev = () => setCurrentStep(currentStep - 1);
+
+//   // --- 3. Logic Đặt Lịch (ÁP DỤNG useApiAction) ---
+//   const handleSubmitBooking = async () => {
+//     const payload = {
+//       userId: bookingData.userId,
+//       wardId: bookingData.wardId,
+//       appointmentDate: bookingData.appointmentDate,
+//       startTime: bookingData.startTime,
+//       serviceIds: bookingData.serviceIds,
+//       staffId: bookingData.staffId,
+//     };
+
+//     // Truyền hàm gọi API và message vào execute cực kỳ gọn gàng
+//     const { success } = await execute(
+//       () => appointmentApi.create(payload),
+//       'Đặt lịch thành công! Cảm ơn bạn.',
+//       'Có lỗi xảy ra khi đặt lịch. Vui lòng kiểm tra lại!'
+//     );
+
+//     if (success) {
+//       setIsSuccess(true);
+//     }
+//   };
+
+  
+
+ 
+//   </Spin>
+// );
+
+//   const steps = [
+//     { title: 'Dịch vụ', content: <ServiceStep /> },
+//     { title: 'Chi nhánh', content: <WardStep /> },
+//     { title: 'Thời gian', content: <TimeStep /> },
+//     { title: 'Nhân viên', content: <StaffStep /> },
+//     { title: 'Xác nhận', content: <BookingSummary data={bookingData}/> },
+//   ];
+
+
+// };
+
+// export default Appointment;
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Steps, Button, Typography, Card, List, Checkbox, 
+  Steps, Button, Typography, Card, Checkbox, 
   Badge, Row, Col, message, Divider, Space, Spin, 
-  DatePicker, TimePicker, Avatar, Result ,Modal, Tag
+  DatePicker, TimePicker, Avatar, Result, Modal, Tag
 } from 'antd';
 import { 
-  EnvironmentOutlined, ClockCircleOutlined, DollarOutlined, 
+  EnvironmentOutlined, ClockCircleOutlined, 
   UserOutlined, CheckCircleOutlined, SmileOutlined 
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -17,7 +285,7 @@ import serviceApi from '../../api/serviceApi';
 import wardApi from '../../api/wardApi';
 import staffApi from '../../api/staffApi';
 import appointmentApi from '../../api/appointmentApi';
-import { useApiAction } from '../../hooks/useApiAction'; // Import hook của bạn
+import { useApiAction } from '../../hooks/useApiAction';
 import BookingSummary from '../../components/BookingSummary';
 
 const { Title, Text } = Typography;
@@ -37,23 +305,19 @@ const Appointment = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false); 
 
-  // 1. Cập nhật state và hàm mở Profile (trong Component chính)
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
   const [viewingStaff, setViewingStaff] = useState(null);
   
-  // State quản lý Loading
   const [loadingInitial, setLoadingInitial] = useState(false);
   const [loadingStaff, setLoadingStaff] = useState(false);
 
-  // Khởi tạo useApiAction cho thao tác Submit
   const { actionLoading, execute } = useApiAction();
 
-  // State lưu trữ Form đặt lịch
   const currentUser = GetUser();
   const [bookingData, setBookingData] = useState({
     userId: currentUser ? currentUser.id : null,
     serviceIds: [],
-    selectedServices: [], // Mảng lưu trữ chi tiết dịch vụ đã chọn
+    selectedServices: [],
     wardId: null,
     wardName: null,
     appointmentDate: null, 
@@ -69,65 +333,78 @@ const Appointment = () => {
   const [wardData, setWardData] = useState([]);
   const [availableStaffs, setAvailableStaffs] = useState([]);
 
- // ================== 1. XỬ LÝ DỮ LIỆU KHỞI TẠO VÀ TRUYỀN DỮ LIỆU GIỮA CÁC TRANG ==================
-    useEffect(() => {
-      console.log("Toàn bộ State nhận được:", location.state);
-      // 1. Kiểm tra dữ liệu (selectedList nếu chọn nhiều, hoặc selectedService nếu chọn 1)
-      const serviceFromHome = location.state?.selectedService || location.state?.selectedList;
-      const shouldAutoNext = location.state?.autoNext;
+  // ================== 1. HỨNG DỮ LIỆU TỪ HOME ==================
+  useEffect(() => {
+    const serviceFromHome = location.state?.selectedService || location.state?.selectedList;
+    const staffFromHome = location.state?.selectedStaff; // 👈 Hứng nhân viên
+    const shouldAutoNext = location.state?.autoNext;
 
-      if (serviceFromHome) {
-        // Đảm bảo dữ liệu luôn là mảng để dễ xử lý (nếu từ Home chỉ gửi 1 cái thì bọc nó vào [])
-        const servicesArray = Array.isArray(serviceFromHome) ? serviceFromHome : [serviceFromHome];
+    let initialData = {};
+    let jumpToStep = 0;
 
-        // Tính toán tổng thời gian liệu trình (duration)
-        const totalDuration = servicesArray.reduce((sum, s) => sum + (s.duration || 0), 0);
-
-        // 2. Cập nhật dữ liệu vào Booking Data
-        setBookingData(prev => ({
-          ...prev,
-          // 1. Lưu danh sách ID để gửi API sau này
-          serviceIds: servicesArray.map(s => s.id),
-          
-          // 2. Lưu nguyên mảng Object để lấy Tên, Giá hiển thị ở Summary
-          selectedServices: servicesArray, 
-          
-          // 3. Lưu tổng thời gian để lát nữa tính previewEndTime
-          duration: totalDuration
-
-        }));
-
-        // 3. Nhảy bước (Dùng setTimeout 0ms là mẹo để thoát khỏi luồng render hiện tại, fix lỗi React)
-        if (shouldAutoNext && currentStep === 0) {
-          setTimeout(() => {
-            setCurrentStep(1);
-          }, 0);
-        }
-
-        // 4. Quan trọng: Xóa state của location để khi F5 trang không bị nhảy bước vô lý
-        window.history.replaceState({}, document.title);
+    // A. Nếu có Nhân viên được chọn từ trang Home
+    if (staffFromHome) {
+      initialData.staffId = staffFromHome.id;
+      initialData.staffName = staffFromHome.fullName;
+      // Tự động gán luôn Chi nhánh của nhân viên đó
+      if (staffFromHome.wardId) {
+        initialData.wardId = staffFromHome.wardId;
+        initialData.wardName = staffFromHome.wardName;
       }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.state]); // Chỉ chạy 1 lần khi trang Booking vừa load xong
+    }
+
+    // B. Nếu có Dịch vụ được chọn từ trang Home
+    if (serviceFromHome) {
+      const servicesArray = Array.isArray(serviceFromHome) ? serviceFromHome : [serviceFromHome];
+      const totalDuration = servicesArray.reduce((sum, s) => sum + (s.duration || 0), 0);
+      
+      initialData.serviceIds = servicesArray.map(s => s.id);
+      initialData.selectedServices = servicesArray;
+      initialData.duration = totalDuration;
+      
+      // Tính toán bước sẽ nhảy tới
+      if (shouldAutoNext) {
+        jumpToStep = 1; // Mặc định nhảy qua bước Dịch vụ
+        // Nếu đã có Dịch vụ + Nhân viên + Chi nhánh -> Nhảy thẳng đến bước Chọn Ngày Giờ (Step 2)
+        if (staffFromHome && staffFromHome.wardId) {
+          jumpToStep = 2; 
+        }
+      }
+    }
+
+    // Cập nhật State
+    if (Object.keys(initialData).length > 0) {
+      setBookingData(prev => ({ ...prev, ...initialData }));
+      
+      if (jumpToStep > 0) {
+        setTimeout(() => setCurrentStep(jumpToStep), 0);
+      }
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
 
-  const handleViewProfile = (e, staff) => {
-    e.stopPropagation(); // Không cho chọn nhân viên khi chỉ muốn xem profile
-    setViewingStaff(staff);
-    setIsProfileModalVisible(true);
-};
-  // --- 1. Gọi API Lấy Danh sách ban đầu ---
+  // ================== 2. LOAD DATA DỊCH VỤ DỰA TRÊN NHÂN VIÊN ==================
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoadingInitial(true);
       try {
-        const [serviceRes, wardRes] = await Promise.all([
-          serviceApi.getAll({ pageSize: 100 }),
-          wardApi.getAll()
-        ]);
-        if (serviceRes && serviceRes.items) setServiceData(serviceRes.items);
-        if (Array.isArray(wardRes)) setWardData(wardRes);
-        else if (wardRes?.items) setWardData(wardRes.items);
+        const staffFromHome = location.state?.selectedStaff;
+        
+        // 👈 LOGIC MỚI: Nếu có nhân viên, chỉ lấy list dịch vụ của nhân viên đó
+        let fetchedServices = [];
+        if (staffFromHome && staffFromHome.services?.length > 0) {
+          fetchedServices = staffFromHome.services;
+        } else {
+          // Nếu không có nhân viên, tải toàn bộ dịch vụ
+          const serviceRes = await serviceApi.getAll({ pageSize: 100 });
+          fetchedServices = serviceRes.items || serviceRes.data || serviceRes || [];
+        }
+        
+        setServiceData(fetchedServices);
+
+        const wardRes = await wardApi.getAll();
+        setWardData(Array.isArray(wardRes) ? wardRes : wardRes?.items || []);
       } catch (error) {
         console.log(error);
         message.error('Lỗi khi tải dữ liệu. Vui lòng thử lại!');
@@ -136,22 +413,28 @@ const Appointment = () => {
       }
     };
     fetchInitialData();
-  }, []);
+  }, [location.state]);
+
+
+  const handleViewProfile = (e, staff) => {
+    e.stopPropagation();
+    setViewingStaff(staff);
+    setIsProfileModalVisible(true);
+  };
 
   const selectedServices = serviceData.filter(s => bookingData.serviceIds.includes(s.id));
   const totalMoney = selectedServices.reduce((sum, s) => sum + s.price, 0);
-  const totalTime = selectedServices.reduce((sum, s) => sum + s.duration, 0);
+  const totalTime = selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0);
   const previewEndTime = bookingData.startTimeObj && totalTime > 0
     ? bookingData.startTimeObj.add(totalTime, 'minute')
     : null;
-  const handleServiceChange = (id) => {
 
+  const handleServiceChange = (id) => {
     const newIds = bookingData.serviceIds.includes(id)
       ? bookingData.serviceIds.filter(item => item !== id)
       : [...bookingData.serviceIds, id];
 
     const newSelectedObjects = serviceData.filter(s => newIds.includes(s.id));
-    // 3. Tính toán các thông số từ danh sách mới
     const newTotalDuration = newSelectedObjects.reduce((sum, s) => sum + (s.duration || 0), 0);
 
     setBookingData({ ...bookingData, 
@@ -161,70 +444,67 @@ const Appointment = () => {
      });
   };
 
+  // Sửa lại hàm này để Return data ra ngoài cho hàm next() kiểm tra
   const fetchAvailableStaffForStep4 = async () => {
-  // 1. Kiểm tra nhanh xem người dùng đã chọn đủ thông tin chưa
-  if (!bookingData.appointmentDate || !bookingData.startTime || !bookingData.wardId) {
-    message.warning("Vui lòng chọn đầy đủ ngày, giờ và chi nhánh!");
-    return;
-  }
+    setLoadingStaff(true);
+    try {
+      const params = {
+        date: bookingData.appointmentDate,
+        startTime: Number(bookingData.startTime),
+        wardId: Number(bookingData.wardId),
+        serviceIds: bookingData.serviceIds.map(id => Number(id)), 
+      };
 
-  if (bookingData.serviceIds.length === 0) {
-    message.warning("Vui lòng chọn ít nhất một dịch vụ!");
-    return;
-  }
-
-  setLoadingStaff(true);
-  try {
-    // 2. Chuẩn bị Params đúng chuẩn Swagger yêu cầu
-    const params = {
-      date: bookingData.appointmentDate, // Định dạng YYYY-MM-DD
-      startTime: Number(bookingData.startTime),
-      wardId: Number(bookingData.wardId),
-      // Mảng serviceIds sẽ được staffApi.js xử lý qua paramsSerializer
-      serviceIds: bookingData.serviceIds.map(id => Number(id)), 
-    };
-
-    console.log("🔍 Đang gọi API Staff với Params:", params);
-
-    // 3. Gọi API (Kết quả sẽ được tự động xử lý mảng nhờ config của bạn)
-    const res = await staffApi.getAvailable(params);
-    
-    // 4. Lưu dữ liệu vào state (đề phòng các trường hợp bọc data khác nhau của API)
-    const staffList = res?.items || res?.data || res || [];
-    setAvailableStaffs(staffList);
-    if (staffList.length === 0) {
-      message.info("Không có chuyên viên nào rảnh vào khung giờ này.");
+      const res = await staffApi.getAvailable(params);
+      const staffList = res?.items || res?.data || res || [];
+      
+      setAvailableStaffs(staffList);
+      return staffList; // 👈 Trả về mảng để check
+    } catch (error) {
+      console.error(error);
+      message.error("Không thể tải danh sách nhân viên. Vui lòng thử lại!");
+      return [];
+    } finally {
+      setLoadingStaff(false);
     }
+  };
 
-  } catch (error) {
-    console.error("❌ Lỗi khi lấy danh sách nhân viên:", error);
-    // Log chi tiết lỗi từ server để dễ debug
-    if (error.response) {
-      console.log("Chi tiết lỗi từ Backend:", error.response.data);
-    }
-    message.error("Không thể tải danh sách nhân viên. Vui lòng thử lại!");
-  } finally {
-    setLoadingStaff(false);
-  }
-};
-
+  // ================== 3. LOGIC NEXT() XỬ LÝ CHECK LỊCH TRÙNG ==================
   const next = async () => {
     if (!bookingData.userId) return message.error('Vui lòng đăng nhập để đặt lịch!');
 
     if (currentStep === 0 && bookingData.serviceIds.length === 0) return message.warning('Chọn ít nhất 1 dịch vụ');
     if (currentStep === 1 && !bookingData.wardId) return message.warning('Chọn chi nhánh');
+    
     if (currentStep === 2) {
       if (!bookingData.appointmentDate || !bookingData.startTimeObj) {
         return message.warning('Vui lòng chọn đầy đủ Ngày và Giờ!');
       }
-      await fetchAvailableStaffForStep4();
+      
+      // Gọi API xem ai rảnh
+      const availableList = await fetchAvailableStaffForStep4();
+      
+      // 👈 LOGIC MỚI: Check xem nhân viên đã chọn có rảnh không
+      if (bookingData.staffId) {
+        // Kiểm tra xem ID nhân viên đã chọn có nằm trong list người rảnh không
+        const isStaffFree = availableList.some(staff => staff.id === bookingData.staffId);
+        
+        if (!isStaffFree) {
+          // Báo lỗi và CHẶN không cho sang bước sau
+          return message.error(`Chuyên viên ${bookingData.staffName} đã có lịch bận vào khung giờ này. Vui lòng chọn giờ khác!`, 4);
+        }
+      } else {
+        if (availableList.length === 0) {
+          return message.warning("Không có chuyên viên nào rảnh vào khung giờ này. Vui lòng chọn giờ khác!");
+        }
+      }
     }
+    
     setCurrentStep(currentStep + 1);
   };
 
   const prev = () => setCurrentStep(currentStep - 1);
 
-  // --- 3. Logic Đặt Lịch (ÁP DỤNG useApiAction) ---
   const handleSubmitBooking = async () => {
     const payload = {
       userId: bookingData.userId,
@@ -235,16 +515,13 @@ const Appointment = () => {
       staffId: bookingData.staffId,
     };
 
-    // Truyền hàm gọi API và message vào execute cực kỳ gọn gàng
     const { success } = await execute(
       () => appointmentApi.create(payload),
       'Đặt lịch thành công! Cảm ơn bạn.',
       'Có lỗi xảy ra khi đặt lịch. Vui lòng kiểm tra lại!'
     );
 
-    if (success) {
-      setIsSuccess(true);
-    }
+    if (success) setIsSuccess(true);
   };
 
   // ================= CÁC COMPONENT BƯỚC =================
@@ -508,8 +785,9 @@ const Appointment = () => {
         );
       })}
     </Row>
-
-    {/* Modal Hồ Sơ Chi Tiết (Khớp với StaffResponse) */}
+  </Spin>
+);
+   {/* Modal Hồ Sơ Chi Tiết (Khớp với StaffResponse) */}
     <Modal
       title={<Title level={4} style={{ margin: 0 }}>Hồ sơ Chuyên viên</Title>}
       open={isProfileModalVisible}
@@ -544,8 +822,6 @@ const Appointment = () => {
         </div>
       )}
     </Modal>
-  </Spin>
-);
 
   const steps = [
     { title: 'Dịch vụ', content: <ServiceStep /> },
@@ -555,7 +831,7 @@ const Appointment = () => {
     { title: 'Xác nhận', content: <BookingSummary data={bookingData}/> },
   ];
 
-  if (isSuccess) {
+    if (isSuccess) {
     return (
       <Result
         status="success"

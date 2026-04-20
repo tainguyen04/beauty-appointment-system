@@ -75,17 +75,6 @@ namespace BeautyBooking.Services
             return _mapper.Map<ServiceResponse?>(service);
         }
 
-        public async Task<IEnumerable<ServiceResponse>> GetByStaffIdAsync(int staffId)
-        {
-            var staffProfile = await _staffProfileRepo.GetByIdAsync(staffId);
-            if (staffProfile == null)
-                throw new KeyNotFoundException("Staff không tồn tại.");
-            var services = await _serviceRepo.GetByStaffIdAsync(staffId);
-            if (!services.Any())
-                throw new KeyNotFoundException("Không tìm thấy dịch vụ nào cho nhân viên này.");
-            return _mapper.Map<IEnumerable<ServiceResponse>>(services);
-        }
-
         public async Task<PagedResult<ServiceResponse>> GetServicesAsync(ServiceFilter filter)
         {
             var query = _serviceRepo.Query();
@@ -97,6 +86,8 @@ namespace BeautyBooking.Services
                                                         sp.User.FullName.Contains(keyword)));
             if(filter.CategoryId.HasValue)
                 query = query.Where(s => s.CategoryId == filter.CategoryId.Value);
+            if(filter.StaffProfileId.HasValue)
+                query = query.Where(s => s.StaffProfiles.Any(sp => sp.Id == filter.StaffProfileId.Value));
             return await query
                 .OrderBy(c => c.Name)
                 .ProjectTo<ServiceResponse>(_mapper.ConfigurationProvider)

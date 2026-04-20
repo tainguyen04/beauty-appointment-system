@@ -11,12 +11,7 @@ const serviceApi = {
   getById: (id) => {
     return axiosClient.get(`/BeautyService/${id}`);
   },
-
-  // [GET] Lấy dịch vụ theo StaffId
-  getByStaffId: (staffId) => {
-    return axiosClient.get(`/BeautyService/staff/${staffId}`);
-  },
-
+  
   // [POST] Thêm mới dịch vụ
   create: (formData) => {
     return axiosClient.post('/BeautyService', formData, {
