@@ -7,7 +7,7 @@ import {
   RightOutlined ,LinkOutlined  
 } from '@ant-design/icons';
 import helpdeskCatalogApi from '../../api/helpdeskCatalogApi';
-import { TiptapContent } from '../../components/TipTapContent';
+import { TiptapContent } from '../../components/TiptapContent';
 import { useNavigate } from 'react-router-dom';
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
