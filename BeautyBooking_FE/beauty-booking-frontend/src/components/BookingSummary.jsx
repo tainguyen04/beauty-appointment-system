@@ -19,7 +19,8 @@ const BookingSummary = ({ data }) => {
 
   // Tính tổng tiền từ mảng dịch vụ
   const totalAmount = data.selectedServices?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
-
+  // Tính THòi gian kết thúc dự kiến
+  const expectedEndTime = convertMinutesToTimeStr((data.startTime || 0) + (data.duration || 0));
   return (
     <div style={{ padding: '10px 0' }}>
       <Alert
@@ -60,8 +61,12 @@ const BookingSummary = ({ data }) => {
           </Col>
 
           <Col span={24} style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Text type="secondary">Ngày giờ:</Text>
+            <Text type="secondary">Ngày và giờ bắt đầu:</Text>
             <Text strong>{data.appointmentDate || "---"} lúc {convertMinutesToTimeStr(data.startTime) || "---"}</Text>
+          </Col>
+          <Col span={24} style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Text type="secondary">Giờ kết thúc dự kiến:</Text>
+            <Text strong>{expectedEndTime || '---'}</Text>
           </Col>
 
           <Col span={24} style={{ display: 'flex', justifyContent: 'space-between' }}>

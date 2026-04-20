@@ -388,7 +388,7 @@ const AppointmentManager = () => {
           <Row gutter={[16, 16]} align="middle" style={{ marginTop: '16px' }}>
             <Col><Space><Text>Tìm kiếm:</Text><Input.Search placeholder="Tên khách, SĐT..." onSearch={(v) => handleFilterChange({ Keyword: v })} allowClear style={{ width: 200 }} /></Space></Col>
             <Col><Space><Text>Thời gian:</Text><RangePicker format="DD/MM/YYYY" onChange={(dates) => handleFilterChange({ FromDate: dates ? dates[0].format('YYYY-MM-DD') : undefined, ToDate: dates ? dates[1].format('YYYY-MM-DD') : undefined })} /></Space></Col>
-            <Col><Space><Text>Trạng thái:</Text><Select value={filterStatus} style={{ width: 150 }} options={[{ label: 'Chọn trạng thái', value: 'All' }, ...APPOINTMENT_STATUS.map(s => ({ label: s.label, value: s.value }))]} onChange={(v) => { setFilterStatus(v); handleFilterChange({ Status: v === 'All' ? undefined : v }); }} /></Space></Col>
+            <Col><Space><Text>Trạng thái:</Text><Select value={filterStatus} style={{ width: 150 }} options={[{ label: 'Tất cả', value: 'All' }, ...APPOINTMENT_STATUS.map(s => ({ label: s.label, value: s.value }))]} onChange={(v) => { setFilterStatus(v); handleFilterChange({ Status: v === 'All' ? undefined : v }); }} /></Space></Col>
           </Row>
         )}
       </div>

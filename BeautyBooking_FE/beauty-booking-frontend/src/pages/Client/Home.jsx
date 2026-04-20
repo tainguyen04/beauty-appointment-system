@@ -35,6 +35,7 @@ const Home = () => {
   const [selectedServices, setSelectedServices] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [staffServices, setStaffServices] = useState(null); // MỚI: Dùng để lưu dịch vụ khi xem chi tiết thợ
 
   // --- STATE NHÂN VIÊN (MỚI) ---
   const [staffs, setStaffs] = useState([]); // Chứa danh sách nhân viên load lên Home
@@ -63,12 +64,15 @@ const Home = () => {
   };
 
   // 👈 Xử lý chọn Nhân viên
-  const handleSelectStaff = (staff) => {
+  const handleSelectStaff = async (staff) => {
     // Nếu click lại đúng nhân viên đang chọn thì bỏ chọn, ngược lại thì thay thế bằng nhân viên mới
     if (selectedStaff?.id === staff.id) {
       setSelectedStaff(null);
+      setStaffServices(null); // Xóa dịch vụ liên quan đến thợ khi bỏ chọn
     } else {
       setSelectedStaff(staff);
+      
+      setStaffServices(staff.services || []); // Lưu dịch vụ liên quan đến thợ vào state
     }
   };
 
@@ -133,6 +137,8 @@ const Home = () => {
     handleFilterChange(filter);
   };
 
+  const displayServices = staffServices || services; // Nếu đã chọn thợ và có dịch vụ liên quan thì hiển thị, ngược lại hiển thị tất cả
+
   return (
     <>
       <ConfigProvider theme={{ token: { colorPrimary: '#eb2f96', borderRadius: 12 } }}>
@@ -145,6 +151,27 @@ const Home = () => {
           onSearch={handleHomeSearch}
           placeholder="Bạn muốn làm đẹp gì hôm nay?"
         />
+
+        {/* ===== 👈 PHẦN MỚI: ĐỘI NGŨ CHUYÊN GIA ===== */}
+        <div style={{ marginBottom: '40px' }}>
+          <div style={sectionHeaderStyle}>
+            <TeamOutlined style={{ color: '#eb2f96', fontSize: '20px' }} />
+            <Title level={4} style={{ margin: 0 }}>Đội ngũ chuyên gia</Title>
+          </div>
+          
+          <Row gutter={[24, 24]}>
+            {staffs.map(staff => (
+              <Col xs={24} sm={12} md={8} lg={6} key={staff.id}>
+                <StaffProfileCard 
+                  staff={staff} 
+                  isSelected={selectedStaff?.id === staff.id}
+                  onSelect={handleSelectStaff}
+                  onViewDetail={() => handleViewStaffDetail(staff)}
+                />
+              </Col>
+            ))}
+          </Row>
+        </div>
 
         {/* ... PHẦN DANH MỤC DỊCH VỤ (Giữ nguyên) ... */}
         <div style={{ marginBottom: '40px' }}>
@@ -166,14 +193,17 @@ const Home = () => {
         <div style={{ marginBottom: '60px' }}>
             <div style={sectionHeaderStyle}>
               <StarOutlined style={{ color: '#faad14', fontSize: '20px' }} />
-              <Title level={4} style={{ margin: 0 }}>Liệu trình dành cho bạn</Title>
+              <Title level={4} style={{ margin: 0 }}>
+                {selectedStaff ? `Dịch vụ của ${selectedStaff.fullName}` : 'Tất cả Dịch vụ'}
+              </Title>
             </div>
+            
 
             <Spin spinning={loading} tip="Đang tải dữ liệu...">
-              {services.length > 0 ? (
+              {displayServices.length > 0 ? (
                 <div>
                   <Row gutter={[24, 24]}>
-                    {services.map(service => (
+                    {displayServices.map(service => (
                       <Col xs={24} sm={12} md={8} lg={6} key={service.id}>
                         <ServiceCard 
                           service={service} 
@@ -195,27 +225,6 @@ const Home = () => {
                 <Empty description="Không tìm thấy dịch vụ nào" style={{ padding: '80px 0' }} />
               )}
             </Spin>
-        </div>
-
-        {/* ===== 👈 PHẦN MỚI: ĐỘI NGŨ CHUYÊN GIA ===== */}
-        <div style={{ marginBottom: '40px' }}>
-          <div style={sectionHeaderStyle}>
-            <TeamOutlined style={{ color: '#eb2f96', fontSize: '20px' }} />
-            <Title level={4} style={{ margin: 0 }}>Đội ngũ chuyên gia</Title>
-          </div>
-          
-          <Row gutter={[24, 24]}>
-            {staffs.map(staff => (
-              <Col xs={24} sm={12} md={8} lg={6} key={staff.id}>
-                <StaffProfileCard 
-                  staff={staff} 
-                  isSelected={selectedStaff?.id === staff.id}
-                  onSelect={handleSelectStaff}
-                  onViewDetail={() => handleViewStaffDetail(staff)}
-                />
-              </Col>
-            ))}
-          </Row>
         </div>
 
         {/* Nút Đặt lịch */}

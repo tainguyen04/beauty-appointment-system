@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Table, Tag, Card, Typography, Space, Button, Drawer, Popover,
-  Descriptions, Tooltip, Radio, Input, Calendar, Badge , Row, Col, Select, DatePicker
+  Descriptions, Tooltip, Radio, Input, Calendar, Badge , 
+  Row, Col, Select, DatePicker, Spin ,Popconfirm
 } from 'antd';
 import { 
   ClockCircleOutlined, EyeOutlined, ExclamationCircleOutlined,
   TableOutlined, CalendarOutlined, SearchOutlined ,TagOutlined
 } from '@ant-design/icons';
+
 import dayjs from 'dayjs';
 
 // Import Hooks & API
@@ -16,23 +19,27 @@ import { useApiAction } from '../../hooks/useApiAction';
 import { getStatusConfig,convertMinutesToTimeStr,APPOINTMENT_STATUS } from '../../utils/apiHelper'; 
 
 const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
 };
 
 const MyAppointment = () => {
+  const navigate = useNavigate();
   // --- 1. STATE QUẢN LÝ GIAO DIỆN ---
   const [viewMode, setViewMode] = useState('table'); // 'table' hoặc 'calendar'
-  const [searchText, setSearchText] = useState('');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState(null);
   const [filterStatus, setFilterStatus] = useState('All');
 
   // --- 2. HÀM BỌC API (Để khớp với Object params của usePagination) ---
-  const fetchAppointments = useCallback(async ({ pageNumber, pageSize }) => {
-    // Chuyển đổi từ object {pageNumber, pageSize} sang tham số rời (page, size) cho API
-    return await appointmentApi.getAll(pageNumber, pageSize);
-  }, []);
+  const fetchAppointments = useCallback(async ({ pageNumber, pageSize, ...filters }) => {
+  return await appointmentApi.getAll({
+    pageNumber,
+    pageSize,
+    ...filters
+  });
+}, []);
 
   // --- 3. KHỞI TẠO HOOKS ---
   const { 
@@ -52,7 +59,26 @@ const MyAppointment = () => {
   }, []); // Chỉ chạy 1 lần khi mount để tránh loop
 
   // --- 5. LOGIC XỬ LÝ DỮ LIỆU ---
-  
+  const handleRebook = (record) => {
+    navigate('/appointments', {
+      state: {
+        selectedStaff: {
+          id: record.staffId,
+          fullName: record.staffName,
+          wardId: record.wardId,
+          wardName: record.wardName
+        },
+        selectedList: record.appointmentServices?.map(s => ({
+          id: s.serviceId,
+          name: s.serviceName,
+          duration: s.duration
+        })),
+        autoNext: true
+      }
+    });
+  };
+
+
   // Hàm chuyển đổi chế độ xem
   const handleViewModeChange = useCallback((e) => {
     const mode = e.target.value;
@@ -65,18 +91,6 @@ const MyAppointment = () => {
       handleFilterChange({ pageSize: 10, pageNumber: 1 });
     }
   }, [handleFilterChange]);
-
-  // Tìm kiếm dữ liệu (Lọc local dựa trên mảng đã fetch về)
-  const filteredData = useMemo(() => {
-    const data = appointments || [];
-    if (!searchText) return data;
-    const lowerSearch = searchText.toLowerCase();
-    return data.filter(item => 
-      item.id.toString().includes(lowerSearch) || 
-      item.staffName?.toLowerCase().includes(lowerSearch)
-    );
-  }, [appointments, searchText]);
-
 
   const canCancelAppointment = (record) => {
   if (!record?.appointmentDate) return false;
@@ -106,11 +120,21 @@ const handleCancel = async (record) => {
     console.log('Lỗi khi hủy lịch:', error);
   }
 };
+
+const appointmentMap = useMemo(() => {
+  const map = {};
+
+  appointments?.forEach(item => {
+    const key = dayjs(item.appointmentDate).format('YYYY-MM-DD');
+    if (!map[key]) map[key] = [];
+    map[key].push(item);
+  });
+
+  return map;
+}, [appointments]);
   // --- 6. RENDER CALENDAR CELLS ---
   const dateCellRender = (value) => {
-    const dayAppointments = filteredData.filter(item => 
-      dayjs(item.appointmentDate).isSame(value, 'day')
-    );
+    const dayAppointments = appointmentMap[value.format('YYYY-MM-DD')] || [];
 
         return (
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -187,7 +211,7 @@ const handleCancel = async (record) => {
       width: 200,
       render: (_, record) => {
         const canCancel = canCancelAppointment(record);
-
+        const isCancelled = record.appointmentStatus === 'Cancelled';
         return (
           <Space>
             <Button 
@@ -203,14 +227,32 @@ const handleCancel = async (record) => {
               Chi tiết
             </Button>
 
-            <Button
-              danger
-              disabled={!canCancel}
-              onClick={() => handleCancel(record)}
-              size="small"
-            >
-              Hủy
-            </Button>
+            {isCancelled ? (
+        <Button
+          type="primary"
+          size="small"
+          onClick={() => handleRebook(record)}
+        >
+          Đặt lại
+        </Button>
+      ) : (
+        /* Nếu chưa hủy → hiện Hủy */
+        <Popconfirm
+          title="Hủy lịch hẹn"
+          description="Bạn có chắc muốn hủy lịch này không?"
+          onConfirm={() => handleCancel(record)}
+          okText="Hủy lịch"
+          cancelText="Không"
+        >
+          <Button
+            danger
+            disabled={!canCancel}
+            size="small"
+          >
+            Hủy
+          </Button>
+        </Popconfirm>
+      )}
           </Space>
         );
       },
@@ -219,72 +261,131 @@ const handleCancel = async (record) => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px' }}>
-      {/* THANH ĐIỀU KHIỂN (TOOLBAR) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <Title level={3} style={{ margin: 0 }}>
-          <ClockCircleOutlined style={{ marginRight: 10, color: '#eb2f96' }} />
-          Lịch sử hẹn của tôi
-        </Title>
-        <Row gutter={[16, 16]} align="middle" style={{ marginTop: '16px' }}>
-            <Col><Space><Text>Tìm kiếm:</Text><Input.Search placeholder="Tên khách, SĐT..." onSearch={(v) => handleFilterChange({ Keyword: v })} allowClear style={{ width: 200 }} /></Space></Col>
-            <Col><Space><Text>Thời gian:</Text><RangePicker format="DD/MM/YYYY" onChange={(dates) => handleFilterChange({ FromDate: dates ? dates[0].format('YYYY-MM-DD') : undefined, ToDate: dates ? dates[1].format('YYYY-MM-DD') : undefined })} /></Space></Col>
-            <Col><Space><Text>Trạng thái:</Text>
-            <Select value={filterStatus} 
-            style={{ width: 150 }} 
-            options={[{ label: 'Chọn trạng thái', value: 'All' }, 
-            ...APPOINTMENT_STATUS.map(s => ({ label: s.label, value: s.value }))]} 
-            onChange={(v) => { setFilterStatus(v); 
-            handleFilterChange({ Status: v === 'All' ? undefined : v }); }} /></Space></Col>
-          </Row>
-        <Space size="middle">
-          <Input 
-            placeholder="Tìm mã lịch hoặc nhân viên..." 
-            prefix={<SearchOutlined />} 
-            style={{ width: 280 }}
-            onChange={(e) => setSearchText(e.target.value)}
-            allowClear
-          />
-          <Radio.Group 
-            value={viewMode} 
-            onChange={handleViewModeChange} 
-            buttonStyle="solid"
-          >
-            <Radio.Button value="table"><TableOutlined /> Danh sách</Radio.Button>
-            <Radio.Button value="calendar"><CalendarOutlined /> Lịch biểu</Radio.Button>
-          </Radio.Group>
-        </Space>
-      </div>
+      {/* HEADER */}
+  <div style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    gap: 16
+  }}>
 
-      {/* NỘI DUNG CHÍNH */}
-      <Card 
-        style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-        bodyStyle={{ padding: viewMode === 'calendar' ? '10px' : '24px' }}
+    {/* TITLE */}
+    <Title level={3} style={{ margin: 0 }}>
+      <ClockCircleOutlined style={{ marginRight: 10, color: '#eb2f96' }} />
+      Lịch sử hẹn của tôi
+    </Title>
+
+    {/* RIGHT TOOLBAR */}
+    <Space direction="vertical" size={12} style={{ alignItems: 'flex-end' }}>
+
+      {/* FILTER ROW */}
+      <Row gutter={[12, 12]} align="middle" justify="end">
+
+        <Col>
+          <Space>
+            <Text>Tìm kiếm:</Text>
+            <Input.Search
+              placeholder="Tên khách, SĐT..."
+              onSearch={(v) => handleFilterChange({ Keyword: v })}
+              allowClear
+              style={{ width: 200 }}
+            />
+          </Space>
+        </Col>
+
+        <Col>
+          <Space>
+            <Text>Thời gian:</Text>
+            <DatePicker.RangePicker
+              format="DD/MM/YYYY"
+              onChange={(dates) =>
+                handleFilterChange({
+                  FromDate: dates ? dates[0].format('YYYY-MM-DD') : undefined,
+                  ToDate: dates ? dates[1].format('YYYY-MM-DD') : undefined
+                })
+              }
+            />
+          </Space>
+        </Col>
+
+        <Col>
+          <Space>
+            <Text>Trạng thái:</Text>
+            <Select
+              value={filterStatus}
+              style={{ width: 150 }}
+              options={[
+                { label: 'Tất cả', value: 'All' },
+                ...APPOINTMENT_STATUS.map(s => ({
+                  label: s.label,
+                  value: s.value
+                }))
+              ]}
+              onChange={(v) => {
+                setFilterStatus(v);
+                handleFilterChange({
+                  Status: v === 'All' ? undefined : v
+                });
+              }}
+            />
+          </Space>
+        </Col>
+
+      </Row>
+
+      {/* VIEW TOGGLE */}
+      <Radio.Group
+        value={viewMode}
+        onChange={handleViewModeChange}
+        buttonStyle="solid"
       >
-        {viewMode === 'table' ? (
-          <Table
-            columns={columns}
-            dataSource={filteredData}
-            loading={loading}
-            rowKey="id"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              onChange: (page, pageSize) => runFetch(page, pageSize),
-              showSizeChanger: false,
-              position: ['bottomCenter']
-            }}
-          />
-        ) : (
-          <Calendar 
-            loading={loading}
-            cellRender={(current, info) => {
-              if (info.type === 'date') return dateCellRender(current);
-              return info.originNode;
-            }} 
-          />
-        )}
-      </Card>
+        <Radio.Button value="table">
+          <TableOutlined /> Danh sách
+        </Radio.Button>
+        <Radio.Button value="calendar">
+          <CalendarOutlined /> Lịch biểu
+        </Radio.Button>
+      </Radio.Group>
+
+    </Space>
+  </div>
+
+  {/* CONTENT */}
+  <Card
+    style={{
+      borderRadius: '12px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+    }}
+    bodyStyle={{
+      padding: viewMode === 'calendar' ? '10px' : '24px'
+    }}
+  >
+    {viewMode === 'table' ? (
+      <Table
+        columns={columns}
+        dataSource={appointments}
+        loading={loading}
+        rowKey="id"
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          onChange: (page, pageSize) => runFetch(page, pageSize),
+          showSizeChanger: false,
+          position: ['bottomCenter']
+        }}
+      />
+    ) : (
+      <Calendar
+        loading={loading}
+        cellRender={(current, info) => {
+          if (info.type === 'date') return dateCellRender(current);
+          return info.originNode;
+        }}
+      />
+    )}
+  </Card>
 
       <Drawer
   title={<Title level={4}>Chi tiết lịch đặt #{selectedDetail?.id}</Title>}
@@ -321,6 +422,11 @@ const handleCancel = async (record) => {
             </li>
           ))}
         </ul>
+      </Descriptions.Item>
+      <Descriptions.Item label="Trạng thái">
+        <Tag color={getStatusConfig(selectedDetail.appointmentStatus)?.color}>
+          {getStatusConfig(selectedDetail.appointmentStatus)?.label || selectedDetail.appointmentStatus}
+        </Tag>
       </Descriptions.Item>
 
       <Descriptions.Item label="Tổng hóa đơn">
