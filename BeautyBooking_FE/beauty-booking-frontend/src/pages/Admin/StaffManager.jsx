@@ -14,6 +14,7 @@ import staffApi from '../../api/staffApi';
 import userApi from '../../api/userApi';
 import serviceApi from '../../api/serviceApi';
 import wardApi from '../../api/wardApi';
+import { GetUser } from '../../api/axiosClient';
 
 const { Title, Text } = Typography;
 
@@ -34,6 +35,8 @@ const StaffManager = () => {
 
   const [wards, setWards] = useState([]);
   const [loadingWards, setLoadingWards] = useState(false);
+  const user = GetUser(); // Lấy thông tin người dùng hiện tại để kiểm tra quyền hạn nếu cần
+  const isAdmin = user?.role === 'Admin';
   
   // LƯU Ý: Đã xóa bỏ submitLoading thủ công
 
@@ -243,9 +246,11 @@ const StaffManager = () => {
           }
         ];
         return (
+          (isAdmin) && (
           <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
             <Button type="text" size="small" icon={<MoreOutlined />} />
           </Dropdown>
+          )
         );
       },
     },
@@ -262,9 +267,11 @@ const StaffManager = () => {
             style={{ width: 200 }}
             allowClear
           />
-          <Button type="primary" icon={<UserAddOutlined />} onClick={() => setIsModalOpen(true)}>
-            Thêm mới
-          </Button>
+          {isAdmin && (
+            <Button type="primary" icon={<UserAddOutlined />} onClick={() => setIsModalOpen(true)}>
+              Thêm mới
+            </Button>
+          )}
         </Space>
       </div>
 
