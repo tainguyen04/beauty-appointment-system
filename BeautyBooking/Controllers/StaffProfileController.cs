@@ -13,7 +13,6 @@ namespace BeautyBooking.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class StaffProfileController : ControllerBase
     {
         private readonly IStaffProfileService _staffProfileService;

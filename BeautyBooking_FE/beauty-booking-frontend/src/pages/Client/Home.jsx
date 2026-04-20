@@ -158,19 +158,33 @@ const Home = () => {
             <TeamOutlined style={{ color: '#eb2f96', fontSize: '20px' }} />
             <Title level={4} style={{ margin: 0 }}>Đội ngũ chuyên gia</Title>
           </div>
-          
-          <Row gutter={[24, 24]}>
-            {staffs.map(staff => (
-              <Col xs={24} sm={12} md={8} lg={6} key={staff.id}>
-                <StaffProfileCard 
-                  staff={staff} 
-                  isSelected={selectedStaff?.id === staff.id}
-                  onSelect={handleSelectStaff}
-                  onViewDetail={() => handleViewStaffDetail(staff)}
-                />
-              </Col>
-            ))}
-          </Row>
+           <Spin spinning={loading} tip="Đang tải dữ liệu...">
+            {staffs.length > 0 ? (
+              <div>
+                <Row gutter={[24, 24]}>
+                {staffs.map(staff => (
+                  <Col xs={24} sm={12} md={8} lg={6} key={staff.id}>
+                    <StaffProfileCard 
+                      staff={staff} 
+                      isSelected={selectedStaff?.id === staff.id}
+                      onSelect={handleSelectStaff}
+                      onViewDetail={() => handleViewStaffDetail(staff)}
+                    />
+                  </Col>
+                ))}
+              </Row>
+              <div style={paginationContainerStyle}>
+                    <Pagination 
+                      current={pagination.current} pageSize={pagination.pageSize} total={pagination.total} showSizeChanger={false}
+                      onChange={(page) => runFetch(page, pagination.pageSize, { ...pagination.currentFilters, Keyword: querySearch })}
+                    />
+                  </div>
+            </div>
+            
+            ):(
+              <Empty description="Không tìm thấy chuyên gia nào" style={{ padding: '80px 0' }} />
+            )}
+          </Spin>
         </div>
 
         {/* ... PHẦN DANH MỤC DỊCH VỤ (Giữ nguyên) ... */}

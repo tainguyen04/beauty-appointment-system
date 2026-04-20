@@ -11,6 +11,7 @@ import {
 import helpdeskContentApi from '../../api/helpdeskContentApi';
 import helpdeskCatalogApi from '../../api/helpdeskCatalogApi';
 import { useApiAction } from '../../hooks/useApiAction';
+import TiptapEditor from '../../components/TiptapEditor';
 
 const { Text } = Typography;
 
@@ -63,8 +64,8 @@ const HelpdeskCatalogManager = () => {
   const handleSaveCatalog = async (values) => {
     const payload = {
       ...values,
-      // Đảm bảo lọc kỹ mảng contents để không gửi chuỗi rỗng lên API
-      contents: values.contents?.filter(c => typeof c === 'string' && c.trim() !== "") || []
+      // Lọc bỏ các dòng nội dung rỗng hoặc chỉ có thẻ <p></p>
+      contents: values.contents?.filter(c => c && c !== "<p></p>") || []
     };
 
     const apiCall = editingCatalog
@@ -133,6 +134,7 @@ const HelpdeskCatalogManager = () => {
       title: 'Tên danh mục',
       dataIndex: 'nameVn',
       render: (text, record) => (
+        <Space>
         <div
           onClick={() => fetchContentsByCatalog(record.catalogId)}
           style={{
@@ -143,7 +145,15 @@ const HelpdeskCatalogManager = () => {
           }}
         >
           {text}
+          
         </div>
+        {/* Nếu có URL thì hiện icon link, bấm vào mở tab mới */}
+        {record.url && (
+          <a href={record.url} target="_blank" rel="noopener noreferrer">
+            <LinkOutlined style={{ color: '#52c41a' }} />
+          </a>
+        )}
+        </Space>
       )
     },
     {
@@ -254,6 +264,17 @@ const HelpdeskCatalogManager = () => {
           <Card
             title={<span><FileTextOutlined /> Chi tiết: {selectedCatalog?.nameVn || '...'}</span>}
             extra={
+              <Space>
+                {/* Nút mở link URL của Catalog */}
+                {selectedCatalog?.url && (
+                  <Button 
+                    type="default" 
+                    icon={<LinkOutlined />} 
+                    onClick={() => window.open(selectedCatalog.url, '_blank')}
+                  >
+                    Mở link tài liệu
+                  </Button>
+                )}
               <Button
                 type="primary"
                 size="small"
@@ -267,8 +288,20 @@ const HelpdeskCatalogManager = () => {
               >
                 Thêm dòng nội dung
               </Button>
+              </Space>
             }
           >
+            {/* Nếu Catalog có URL, hiện một Alert nhỏ nhắc nhở */}
+            {selectedCatalog?.url && (
+              <div style={{ marginBottom: 16, padding: '8px 12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 4 }}>
+                <Text type="success">
+                  <LinkOutlined /> Danh mục này có liên kết bên ngoài: 
+                  <a href={selectedCatalog.url} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>
+                    {selectedCatalog.url}
+                  </a>
+                </Text>
+              </div>
+            )}
             {selectedCatalog ? (
               <Table
                 dataSource={contents}
@@ -284,79 +317,71 @@ const HelpdeskCatalogManager = () => {
         </Col>
       </Row>
 
-      {/* MODAL CATALOG */}
+      
+      {/* MODAL CATALOG - Thêm Tiptap vào Form.List */}
       <Modal
-        title={editingCatalog ? "Cập nhật Danh mục" : "Tạo Danh mục mới"}
+        title={editingCatalog ? "Cập nhật Catalog" : "Tạo Catalog mới"}
         open={isCatalogModalOpen}
         onOk={() => catalogForm.submit()}
         onCancel={() => setIsCatalogModalOpen(false)}
         confirmLoading={actionLoading}
-        width={650}
+        width={800} // Tăng width vì Editor cần không gian
         destroyOnClose
       >
         <Form form={catalogForm} layout="vertical" onFinish={handleSaveCatalog}>
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="keyCatalog" label="Mã (Key)" rules={[{ required: true, message: 'Không bỏ trống' }]}>
-                <Input placeholder="VD: HELP_BOOKING" disabled={!!editingCatalog} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="isActived" label="Kích hoạt" valuePropName="checked" initialValue={true}>
-                <Switch />
-              </Form.Item>
-            </Col>
+            <Col span={12}><Form.Item name="keyCatalog" label="Mã (Key)"><Input disabled={!!editingCatalog} /></Form.Item></Col>
+            <Col span={12}><Form.Item name="isActived" label="Kích hoạt" valuePropName="checked"><Switch /></Form.Item></Col>
           </Row>
-
-          <Form.Item name="nameVn" label="Tên hiển thị" rules={[{ required: true, message: 'Không bỏ trống' }]}>
-            <Input placeholder="Nhập tên tiếng Việt" />
+          <Form.Item name="nameVn" label="Tên hiển thị" rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item 
+            name="url" 
+            label="Đường dẫn liên kết (URL)"
+            extra="Nếu dán link hướng dẫn đặt lịch vào đây, hệ thống sẽ ưu tiên dẫn khách đến link này."
+            rules={[{ pattern: /^(\/|http:\/\/|https:\/\/).*/, message: 'Vui lòng nhập đúng định dạng link (http://...)' }]}
+          >
+            <Input prefix={<LinkOutlined />} placeholder="Ví dụ: https://youtube.com/watch?v=..." />
           </Form.Item>
-
-          <Form.Item name="url" label="Đường dẫn liên kết (URL)">
-            <Input prefix={<LinkOutlined />} placeholder="https://docs.spa.vn/..." />
-          </Form.Item>
-
           <Divider orientation="left">Nội dung khởi tạo</Divider>
-          
           <Form.List name="contents">
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }, index) => (
-                  <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                  <Card key={key} size="small" style={{ marginBottom: 12 }} 
+                    title={`Đoạn nội dung ${index + 1}`}
+                    extra={fields.length > 1 && <DeleteOutlined onClick={() => remove(name)} style={{ color: 'red' }} />}
+                  >
                     <Form.Item
                       {...restField}
                       name={name}
                       rules={[{ required: true, message: 'Nhập nội dung' }]}
-                      style={{ width: 540 }}
                     >
-                      <Input placeholder={`Dòng nội dung ${index + 1}`} />
+                      {/* THAY THẾ INPUT BẰNG TIPTAP */}
+                      <TiptapEditor />
                     </Form.Item>
-                    {fields.length > 1 && (
-                      <DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />
-                    )}
-                  </Space>
+                  </Card>
                 ))}
-                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                  Thêm dòng mới
-                </Button>
+                <Button type="dashed" onClick={() => add("<p></p>")} block icon={<PlusOutlined />}>Thêm đoạn mới</Button>
               </>
             )}
           </Form.List>
         </Form>
       </Modal>
 
-      {/* MODAL CONTENT LẺ */}
+      {/* MODAL CONTENT LẺ - Thêm Tiptap vào Editor đơn */}
       <Modal
         title={editingContent ? "Sửa nội dung" : "Thêm nội dung chi tiết"}
         open={isContentModalOpen}
         onOk={() => contentForm.submit()}
         onCancel={() => setIsContentModalOpen(false)}
         confirmLoading={actionLoading}
+        width={800}
         destroyOnClose
       >
         <Form form={contentForm} layout="vertical" onFinish={handleSaveContent}>
-          <Form.Item name="contentDetail" label="Nội dung chi tiết" rules={[{ required: true, message: 'Vui lòng nhập' }]}>
-            <Input.TextArea rows={5} placeholder="Nhập hướng dẫn..." />
+          <Form.Item name="contentDetail" label="Nội dung chi tiết" rules={[{ required: true }]}>
+             {/* THAY THẾ TEXTAREA BẰNG TIPTAP */}
+            <TiptapEditor />
           </Form.Item>
         </Form>
       </Modal>

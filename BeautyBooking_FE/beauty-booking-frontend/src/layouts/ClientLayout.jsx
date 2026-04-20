@@ -60,8 +60,8 @@ const ClientLayout = () => {
           
           <Space size="large">
             <Link to="/" style={{ color: '#333' }}>Trang chủ</Link>
-            <Link to="/booking" style={{ color: '#333' }}>Đặt lịch</Link>
-            
+            <Link to="/appointments" style={{ color: '#333' }}>Đặt lịch</Link>
+            <Link to="/helpdesk" style={{ color: '#333' }}>Hỗ trợ</Link>
             {user ? (
               <Spin spinning={actionLoading}>
               <Dropdown menu={{ items: menuItems }} placement="bottomRight">
@@ -72,9 +72,14 @@ const ClientLayout = () => {
               </Dropdown>
               </Spin>          
             ) : (
+              <Space>
               <Button type="primary" shape="round" onClick={() => navigate('/login')} style={{ background: '#eb2f96', border: 'none' }}>
                 Đăng nhập
               </Button>
+              <Button type="primary" shape="round" onClick={() => navigate('/register')} style={{ background: '#eb2f96', border: 'none' }}>
+                Đăng ký
+              </Button>
+              </Space>
             )}
           </Space>
         </nav>

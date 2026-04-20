@@ -1,5 +1,5 @@
 import { Form, Input, Button, Card, Typography,Checkbox } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined,HomeOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import authApi from '../../api/authApi';
@@ -88,13 +88,17 @@ const Login = () => {
             <Checkbox>Nhớ đăng nhập của tôi</Checkbox>
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={actionLoading}>
+            <Button type="primary" htmlType="submit" block loading={actionLoading} style={{ backgroundColor: '#eb2f96', borderColor: '#eb2f96' }}>
               Đăng nhập
             </Button>
           </Form.Item>
-
-          <div style={{ textAlign: 'center' }}>
-            Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+          <div style={{ textAlign: 'center', marginTop: 10 }}>
+            <Link to="/" style={{ color: '#eb2f96' }}>
+              <HomeOutlined /> Về trang chủ
+            </Link>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: 10 }}>
+            Chưa có tài khoản? <Link to="/register" style={{ color: '#eb2f96' }}>Đăng ký ngay</Link>
           </div>
         </Form>
       </Card>

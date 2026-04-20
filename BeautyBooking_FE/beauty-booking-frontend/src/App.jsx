@@ -17,6 +17,7 @@ import WebLocalizationManager from './pages/Admin/WebLocalizationManager';
 import HelpdeskCatalogManager from './pages/Admin/HelpdeskCatalogManager';
 import Appointment from './pages/Client/Appointment'; // Import trang Appointment mới
 import MyAppointment from './pages/Client/MyAppointment';
+import Helpdesk from './pages/Client/Helpdesk'; // Import trang Helpdesk mới
 // 1. Import ProtectedRoute vừa tạo
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -31,6 +32,8 @@ function App() {
         {/* LUỒNG 1: KHÁCH HÀNG (Tạm thời ai cũng vào được) */}
         <Route path="/" element={<ClientLayout />}>
           <Route index element={<Home />} />
+          <Route path="helpdesk" element={<Helpdesk />} />
+
           {/* Nếu muốn khách phải đăng nhập mới được đặt lịch, dùng ProtectedRoute ở đây */}
           <Route element={<ProtectedRoute allowedRoles={['Customer', 'Admin', 'Staff']} />}>
             <Route path="appointments" element={<Appointment />} />
