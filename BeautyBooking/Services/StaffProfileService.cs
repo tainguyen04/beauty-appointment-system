@@ -235,7 +235,7 @@ namespace BeautyBooking.Services
 
             if (filter.ServiceId.HasValue)
             {
-                query = query.Where(s =>s.Services.Select(x => x.Id).Contains(filter.ServiceId.Value));
+                query = query.Where(s =>s.Services.Any(x => x.Id == filter.ServiceId.Value));
             }
                 
             

@@ -25,7 +25,7 @@ namespace BeautyBooking.Services
             }
         }
 
-        public string Email
+        public string? Email
         {
             get
             {
@@ -35,11 +35,11 @@ namespace BeautyBooking.Services
                 {
                     return emailClaim;
                 }
-                throw new UnauthorizedAccessException();
+                return null;
             }
         }
 
-        public UserRole Role
+        public UserRole? Role
         {
             get
             {
@@ -49,7 +49,7 @@ namespace BeautyBooking.Services
                 {
                     return role;
                 }
-                throw new UnauthorizedAccessException();
+                return null;
             }
         }
         public int? StaffId
