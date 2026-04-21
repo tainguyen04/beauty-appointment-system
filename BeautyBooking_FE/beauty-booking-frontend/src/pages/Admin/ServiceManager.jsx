@@ -130,11 +130,11 @@ const ServiceManager = () => {
   const columns = [
     {
       title: 'Ảnh',
-      dataIndex: 'ImageUrl',
+      dataIndex: 'imageUrl',
       width: 80,
-      render: (ImageUrl) => (
+      render: (imageUrl) => (
         <img 
-          src={ImageUrl || 'https://via.placeholder.com/50'} 
+          src={imageUrl || 'https://via.placeholder.com/50'} 
           alt="img" 
           style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }} 
         />

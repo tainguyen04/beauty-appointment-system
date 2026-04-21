@@ -269,7 +269,7 @@ const Home = () => {
             <Row gutter={[32, 24]}>
               <Col xs={24} md={10}>
                 <img 
-                  src={selectedService.ImageUrl || 'https://via.placeholder.com/400x500'} 
+                  src={selectedService.imageUrl || 'https://via.placeholder.com/400x500'} 
                   alt={selectedService.name}
                   style={{ width: '100%', borderRadius: '16px', objectFit: 'cover', boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
                 />
