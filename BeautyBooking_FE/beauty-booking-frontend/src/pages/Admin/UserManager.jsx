@@ -175,6 +175,8 @@ const UserManager = () => {
     {
       title: 'Họ tên',
       dataIndex: 'fullName',
+      ellipsis: true,
+      width: 200,
       render: (text, record) => (
         <Space>
           <Avatar src={record.avatarUrl} icon={<UserOutlined />} />
