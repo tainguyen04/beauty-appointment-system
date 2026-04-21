@@ -31,7 +31,7 @@ const ServiceCard = ({ service, isSelected, onSelect, onViewDetail }) => {
         <div style={{ height: 200, overflow: 'hidden', background: '#f5f5f5', position: 'relative' }}>
           <img
             alt={service.name}
-            src={service.imageUrl || fallbackImage}
+            src={service.ImageUrl || fallbackImage}
             onError={(e) => { e.target.src = fallbackImage }}
             style={{ 
                 width: '100%', 

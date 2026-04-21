@@ -14,6 +14,7 @@ namespace BeautyBooking.MappingProfiles
 
             CreateMap<UpdateServiceRequest, Service>()
                 .IgnoreAuditFields()
+                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<Service, ServiceResponse>()
