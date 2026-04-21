@@ -34,9 +34,13 @@ function App() {
           <Route index element={<Home />} />
           <Route path="helpdesk" element={<Helpdesk />} />
 
+          {/* Không cho staff vào*/}
+          <Route element={<ProtectedRoute allowedRoles={['Customer', 'Admin']} />}>
+            <Route path="appointments" element={<Appointment />} />
+          </Route>
+
           {/* Nếu muốn khách phải đăng nhập mới được đặt lịch, dùng ProtectedRoute ở đây */}
           <Route element={<ProtectedRoute allowedRoles={['Customer', 'Admin', 'Staff']} />}>
-            <Route path="appointments" element={<Appointment />} />
             <Route path="profile" element={<Profile />} />
             <Route path="my-appointments" element={<MyAppointment />} />
           </Route>
