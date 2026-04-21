@@ -176,7 +176,7 @@ const UserManager = () => {
       title: 'Họ tên',
       dataIndex: 'fullName',
       ellipsis: true,
-      width: 200,
+      width: 100,
       render: (text, record) => (
         <Space>
           <Avatar src={record.avatarUrl} icon={<UserOutlined />} />
@@ -185,7 +185,7 @@ const UserManager = () => {
       ),
     },
     { title: 'Email', dataIndex: 'email' ,width: 100, ellipsis: true},
-    { title: 'Số điện thoại', dataIndex: 'phone' },
+    { title: 'Số điện thoại', dataIndex: 'phone', width: 100, ellipsis: true},
     {title: 'Địa chỉ', dataIndex: 'address', width: 100, ellipsis: true},
     {
       title: 'Vai trò',
