@@ -6,7 +6,6 @@ const { Title, Text } = Typography;
 
 const ServiceCard = ({ service, isSelected, onSelect, onViewDetail }) => {
   const fallbackImage = "https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=500";
-
   return (
     <Card
       hoverable
