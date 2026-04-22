@@ -7,6 +7,7 @@ const axiosClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Cho phép gửi cookie nếu cần (nếu backend và frontend cùng domain hoặc đã cấu hình CORS đúng)
   paramsSerializer: (params) => queryString.stringify(params),
 });
 
@@ -33,20 +34,48 @@ axiosClient.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
     const status = error.response?.status;
-    const url = error.config?.url || '';
-    // Nếu Backend trả về lỗi 401 (Hết hạn Token hoặc chưa đăng nhập)
-    if (status === 401 && !url.includes('/Auth/login') && !url.includes('/Auth/register')) {
-      localStorage.removeItem('token');
-      window.location.href = '/login'; // Đá văng ra trang đăng nhập
+
+    // Nếu lỗi 401 và KHÔNG PHẢI là request đăng nhập/đăng ký
+    if (status === 401 && !originalRequest._retry && !originalRequest.url.includes('/Auth/login')) {
+      originalRequest._retry = true; // Đánh dấu đã thử refresh để tránh lặp vô tận
+
+      try {
+        // Gọi API Refresh Token
+        // Vì dùng withCredentials: true, trình duyệt sẽ tự đính kèm RefreshToken từ Cookie
+        const res = await axios.post(
+          'https://beauty-booking-7gd4.onrender.com/api/Auth/refresh-token', 
+          {}, 
+          { withCredentials: true }
+        );
+
+        if (res.data && res.data.accessToken) {
+          const newAccessToken = res.data.accessToken;
+          
+          // 1. Lưu Access Token mới vào LocalStorage
+          localStorage.setItem('accessToken', newAccessToken);
+
+          // 2. Gắn token mới vào request cũ và chạy lại
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return axiosClient(originalRequest);
+        }
+      } catch (refreshError) {
+        // Nếu refresh cũng lỗi (hết hạn hoàn toàn), xóa sạch và đá ra Login
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
     }
+
     return Promise.reject(error);
   }
 );
 
 export const GetToken = () => {
-  return localStorage.getItem('token') || sessionStorage.getItem('token');
+  return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
 };
 
 export const GetUser = () => {
@@ -55,8 +84,9 @@ export const GetUser = () => {
   try {
     return JSON.parse(userString);
   }catch {
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('user');
+    const storage = localStorage.getItem('user') ? localStorage : sessionStorage;
+    storage.removeItem('user');
+    storage.removeItem('accessToken'); // Xóa luôn token đi kèm
     return null;
   }
 };

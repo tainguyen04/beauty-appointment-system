@@ -45,7 +45,7 @@ namespace BeautyBooking.Controllers
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.None
             });
             return NoContent();
         }
@@ -68,7 +68,7 @@ namespace BeautyBooking.Controllers
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(7),
                 Secure = true, // Chỉ dùng nếu có HTTPS
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.None // Cho phép gửi cookie trong các yêu cầu cross-site (cần thiết nếu FE và BE khác domain)
             };
             Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }

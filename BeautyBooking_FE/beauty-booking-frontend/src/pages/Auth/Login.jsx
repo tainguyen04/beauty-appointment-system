@@ -34,13 +34,19 @@ const Login = () => {
     if (success && response) {
       const token = response.token;
       const userInfo = response.user; // Thay bằng đúng tên trường BE trả về nếu khác
+
+      // Trước khi lưu, xóa sạch token và user cũ để tránh rối nếu có
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('user');
       // Lưu vào LocalStorage
       if(values.remember) {
-        localStorage.setItem('token', token); 
+        localStorage.setItem('accessToken', token); 
         localStorage.setItem('user', JSON.stringify(userInfo));
         localStorage.setItem('rememberedEmail', values.email); // Lưu email để tự động điền lần sau
       }else {
-        sessionStorage.setItem('token', token); 
+        sessionStorage.setItem('accessToken', token); 
         sessionStorage.setItem('user', JSON.stringify(userInfo));
         localStorage.removeItem('rememberedEmail'); // Xóa email đã lưu nếu không nhớ đăng nhập
       }
