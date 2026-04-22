@@ -23,7 +23,7 @@ namespace BeautyBooking.EF
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<AppointmentService> AppointmentServices { get; set; }
         public DbSet<WorkSchedule> WorkSchedules { get; set; }
-        public DbSet<BlacklistToken> BlacklistTokens { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

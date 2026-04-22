@@ -4,6 +4,7 @@ using BeautyBooking.EF;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BeautyBooking.EF.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260422031812_tao_refreshToken")]
+    partial class tao_refreshToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,6 +166,30 @@ namespace BeautyBooking.EF.Migrations
                     b.ToTable("appointment_services", (string)null);
                 });
 
+            modelBuilder.Entity("BeautyBooking.Entities.BlacklistToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("expiry_date");
+
+                    b.Property<string>("Jti")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("jti");
+
+                    b.HasKey("Id")
+                        .HasName("pk_blacklist_tokens");
+
+                    b.ToTable("blacklist_tokens", (string)null);
+                });
+
             modelBuilder.Entity("BeautyBooking.Entities.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -300,16 +327,16 @@ namespace BeautyBooking.EF.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_refresh_tokens");
+                        .HasName("pk_refresh_token");
 
                     b.HasIndex("Token")
                         .IsUnique()
-                        .HasDatabaseName("ix_refresh_tokens_token");
+                        .HasDatabaseName("ix_refresh_token_token");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ix_refresh_tokens_user_id");
+                        .HasDatabaseName("ix_refresh_token_user_id");
 
-                    b.ToTable("refresh_tokens", (string)null);
+                    b.ToTable("refresh_token", (string)null);
                 });
 
             modelBuilder.Entity("BeautyBooking.Entities.Service", b =>
@@ -829,7 +856,7 @@ namespace BeautyBooking.EF.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_refresh_tokens_users_user_id");
+                        .HasConstraintName("fk_refresh_token_users_user_id");
 
                     b.Navigation("User");
                 });

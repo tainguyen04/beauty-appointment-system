@@ -25,6 +25,7 @@ namespace BeautyBooking.Controllers
             var result = await _authService.LoginAsync(request);
             if (result == null)
                 return Unauthorized();
+            SetRefreshTokenCookie(result.RefreshToken);
             return Ok(result);
         }
 
@@ -32,18 +33,44 @@ namespace BeautyBooking.Controllers
         public async Task<ActionResult<UserResponse>> Register([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
-            return Created(string.Empty,result);
+            return Created(string.Empty, result);
         }
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-            if (token == null)
-                return BadRequest("Token không được cung cấp.");
-            var result = await _authService.LogoutAsync(token);
-            if (!result)
-                return BadRequest();
+            var refreshToken = Request.Cookies["refreshToken"];
+            if(!string.IsNullOrEmpty(refreshToken))
+            await _authService.LogoutAsync(refreshToken);
+            Response.Cookies.Delete("refreshToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
             return NoContent();
+        }
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+                return Unauthorized("Không tìm thấy Refresh Token");
+            var result = await _authService.RefreshtokenAsync(refreshToken);
+            if (result == null)
+                return Unauthorized("Refresh Token không hợp lệ hoặc hết hạn");
+            SetRefreshTokenCookie(result.RefreshToken);
+            return Ok(new {accessToken = result.AccessToken, user = result.User});
+        }
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(7),
+                Secure = true, // Chỉ dùng nếu có HTTPS
+                SameSite = SameSiteMode.Strict
+            };
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }
     }
 }

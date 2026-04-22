@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text.Json;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
 
@@ -20,20 +21,20 @@ namespace BeautyBooking.Services
     {
         private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
-        private readonly IBlacklistTokenRepository _blacklistTokenRepo;
+        private readonly IRefreshTokenRepository _tokenRepository;
         private readonly AvatarDefaultSettings _avatarSettings;
         private readonly JwtOptions _jwtOptions;
         private readonly SymmetricSecurityKey _securityKey;
 
         public AuthService(IUserRepository userRepo, IMapper mapper, IOptions<JwtOptions> jwtOptions, 
-            SymmetricSecurityKey securityKey, AvatarDefaultSettings avatarSettings, IBlacklistTokenRepository blacklistTokenRepo)
+            SymmetricSecurityKey securityKey, AvatarDefaultSettings avatarSettings, IRefreshTokenRepository tokenRepository)
         {
             _userRepo = userRepo;
             _mapper = mapper;
             _jwtOptions = jwtOptions.Value;
             _securityKey = securityKey;
             _avatarSettings = avatarSettings;
-            _blacklistTokenRepo = blacklistTokenRepo;
+            _tokenRepository = tokenRepository;
         }
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
@@ -46,12 +47,23 @@ namespace BeautyBooking.Services
                 return null;
 
             var tokenString = GenerateToken(user);
+            var refreshTokenString = GenerateRefreshToken();
+            var refreshEntity = new RefreshToken
+            {
+                UserId = user.Id,
+                Token = refreshTokenString,
+                ExpiryDate = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false,
+            };
+            await _tokenRepository.CreateAsync(refreshEntity);
+            await _tokenRepository.SaveChangesAsync();
             var userResponse = _mapper.Map<UserResponse>(user);
 
             return new LoginResponse
             {
                 User = userResponse,
-                Token = tokenString
+                AccessToken = tokenString,
+                RefreshToken = refreshTokenString,
             };
         }
 
@@ -104,25 +116,51 @@ namespace BeautyBooking.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
-        public async Task<bool> LogoutAsync(string token)
+        public string GenerateRefreshToken()
         {
-            try
-            {
-                var handler = new JsonWebTokenHandler();
-                var jwt = handler.ReadJsonWebToken(token);
-                var jti = jwt.Id;
-                var expiryDate = jwt.ValidTo;
-                await _blacklistTokenRepo.BlacklistTokenAsync(jti, expiryDate);
-                await _blacklistTokenRepo.SaveChangesAsync();
-
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            var randomNumber = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
         }
 
+        public async Task<bool> LogoutAsync(string refreshToken)
+        {
+            var storedToken = await _tokenRepository.GetByTokenAsync(refreshToken);
+            if(storedToken == null)
+                return false;
+            storedToken.IsRevoked = true;
+            await _tokenRepository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<LoginResponse?> RefreshtokenAsync(string refreshToken)
+        {
+            var storedToken = await _tokenRepository.GetByTokenAsync(refreshToken);
+            if(storedToken == null || storedToken.IsRevoked || storedToken.ExpiryDate < DateTime.UtcNow)
+                return null;
+            var user = await _userRepo.GetByIdAsync(storedToken.UserId);
+            if(user == null || !user.IsActive)
+                return null;
+            storedToken.IsRevoked = true;
+            await _tokenRepository.SaveChangesAsync();
+            var newAccessToken = GenerateToken(user);
+            var newRefreshToken = GenerateRefreshToken();
+            var RefreshEntity = new RefreshToken
+            {
+                UserId = user.Id,
+                Token = newRefreshToken,
+                ExpiryDate = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false,
+            };
+            await _tokenRepository.CreateAsync(RefreshEntity);
+            await _tokenRepository.SaveChangesAsync();
+            return new LoginResponse
+            {
+                User = _mapper.Map<UserResponse>(user),
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken
+            };
+        }
     }
 }

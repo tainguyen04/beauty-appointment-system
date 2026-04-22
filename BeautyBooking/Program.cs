@@ -71,24 +71,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
             ClockSkew = TimeSpan.Zero
         };
-        option.Events = new JwtBearerEvents
-        {
-            OnTokenValidated = async context =>
-            {
-                var blacklistTokenRepo = context.HttpContext.RequestServices.GetRequiredService<IBlacklistTokenRepository>();
-                var jti = context.Principal?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
-                if (jti == null)
-                {
-                    context.Fail("Invalid token");
-                    return;
-                }
-                if (await blacklistTokenRepo.IsTokenBlacklistedAsync(jti))
-                {
-                    context.Fail("Token đã bị thu hồi");
-                    return;
-                }
-            }
-        };
     }
 );
 builder.Services.AddAuthorization(option =>

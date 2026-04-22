@@ -26,13 +26,14 @@ namespace BeautyBooking.Services
         private readonly ICurrentUserService _currentUserService;
         private readonly IPhotoService _photoService;
         private readonly IRepository<WebsiteLocalizationWard,int> _wardRepo;
+        private readonly IRefreshTokenRepository _refreshTokenRepo;
         private readonly ApplicationDbContext _dbContext;
         private readonly AvatarDefaultSettings _avatarSettings;
         public UserService(IUserRepository userRepo, IMapper mapper, 
             IStaffProfileService staffProfileService,ApplicationDbContext dbContext, 
             ICurrentUserService currentUserService, IPhotoService photoService, 
             IRepository<WebsiteLocalizationWard, int> wardRepo,
-            AvatarDefaultSettings avatarDefaultSettings)
+            AvatarDefaultSettings avatarDefaultSettings, IRefreshTokenRepository refreshTokenRepository)
         {
             _userRepo = userRepo;   
             _mapper = mapper;
@@ -42,6 +43,7 @@ namespace BeautyBooking.Services
             _photoService = photoService;
             _wardRepo = wardRepo;
             _avatarSettings = avatarDefaultSettings;
+            _refreshTokenRepo = refreshTokenRepository;
         }
 
         public async Task<bool> ChangeMyPasswordAsync(ChangePasswordRequest request)
@@ -57,8 +59,13 @@ namespace BeautyBooking.Services
                 throw new InvalidOperationException("User không tồn tại.");
             if(!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
                 throw new InvalidOperationException("Mật khẩu cũ không chính xác");
+            if (BCrypt.Net.BCrypt.Verify(request.NewPassword, user.PasswordHash))
+                throw new InvalidOperationException("Mật khẩu mới không được trùng với mật khẩu hiện tại.");
             var newHashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             user.PasswordHash = newHashedPassword;
+            var userTokens = await _refreshTokenRepo.FindAllAsync(userId.Value);
+            foreach (var token in userTokens)
+                token.IsRevoked = true;
             await _userRepo.SaveChangesAsync();
             return true;
         }
