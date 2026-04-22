@@ -56,12 +56,5 @@ Dự án giải quyết bài toán đặt lịch dịch vụ làm đẹp tại c
 - Truy cập thư mục `BeautyBooking_FE/beauty-booking-frontend/`.
 - Chạy lệnh: `npm install` để cài đặt Ant Design và các thư viện liên quan.
 - Chạy lệnh: `npm run dev`
-
-## 🌐 Lưu ý triển khai Production (Render)
-Cần cấu hình các Environment Variables:
-- `ConnectionStrings__DefaultConnection`: Chuỗi kết nối DB SQL Server.
-- `Jwt__Key`: Khóa bí mật JWT (32+ ký tự).
-- Thiết lập CORS trỏ về URL của Frontend và bật `AllowCredentials` để hỗ trợ Cookie.
-
 ---
-⭐ *Dự án được thực hiện bởi tainguyen04 - 2024*
+⭐ *Dự án được thực hiện bởi tainguyen04 - 2026*
