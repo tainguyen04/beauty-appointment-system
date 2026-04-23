@@ -77,8 +77,7 @@ const Login = () => {
           <Form.Item
             name="email"  
             rules={[
-              { required: true, message: 'Vui lòng nhập Email!' },
-              { pattern: /^[a-zA-Z0-9_]+$/, message: 'Tên tài khoản không được chứa ký tự đặc biệt!' }
+              { required: true, message: 'Vui lòng nhập Tài khoản!' },
             ]}
           >
             <Input prefix={<UserOutlined />} placeholder="Email của bạn" autoComplete='username'/>
