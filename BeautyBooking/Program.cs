@@ -51,11 +51,16 @@ builder.Services.AddControllers()
         option.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
-var key = Encoding.UTF8.GetBytes(jwtSettings.Key);
+// Lấy giá trị từ Config, nếu null thì khởi tạo object mới để tránh sập
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
+
+// Kiểm tra Key, nếu trên Render quên chưa nhập thì dùng một Key tạm để App không bị Crash
+var secretKey = jwtSettings.Key ?? "MotChuoiBiMatMacDinhSieuDaiTren32KyTu"; 
+var key = Encoding.UTF8.GetBytes(secretKey);
+
 var securityKey = new SymmetricSecurityKey(key);
 builder.Services.AddSingleton(securityKey);
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(option =>
     {
@@ -65,10 +70,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidAudience = jwtSettings.Audience,
+            ValidIssuer = jwtSettings.Issuer ?? "https://beauty-booking-7gd4.onrender.com",
+            ValidAudience = jwtSettings.Audience ?? "https://beauty-appointment-system-ui.onrender.com",
             IssuerSigningKey = securityKey,
-
             ClockSkew = TimeSpan.Zero
         };
     }
