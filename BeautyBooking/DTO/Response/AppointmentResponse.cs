@@ -7,7 +7,7 @@ namespace BeautyBooking.DTO.Response
     {
         public int Id { get; set; }
         public int UserId { get; set; }
-        public int StaffId { get; set; }
+        public int? StaffId { get; set; }
         public int WardId { get; set; }
         public string? UserName { get; set; }
         public string? StaffName { get; set; }

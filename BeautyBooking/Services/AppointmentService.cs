@@ -127,11 +127,11 @@ namespace BeautyBooking.Services
 
             if (filter.Status.HasValue)
                 query = query.Where(a => a.AppointmentStatus == filter.Status.Value);
-
             return await query
                 .OrderByDescending(a => a.AppointmentDate)
                 .ProjectTo<AppointmentResponse>(_mapper.ConfigurationProvider)
                 .ToPagedResultAsync(filter.PageNumber, filter.PageSize);
+
         }
 
         public async Task<AppointmentResponse?> GetByIdWithDetailsAsync(int id)
