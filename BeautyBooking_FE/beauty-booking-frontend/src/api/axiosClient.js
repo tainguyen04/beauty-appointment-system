@@ -30,41 +30,34 @@ axiosClient.interceptors.request.use(
 // Interceptor cho Response: Xử lý lỗi tập trung
 axiosClient.interceptors.response.use(
   (response) => {
-    // Nếu thành công, chỉ lấy cái ruột data trả về, bỏ qua các thông tin rườm rà của HTTP
-    if (response && response.data) {
-      return response.data;
-    }
-    return response;
+    return response?.data ?? response;
   },
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
 
-    // Nếu lỗi 401 và KHÔNG PHẢI là request đăng nhập/đăng ký
-    if (status === 401 && !originalRequest._retry && !originalRequest.url.includes('/Auth/login')) {
-      originalRequest._retry = true; // Đánh dấu đã thử refresh để tránh lặp vô tận
+    if (
+      status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url.includes('/Auth/login') &&
+      !originalRequest.url.includes('/Auth/refresh-token')
+    ) {
+      originalRequest._retry = true;
 
       try {
-        // Gọi API Refresh Token
-        // Vì dùng withCredentials: true, trình duyệt sẽ tự đính kèm RefreshToken từ Cookie
-        const res = await axios.post(
-          'https://beauty-booking-7gd4.onrender.com/api/Auth/refresh-token', 
-          {}, 
-          { withCredentials: true }
-        );
+        const res = await axiosClient.post('/Auth/refresh-token');
 
-        if (res.data && res.data.accessToken) {
-          const newAccessToken = res.data.accessToken;
-          
-          // 1. Lưu Access Token mới vào LocalStorage
+        if (res && res.accessToken) {
+          const newAccessToken = res.accessToken;
+
           localStorage.setItem('accessToken', newAccessToken);
 
-          // 2. Gắn token mới vào request cũ và chạy lại
+          originalRequest.headers = originalRequest.headers || {};
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
           return axiosClient(originalRequest);
         }
       } catch (refreshError) {
-        // Nếu refresh cũng lỗi (hết hạn hoàn toàn), xóa sạch và đá ra Login
         localStorage.clear();
         sessionStorage.clear();
         window.location.href = '/login';

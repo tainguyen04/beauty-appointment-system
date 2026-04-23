@@ -131,7 +131,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFE",
         policy => policy
-            .WithOrigins("https://beauty-appointment-system-ui.onrender.com", "http://localhost:5173", "https://beauty-booking-7gd4.onrender.com") // FE của bạn
+            .WithOrigins("https://beauty-appointment-system-ui.onrender.com", 
+            "http://localhost:5173", "https://beauty-booking-7gd4.onrender.com") // FE của bạn
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()

@@ -32,7 +32,7 @@ const Login = () => {
 
     // 2. Nếu thành công, tiến hành lưu token và điều hướng
     if (success && response) {
-      const token = response.token;
+      const token = response.accessToken; // Thay bằng đúng tên trường BE trả về nếu khác
       const userInfo = response.user; // Thay bằng đúng tên trường BE trả về nếu khác
 
       // Trước khi lưu, xóa sạch token và user cũ để tránh rối nếu có
