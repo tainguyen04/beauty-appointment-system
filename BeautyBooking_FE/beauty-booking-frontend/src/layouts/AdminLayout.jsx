@@ -4,7 +4,7 @@ import {
   DashboardOutlined, UserOutlined, TeamOutlined, IdcardOutlined,
   CalendarOutlined, LogoutOutlined, DownOutlined, SettingOutlined,
   CustomerServiceOutlined, EnvironmentOutlined, AppstoreOutlined,ScheduleOutlined, CoffeeOutlined
-  ,ScissorOutlined ,TagOutlined
+  ,ScissorOutlined ,TagOutlined,HomeOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import authApi from '../api/authApi';
@@ -148,7 +148,7 @@ const menuItems = [
   const userMenuItems = {
     items: [
       { key: 'profile', label: 'Thông tin cá nhân', icon: <UserOutlined /> },
-      { key: 'settings', label: 'Trang chủ', icon: <SettingOutlined /> },
+      { key: 'settings', label: 'Trang chủ', icon: <HomeOutlined /> },
       { type: 'divider' },
       { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, danger: true },
     ],
