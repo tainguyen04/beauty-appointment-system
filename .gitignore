@@ -416,3 +416,9 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# === Custom Ignore ===
+appsettings.Development.json
+appsettings.Production.json
+# Nếu bạn muốn chặn toàn bộ các file settings ngoại trừ file gốc
+# appsettings.*.json
