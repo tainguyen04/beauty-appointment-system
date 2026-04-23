@@ -49,11 +49,10 @@ const Register = () => {
           <Form.Item
             name="email"
             rules={[
-              { required: true, message: 'Vui lòng nhập Email!' },
-              { type: 'email', message: 'Email không đúng định dạng!' }
+              { required: true, message: 'Vui lòng nhập Tên đăng nhập!' }
             ]}
           >
-            <Input prefix={<MailOutlined />} placeholder="Email" />
+            <Input prefix={<MailOutlined />} placeholder="Tên đăng nhập" />
           </Form.Item>
 
           <Form.Item
