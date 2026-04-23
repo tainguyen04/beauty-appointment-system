@@ -138,7 +138,7 @@ const menuItems = [
         await handleLogout();
         break;
       case 'settings':
-        message.info('Chức năng cài đặt đang phát triển');
+        navigate('/'); // Chuyển về trang chủ nếu có phần cài đặt chung nào đó
         break;
       default:
         break;
@@ -148,7 +148,7 @@ const menuItems = [
   const userMenuItems = {
     items: [
       { key: 'profile', label: 'Thông tin cá nhân', icon: <UserOutlined /> },
-      { key: 'settings', label: 'Cài đặt', icon: <SettingOutlined /> },
+      { key: 'settings', label: 'Trang chủ', icon: <SettingOutlined /> },
       { type: 'divider' },
       { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, danger: true },
     ],
