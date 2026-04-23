@@ -127,7 +127,7 @@ const Profile = () => {
             <Divider />
             
             <div style={{ textAlign: 'left' }}>
-              <p><MailOutlined /> <Text strong> Email:</Text> {user?.email}</p>
+              <p><MailOutlined /> <Text strong> Tên đăng nhập:</Text> {user?.email}</p>
               <p><PhoneOutlined /> <Text strong> SĐT:</Text> {user?.phone || user?.phoneNumber || 'N/A'}</p>
               <p><EnvironmentOutlined /> <Text strong> Địa chỉ:</Text> {user?.address || 'N/A'}</p>
               <p><SafetyCertificateOutlined /> <Text strong> Trạng thái:</Text> <Tag color="green">Hoạt động</Tag></p>
