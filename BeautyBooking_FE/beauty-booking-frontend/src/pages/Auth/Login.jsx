@@ -78,7 +78,7 @@ const Login = () => {
             name="email"  
             rules={[
               { required: true, message: 'Vui lòng nhập Email!' },
-              { type: 'email', message: 'Email không đúng định dạng!' }
+              { pattern: /^[a-zA-Z0-9_]+$/, message: 'Tên tài khoản không được chứa ký tự đặc biệt!' }
             ]}
           >
             <Input prefix={<UserOutlined />} placeholder="Email của bạn" autoComplete='username'/>
