@@ -109,7 +109,9 @@ export const getStatusConfig = (status) =>
 
 // Hàm lưu token vào LocalStorage hoặc SessionStorage
 export const setToken = (token) => {
-  if (localStorage.getItem('accessToken')) {
+  const remember = localStorage.getItem('remember') === 'true';
+
+  if (remember) {
     localStorage.setItem('accessToken', token);
   } else {
     sessionStorage.setItem('accessToken', token);

@@ -42,6 +42,7 @@ const Login = () => {
       sessionStorage.removeItem('user');
       // Lưu vào LocalStorage
       if(values.remember) {
+        localStorage.setItem('remember', 'true');
         localStorage.setItem('accessToken', token); 
         localStorage.setItem('user', JSON.stringify(userInfo));
         localStorage.setItem('rememberedEmail', values.email); // Lưu email để tự động điền lần sau
@@ -49,6 +50,7 @@ const Login = () => {
         sessionStorage.setItem('accessToken', token); 
         sessionStorage.setItem('user', JSON.stringify(userInfo));
         localStorage.removeItem('rememberedEmail'); // Xóa email đã lưu nếu không nhớ đăng nhập
+        localStorage.removeItem('remember');
       }
 
       // 3. CHUYỂN HƯỚNG THÔNG MINH DỰA VÀO QUYỀN (ROLE)
