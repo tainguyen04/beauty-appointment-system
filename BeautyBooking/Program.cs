@@ -86,6 +86,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero,
             RoleClaimType = ClaimTypes.Role
         };
+        option.Events = new JwtBearerEvents
+{
+    OnAuthenticationFailed = context =>
+    {
+        Console.WriteLine("❌ AUTH FAILED: " + context.Exception.Message);
+        return Task.CompletedTask;
+    },
+    OnTokenValidated = context =>
+    {
+        Console.WriteLine("✅ TOKEN VALID");
+        return Task.CompletedTask;
+    }
+};
     }
 );
 builder.Services.AddAuthorization(option =>
