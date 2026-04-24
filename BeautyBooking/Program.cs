@@ -97,14 +97,16 @@ builder.Services.AddAuthorization(option =>
 });
 builder.Services.AddSingleton(sp =>
 {
-    var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>()!;
+    var cloudinarySettings = new CloudinarySettings();
+    builder.Configuration.GetSection("Cloudinary").Bind(cloudinarySettings);
     var account = new Account(cloudinarySettings.CloudName, cloudinarySettings.ApiKey, cloudinarySettings.ApiSecret);
     return new Cloudinary(account);
 });
 
 builder.Services.AddSingleton(sp =>
 {
-    var settings = builder.Configuration.GetSection("AvatarDefaultSettings").Get<AvatarDefaultSettings>()!;
+    var settings = new AvatarDefaultSettings();
+    builder.Configuration.GetSection("AvatarDefaultSettings").Bind(settings);
     return settings;
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
