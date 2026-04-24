@@ -58,6 +58,10 @@ var jwtSettings = new JwtOptions();
 // 2. Dùng Bind để đổ dữ liệu từ config (bao gồm cả Env Vars) vào object
 // Nó sẽ tìm các biến có tiền tố "Jwt__" và map vào các thuộc tính tương ứng
 builder.Configuration.GetSection("Jwt").Bind(jwtSettings);
+
+builder.Services.Configure<JwtOptions>(
+    builder.Configuration.GetSection("Jwt")
+);
 // 3. (QUAN TRỌNG) Kiểm tra nếu sau khi Bind mà vẫn trống (do cache Render)
 // thì gán giá trị mặc định để không bị Crash (Lỗi 500)
 if (string.IsNullOrEmpty(jwtSettings.Key))
