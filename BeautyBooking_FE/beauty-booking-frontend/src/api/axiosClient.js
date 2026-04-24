@@ -70,7 +70,10 @@ axiosClient.interceptors.response.use(
 );
 
 export const GetToken = () => {
-  return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+  const sessionToken = sessionStorage.getItem('accessToken');
+  if (sessionToken) return sessionToken;
+
+  return localStorage.getItem('accessToken');
 };
 
 export const GetUser = () => {
