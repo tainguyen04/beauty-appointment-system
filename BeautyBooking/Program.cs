@@ -57,6 +57,12 @@ var jwtSettings = new JwtOptions();
 // 2. Dùng Bind để đổ dữ liệu từ config (bao gồm cả Env Vars) vào object
 // Nó sẽ tìm các biến có tiền tố "Jwt__" và map vào các thuộc tính tương ứng
 builder.Configuration.GetSection("Jwt").Bind(jwtSettings);
+Console.WriteLine("==== JWT CONFIG DEBUG ====");
+Console.WriteLine("Key: " + jwtSettings.Key);
+Console.WriteLine("Issuer: " + jwtSettings.Issuer);
+Console.WriteLine("Audience: " + jwtSettings.Audience);
+Console.WriteLine("ExpiryMinutes: " + jwtSettings.ExpiryMinutes);
+Console.WriteLine("==========================");
 
 // 3. (QUAN TRỌNG) Kiểm tra nếu sau khi Bind mà vẫn trống (do cache Render)
 // thì gán giá trị mặc định để không bị Crash (Lỗi 500)
@@ -98,7 +104,7 @@ builder.Services.AddAuthorization(option =>
 builder.Services.AddSingleton(sp =>
 {
     var cloudinarySettings = new CloudinarySettings();
-    builder.Configuration.GetSection("Cloudinary").Bind(cloudinarySettings);
+    builder.Configuration.GetSection("CloudinarySettings").Bind(cloudinarySettings);
     var account = new Account(cloudinarySettings.CloudName, cloudinarySettings.ApiKey, cloudinarySettings.ApiSecret);
     return new Cloudinary(account);
 });
