@@ -184,8 +184,8 @@ const UserManager = () => {
         </Space>
       ),
     },
-    { title: 'Tên đăng nhập', dataIndex: 'email' ,width: 100, ellipsis: true},
-    { title: 'Số điện thoại', dataIndex: 'phone', width: 100, ellipsis: true},
+    { title: 'Tên đăng nhập', dataIndex: 'email' ,width: 70, ellipsis: true},
+    { title: 'Số điện thoại', dataIndex: 'phone', width: 70, ellipsis: true},
     {title: 'Địa chỉ', dataIndex: 'address', width: 100, ellipsis: true},
     {
       title: 'Vai trò',
@@ -204,7 +204,7 @@ const UserManager = () => {
     title: 'Khu vực (Phường/Xã)',
     dataIndex: 'wardName', // Trỏ thẳng vào wardName do backend trả về
     key: 'wardName',
-    width: 200,
+    width: 150,
     ellipsis: true,
     render: (wardName) => {
         return wardName ? (
