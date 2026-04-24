@@ -51,8 +51,22 @@ builder.Services.AddControllers()
         option.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+// 1. Thay vì dùng .Get<JwtOptions>(), hãy khởi tạo mới
+var jwtSettings = new JwtOptions();
+
+// 2. Dùng Bind để đổ dữ liệu từ config (bao gồm cả Env Vars) vào object
+// Nó sẽ tìm các biến có tiền tố "Jwt__" và map vào các thuộc tính tương ứng
+builder.Configuration.GetSection("Jwt").Bind(jwtSettings);
+
+// 3. (QUAN TRỌNG) Kiểm tra nếu sau khi Bind mà vẫn trống (do cache Render)
+// thì gán giá trị mặc định để không bị Crash (Lỗi 500)
+if (string.IsNullOrEmpty(jwtSettings.Key))
+{
+    jwtSettings.Key = "DayLaChuoiBiMatDuPhongSieuDaiTren32KyTu"; 
+    jwtSettings.Issuer = "https://beauty-booking-7gd4.onrender.com";
+    jwtSettings.Audience = "https://beauty-appointment-system-ui.onrender.com";
+}
+
 var key = Encoding.UTF8.GetBytes(jwtSettings.Key);
 var securityKey = new SymmetricSecurityKey(key);
 builder.Services.AddSingleton(securityKey);
