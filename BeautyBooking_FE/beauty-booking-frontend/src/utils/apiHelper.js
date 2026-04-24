@@ -106,3 +106,12 @@ export const getStatusConfig = (status) =>
     label: status,
     color: 'default'
   };
+
+// Hàm lưu token vào LocalStorage hoặc SessionStorage
+export const setToken = (token) => {
+  if (localStorage.getItem('accessToken')) {
+    localStorage.setItem('accessToken', token);
+  } else {
+    sessionStorage.setItem('accessToken', token);
+  }
+};

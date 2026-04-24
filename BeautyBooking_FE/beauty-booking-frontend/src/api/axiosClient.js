@@ -1,5 +1,6 @@
 import axios from 'axios';
 import queryString from 'query-string';
+import { setToken } from '../utils/apiHelper';
 
 // Tạo một instance của axios với cấu hình mặc định
 const axiosClient = axios.create({
@@ -50,8 +51,7 @@ axiosClient.interceptors.response.use(
         if (res && res.accessToken) {
           const newAccessToken = res.accessToken;
 
-          localStorage.setItem('accessToken', newAccessToken);
-
+        setToken(newAccessToken); // Cập nhật token mới vào storage để các request sau tự động dùng token mới
           originalRequest.headers = originalRequest.headers || {};
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
