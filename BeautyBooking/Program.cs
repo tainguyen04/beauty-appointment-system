@@ -56,19 +56,9 @@ builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection("Jwt")
 );
 
-// 🔥 2. Lấy config từ DI (thay vì new + Bind)
 var jwtSettings = builder.Configuration
     .GetSection("Jwt")
     .Get<JwtOptions>() ?? new JwtOptions();
-
-// 3. (QUAN TRỌNG) Kiểm tra nếu sau khi Bind mà vẫn trống (do cache Render)
-// thì gán giá trị mặc định để không bị Crash (Lỗi 500)
-if (string.IsNullOrEmpty(jwtSettings.Key))
-{
-    jwtSettings.Key = "DayLaChuoiBiMatDuPhongSieuDaiTren32KyTu"; 
-    jwtSettings.Issuer = "https://beauty-booking-7gd4.onrender.com";
-    jwtSettings.Audience = "https://beauty-appointment-system-ui.onrender.com";
-}
 
 var key = Encoding.UTF8.GetBytes(jwtSettings.Key);
 var securityKey = new SymmetricSecurityKey(key);
@@ -89,19 +79,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero,
             RoleClaimType = ClaimTypes.Role
         };
-        option.Events = new JwtBearerEvents
-{
-    OnAuthenticationFailed = context =>
-    {
-        Console.WriteLine("❌ AUTH FAILED: " + context.Exception.Message);
-        return Task.CompletedTask;
-    },
-    OnTokenValidated = context =>
-    {
-        Console.WriteLine("✅ TOKEN VALID");
-        return Task.CompletedTask;
-    }
-};
+        
     }
 );
 builder.Services.AddAuthorization(option =>
