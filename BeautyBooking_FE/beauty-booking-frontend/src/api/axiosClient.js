@@ -37,36 +37,37 @@ axiosClient.interceptors.response.use(
     const originalRequest = error.config;
     const status = error.response?.status;
 
-    if (
-      status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url.includes('/Auth/login') &&
-      !originalRequest.url.includes('/Auth/refresh-token')
-    ) {
-      originalRequest._retry = true;
+    if (status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
 
-      try {
-        const res = await axiosClient.post('/Auth/refresh-token');
+        try {
+            // DÙNG AXIOS GỐC (không dùng axiosClient) để tránh bị dính interceptor cũ
+            const res = await axios.post(
+                'https://beauty-booking-7gd4.onrender.com/api/Auth/refresh-token', 
+                {}, 
+                { withCredentials: true } // Quan trọng để gửi kèm Refresh Token trong Cookie
+            );
 
-        if (res && res.accessToken) {
-          const newAccessToken = res.accessToken;
+            // Kiểm tra cấu trúc data trả về của bạn (thường axios gốc sẽ là res.data)
+            const data = res.data; 
 
-        setToken(newAccessToken); // Cập nhật token mới vào storage để các request sau tự động dùng token mới
-          originalRequest.headers = originalRequest.headers || {};
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-          return axiosClient(originalRequest);
+            if (data && data.accessToken) {
+                const newAccessToken = data.accessToken;
+                setToken(newAccessToken);
+                
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                return axios(originalRequest); // Gọi lại request gốc bằng axios thường
+            }
+        } catch (refreshError) {
+            console.error("Refresh token failed, kicking out...");
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/login';
+            return Promise.reject(refreshError);
         }
-      } catch (refreshError) {
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
     }
-
     return Promise.reject(error);
-  }
+}
 );
 
 export const GetToken = () => {
