@@ -15,6 +15,7 @@ using CloudinaryDotNet;
 using BeautyBooking.Interface.Repository;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.JsonWebTokens;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
@@ -57,13 +58,6 @@ var jwtSettings = new JwtOptions();
 // 2. Dùng Bind để đổ dữ liệu từ config (bao gồm cả Env Vars) vào object
 // Nó sẽ tìm các biến có tiền tố "Jwt__" và map vào các thuộc tính tương ứng
 builder.Configuration.GetSection("Jwt").Bind(jwtSettings);
-Console.WriteLine("==== JWT CONFIG DEBUG ====");
-Console.WriteLine("Key: " + jwtSettings.Key);
-Console.WriteLine("Issuer: " + jwtSettings.Issuer);
-Console.WriteLine("Audience: " + jwtSettings.Audience);
-Console.WriteLine("ExpiryMinutes: " + jwtSettings.ExpiryMinutes);
-Console.WriteLine("==========================");
-
 // 3. (QUAN TRỌNG) Kiểm tra nếu sau khi Bind mà vẫn trống (do cache Render)
 // thì gán giá trị mặc định để không bị Crash (Lỗi 500)
 if (string.IsNullOrEmpty(jwtSettings.Key))
@@ -89,7 +83,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = securityKey,
 
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            RoleClaimType = ClaimTypes.Role
         };
     }
 );
