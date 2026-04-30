@@ -357,7 +357,7 @@ const AppointmentManager = () => {
       </ul>
     );
   };
-
+  const disabledDate = (current) => current && current < dayjs().startOf('day');
   return (
     <Card bordered={false} size="small">
       <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
@@ -397,7 +397,12 @@ const AppointmentManager = () => {
         <Table columns={columns} dataSource={Array.isArray(data) ? data : (data?.items || [])} loading={loading} rowKey="id" size="middle" onChange={handleTableChange} pagination={{ ...pagination, showSizeChanger: true, pageSizeOptions: ['5', '10', '20', '50'] }} />
       ) : (
         <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #f0f0f0' }}>
-          <Spin spinning={loading} tip="Đang tải lịch..."><Calendar fullscreen={true} cellRender={(current, info) => info.type === 'date' ? dateCellRender(current) : info.originNode} onPanelChange={() => runFetch()} onSelect={(date, {source}) => { if(source === 'date'){ handleAddNew(); form.setFieldsValue({ appointmentDate: date }); } }} /></Spin>
+          <Spin spinning={loading} tip="Đang tải lịch...">
+            <Calendar fullscreen={true} 
+              cellRender={(current, info) => info.type === 'date' ? dateCellRender(current) : info.originNode} 
+              onPanelChange={() => runFetch()} 
+              onSelect={(date, {source}) => { if(source === 'date'){ handleAddNew(); form.setFieldsValue({ appointmentDate: date }); } }} />
+          </Spin>
         </div>
       )}
 
@@ -409,7 +414,9 @@ const AppointmentManager = () => {
            <Row gutter={16}>
               <Col span={12}>
                 <Form.Item name="appointmentDate" label="Ngày hẹn" rules={[{ required: true }]}>
-                  <DatePicker style={{width:'100%'}} format="DD/MM/YYYY" />
+                  <DatePicker style={{width:'100%'}} 
+                              format="DD/MM/YYYY" 
+                              disabledDate={disabledDate}/>
                 </Form.Item>
               </Col>
               <Col span={12}>

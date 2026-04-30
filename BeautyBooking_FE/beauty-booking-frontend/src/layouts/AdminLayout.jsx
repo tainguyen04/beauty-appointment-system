@@ -55,7 +55,7 @@ const menuItems = [
     label: 'Quản lý Tài khoản',
     children: [
       ...isAdmin ? [
-      { key: '/admin/users', icon: <UserOutlined />, label: 'Khách hàng' },
+      { key: '/admin/users', icon: <UserOutlined />, label: 'Tài khoản' },
       ] : [],
       { key: '/admin/staffs', icon: <IdcardOutlined />, label: 'Nhân viên' },
     ],
