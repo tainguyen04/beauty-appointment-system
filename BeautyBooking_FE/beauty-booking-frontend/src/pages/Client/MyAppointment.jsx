@@ -94,6 +94,7 @@ const MyAppointment = () => {
 
   const canCancelAppointment = (record) => {
   if (!record?.appointmentDate) return false;
+  if (record.appointmentStatus === APPOINTMENT_STATUS.Pending) return true;
 
   const now = dayjs();
 
@@ -102,12 +103,7 @@ const MyAppointment = () => {
     .hour(Math.floor(record.startTime / 60))
     .minute(record.startTime % 60);
 
-  const diffHours = appointmentDateTime.diff(now, 'hour');
-
-  // Điều kiện:
-  // 1. Chưa tới ngày
-  // 2. Còn hơn 24h
-  return diffHours >= 24;
+  return now.isBefore(appointmentDateTime.subtract(24, 'hour'));
 };
 
 const handleCancel = async (record) => {
