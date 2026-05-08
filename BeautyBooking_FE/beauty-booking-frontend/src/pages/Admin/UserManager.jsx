@@ -397,10 +397,10 @@ const UserManager = () => {
 
             {/* Khu vực (wardId): Dùng cho cả tạo mới và cập nhật */}
             <Col span={12}>
-              <Form.Item name="wardId" label="Khu vực (Phường/Xã)">
+              <Form.Item name="wardId" label="Chi nhánh">
                 <Select
                   showSearch 
-                  placeholder="Chọn khu vực"
+                  placeholder="Chọn chi nhánh"
                   loading={loadingWards}
                   optionFilterProp="children"
                   filterOption={(input, option) =>

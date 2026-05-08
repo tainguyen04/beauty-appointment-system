@@ -2,8 +2,8 @@ import axiosClient from './axiosClient';
 
 const wardApi = {
   // [GET] /api/Ward
-  getAll: () => {
-    return axiosClient.get('/Ward');
+  getAll: (params) => {
+    return axiosClient.get('/Ward', { params });
   },
 
   // [GET] /api/Ward/{id}

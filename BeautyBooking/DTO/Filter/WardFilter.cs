@@ -2,6 +2,6 @@
 {
     public class WardFilter
     {
-        public List<int>? StaffIds { get; set; }
+        public int? StaffId { get; set; }
     }
 }

@@ -167,10 +167,10 @@ const Profile = () => {
                       </Form.Item>
                     </Col>
                     <Col span={12}>
-                      <Form.Item name="wardId" label="Khu vực (Phường/Xã)">
+                      <Form.Item name="wardId" label="Chi nhánh thường sử dụng">
                         <Select
                           showSearch 
-                          placeholder="Chọn khu vực quản lý"
+                          placeholder="Chọn chi nhánh"
                           loading={loadingWards}
                           optionFilterProp="children"
                           filterOption={(input, option) =>

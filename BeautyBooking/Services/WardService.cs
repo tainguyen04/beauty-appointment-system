@@ -41,8 +41,8 @@ namespace BeautyBooking.Services
         public async Task<IEnumerable<WardResponse>> GetAllAsync(WardFilter filter)
         {
             var query = _wardRepo.Query();
-            if (filter != null && filter.StaffIds.Count != 0)
-                query = query.Where(w => w.StaffProfiles.Any(sw => filter.StaffIds.Contains(sw.Id)));
+            if (filter.StaffId.HasValue && filter.StaffId.Value > 0)
+                query = query.Where(w => w.StaffProfiles.Any(sw => sw.Id == filter.StaffId.Value));
             var wards = await query.ToListAsync();
             return _mapper.Map<IEnumerable<WardResponse>>(wards);
         }

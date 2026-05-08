@@ -7,7 +7,7 @@ import {
 } from 'antd';
 import { 
   EnvironmentOutlined, ClockCircleOutlined, 
-  UserOutlined, CheckCircleOutlined, SmileOutlined 
+  UserOutlined, CheckCircleOutlined, SmileOutlined,StarFilled
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -170,8 +170,11 @@ const Appointment = () => {
         
         setServiceData(fetchedServices);
 
-        const wardRes = await wardApi.getAll();
-        setWardData(Array.isArray(wardRes) ? wardRes : wardRes?.items || []);
+        const wardRes = await wardApi.getAll({
+          staffId: staffFromHome ? staffFromHome.id : undefined, // Nếu có nhân viên, lọc chi nhánh theo nhân viên đó
+        });
+        const wards = Array.isArray(wardRes) ? wardRes : wardRes?.items || [];
+        setWardData(wards);
       } catch (error) {
         console.log(error);
         message.error('Lỗi khi tải dữ liệu. Vui lòng thử lại!');
@@ -391,6 +394,7 @@ const Appointment = () => {
     <Row gutter={[16, 16]}>
       {wardData.map((ward) => {
         const id = ward.id || ward.wardId;
+        const isFavorite = currentUser?.wardId === id; // Kiểm tra xem đây có phải là chi nhánh yêu thích của user không (để highlight sẵn)
         const isSelected = bookingData.wardId === id;
         
         return (
@@ -421,9 +425,24 @@ const Appointment = () => {
                   }}>
                     <EnvironmentOutlined style={{ fontSize: '20px', color: isSelected ? '#fff' : '#eb2f96' }} />
                   </div>
-                  {isSelected && (
-                    <Badge status="success" text={<Text strong style={{ color: '#eb2f96' }}>Đang chọn</Text>} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {isFavorite && (
+                    <Tooltip title="Chi nhánh thường sử dụng">
+                      <StarFilled style={{ color: '#faad14', fontSize: '18px' }} />
+                    </Tooltip>
                   )}
+
+                  {isSelected && (
+                    <Badge
+                      status="success"
+                      text={
+                        <Text strong style={{ color: '#eb2f96' }}>
+                          Đang chọn
+                        </Text>
+                      }
+                    />
+                  )}
+                </div>
                 </div>
 
                 <div>
