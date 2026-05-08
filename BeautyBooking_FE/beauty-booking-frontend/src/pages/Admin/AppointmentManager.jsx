@@ -434,12 +434,12 @@ const AppointmentManager = () => {
               </Col>
               
               <Col span={12}>
-                <Form.Item name="wardId" label="Khu vực (Phường/Xã)" rules={[{ required: true, message: 'Vui lòng chọn khu vực!' }]}>
+                <Form.Item name="wardId" label="Chi nhánh" rules={[{ required: true, message: 'Vui lòng chọn chi nhánh!' }]}>
                   {/* CẬP NHẬT: Disabled khi Sửa để Form vẫn giữ giá trị wardId, xử lý triệt để lỗi trống Select do key từ Backend */}
                   <Select 
                     showSearch 
                     disabled={isEdit}
-                    placeholder="Chọn khu vực" 
+                    placeholder="Chọn chi nhánh" 
                     suffixIcon={<EnvironmentOutlined />}
                     options={wardList.map(w => ({ 
                       label: w.name || w.wardName || w.WardName || w.title, 
@@ -479,7 +479,7 @@ const AppointmentManager = () => {
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
             <Descriptions title="Thông tin chung" column={1} bordered size="small">
               <Descriptions.Item label="Khách hàng"><Text strong>{recordDetails.userName}</Text></Descriptions.Item>
-              <Descriptions.Item label="Khu vực"><Tag color="blue">{recordDetails.wardName || 'Chưa cập nhật'}</Tag></Descriptions.Item>
+              <Descriptions.Item label="Chi nhánh"><Tag color="blue">{recordDetails.wardName || 'Chưa cập nhật'}</Tag></Descriptions.Item>
               <Descriptions.Item label="Nhân viên">{recordDetails.staffName || 'Chưa phân công'}</Descriptions.Item>
               <Descriptions.Item label="Ngày hẹn">{dayjs(recordDetails.appointmentDate).format('DD/MM/YYYY')}</Descriptions.Item>
               <Descriptions.Item label="Khung giờ">{recordDetails.timeRange || `${convertMinutesToTimeStr(recordDetails.startTime)} - ${convertMinutesToTimeStr(recordDetails.endTime)}`}</Descriptions.Item>
