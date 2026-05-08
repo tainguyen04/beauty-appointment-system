@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 
@@ -11,7 +12,7 @@ namespace BeautyBooking.Interface.Service
         Task<bool> DeleteAsync(int wardId); 
 
 
-        Task<IEnumerable<WardResponse>> GetAllAsync();
+        Task<IEnumerable<WardResponse>> GetAllAsync(WardFilter filter);
         Task<WardResponse?> GetByIdAsync(int wardId);
     }
 }

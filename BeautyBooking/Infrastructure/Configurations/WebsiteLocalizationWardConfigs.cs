@@ -40,6 +40,11 @@ namespace BeautyBooking.Infrastructure.Configurations
                     .WithMany(x => x.WebsiteLocalizationWards)
                     .HasForeignKey(x => x.KeyLocalization)
                     .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(x => x.StaffProfiles)
+                   .WithOne(x => x.Ward)
+                   .HasForeignKey(x => x.WardId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

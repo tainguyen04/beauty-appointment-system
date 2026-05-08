@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using BeautyBooking.DTO.Filter;
 using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Service;
+using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBooking.Services
 {
@@ -36,9 +38,12 @@ namespace BeautyBooking.Services
             return true;
         }
 
-        public async Task<IEnumerable<WardResponse>> GetAllAsync()
+        public async Task<IEnumerable<WardResponse>> GetAllAsync(WardFilter filter)
         {
-            var wards = await _wardRepo.GetAllAsync();
+            var query = _wardRepo.Query();
+            if (filter != null && filter.StaffIds.Count != 0)
+                query = query.Where(w => w.StaffProfiles.Any(sw => filter.StaffIds.Contains(sw.Id)));
+            var wards = await query.ToListAsync();
             return _mapper.Map<IEnumerable<WardResponse>>(wards);
         }
 

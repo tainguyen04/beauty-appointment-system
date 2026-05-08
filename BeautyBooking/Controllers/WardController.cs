@@ -1,4 +1,5 @@
-﻿using BeautyBooking.DTO.Request;
+﻿using BeautyBooking.DTO.Filter;
+using BeautyBooking.DTO.Request;
 using BeautyBooking.DTO.Response;
 using BeautyBooking.Interface.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -20,9 +21,9 @@ namespace BeautyBooking.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<WardResponse>>> GetAll()
+        public async Task<ActionResult<IEnumerable<WardResponse>>> GetAll([FromQuery] WardFilter filter)
         {
-            var result = await _wardService.GetAllAsync();
+            var result = await _wardService.GetAllAsync(filter);
             return Ok(result);
         }
 

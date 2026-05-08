@@ -24,5 +24,6 @@ namespace BeautyBooking.Entities
         public bool IsActived { get; set; } = true;
 
         public WebsiteLocalization WebsiteLocalization { get; set; }
+        public ICollection<StaffProfile> StaffProfiles { get; set; }
     }
 }
