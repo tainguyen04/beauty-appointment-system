@@ -4,7 +4,10 @@ Hệ thống quản lý đặt lịch làm đẹp chuyên nghiệp, giúp tối 
 
 ## 📖 Giới thiệu dự án
 Dự án giải quyết bài toán đặt lịch dịch vụ làm đẹp tại các chi nhánh một cách thông minh. Hệ thống tự động điều phối dựa trên thời gian trống và đội ngũ nhân viên thực tế tại từng cơ sở.
-
+## Links
+- [Frontend](https://beauty-appointment-system-ui.onrender.com)
+- [Backend API](https://beauty-booking-7gd4.onrender.com)
+- [API Docs](https://beauty-booking-7gd4.onrender.com/swagger)
 ### 👥 Đối tượng sử dụng
 - **Khách hàng:** Tìm kiếm dịch vụ, chọn chi nhánh và nhân viên yêu thích để đặt lịch.
 - **Nhân viên (Staff):** Theo dõi danh sách lịch hẹn cần thực hiện.
