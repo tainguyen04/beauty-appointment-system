@@ -1,6 +1,6 @@
 import { Form, Input, Button, Card, Typography,Checkbox } from 'antd';
 import { UserOutlined, LockOutlined,HomeOutlined } from '@ant-design/icons';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import authApi from '../../api/authApi';
 import { useEffect } from 'react';
@@ -9,6 +9,8 @@ const { Title } = Typography;
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from =  location.state?.from || '/'; // Lấy đường dẫn trước đó hoặc mặc định về trang chủ sau khi đăng nhập thành công
   const [form] = Form.useForm();
   useEffect(() => {
     const rememberedEmail = localStorage.getItem('rememberedEmail');
@@ -58,7 +60,7 @@ const Login = () => {
       if (userInfo.role === 'Admin' || userInfo.role === 'Staff') {
         navigate('/admin'); // Trực chỉ trang Quản trị
       } else {
-        navigate('/'); // Khách hàng thì ra trang chủ đặt lịch
+        navigate(from, { replace: true }); // Khách hàng thì ra trang chủ đặt lịch
       }
     }
   };

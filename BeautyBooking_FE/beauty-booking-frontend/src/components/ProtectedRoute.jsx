@@ -1,15 +1,18 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { message } from 'antd';
 import { GetToken, GetUser } from '../api/axiosClient';
 
 const ProtectedRoute = ({ allowedRoles }) => {
   const token = GetToken(); // Lấy token từ LocalStorage hoặc SessionStorage
+  const location = useLocation();
   const user = GetUser(); // Lấy thông tin user từ LocalStorage hoặc SessionStorage
 
   // 1. Chốt chặn 1: Chưa đăng nhập (Không có Token)
   if (!token || !user) {
     message.warning('Vui lòng đăng nhập để tiếp tục!');
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" 
+            state={{ from: location.pathname }}
+            replace />;
   }
 
   // 2. Chốt chặn 2: Đã đăng nhập nhưng không đủ thẩm quyền (Sai Role)
