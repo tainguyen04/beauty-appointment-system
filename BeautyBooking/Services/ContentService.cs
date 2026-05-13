@@ -21,6 +21,7 @@ namespace BeautyBooking.Services
             var content = _mapper.Map<HelpdeskContent>(request);
             content.CatalogId = catalogId;
             await _contentRepository.CreateAsync(content);
+            await _contentRepository.SaveChangesAsync();
             return true;
         }
 
@@ -30,6 +31,7 @@ namespace BeautyBooking.Services
             if (content == null)
                 return false;
             _contentRepository.Delete(content);
+            await _contentRepository.SaveChangesAsync();
             return true;
         }
 
