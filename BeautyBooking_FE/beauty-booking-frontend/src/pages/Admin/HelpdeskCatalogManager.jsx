@@ -175,12 +175,18 @@ const HelpdeskCatalogManager = () => {
             size="small"
             type="text"
             icon={<EditOutlined />}
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              setEditingCatalog(record);
+              const res = await helpdeskCatalogApi.getById(record.catalogId);
+              setEditingCatalog(res);
               const mapData = {
-                ...record,
-                contents: record.contents?.map(c => c.contentDetail) || [""]
+                ...res,
+                contents: res.contents?.map(c => ({
+                  contentId: c.contentId,
+                  contentDetail: c.contentDetail
+                })) || [
+                  { contentDetail: "<p></p>" }
+                ]
               };
               catalogForm.setFieldsValue(mapData);
               setIsCatalogModalOpen(true);
@@ -352,8 +358,14 @@ const HelpdeskCatalogManager = () => {
                     extra={fields.length > 1 && <DeleteOutlined onClick={() => remove(name)} style={{ color: 'red' }} />}
                   >
                     <Form.Item
+                      name={[name, "contentId"]}
+                      hidden
+                    >
+                      <Input />
+                    </Form.Item>
+                    <Form.Item
                       {...restField}
-                      name={name}
+                      name={[ name, 'contentDetail' ]}
                       rules={[{ required: true, message: 'Nhập nội dung' }]}
                     >
                       {/* THAY THẾ INPUT BẰNG TIPTAP */}

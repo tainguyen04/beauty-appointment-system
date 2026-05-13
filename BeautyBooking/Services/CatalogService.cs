@@ -90,6 +90,7 @@ namespace BeautyBooking.Services
                 {
                     _contentRepo.Delete(oldContent);
                 }
+                await _contentRepo.SaveChangesAsync();
                 existingCatalog.HelpdeskContents = request.Contents.Select(text => new HelpdeskContent 
                 { 
                     ContentDetail = text,
