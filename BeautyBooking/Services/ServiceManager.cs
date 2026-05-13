@@ -15,14 +15,12 @@ namespace BeautyBooking.Services
     public class ServiceManager : IServiceManager
     {
         private readonly IServiceRepository _serviceRepo;
-        private readonly IStaffProfileRepository _staffProfileRepo;
         private readonly IPhotoService _photoService;
         private readonly IMapper _mapper;
-        public ServiceManager(IServiceRepository serviceRepo, IMapper mapper, IStaffProfileRepository staffProfileRepo, IPhotoService photoService)
+        public ServiceManager(IServiceRepository serviceRepo, IMapper mapper, IPhotoService photoService)
         {
             _serviceRepo = serviceRepo;
             _mapper = mapper;
-            _staffProfileRepo = staffProfileRepo;
             _photoService = photoService;
         }
         public async Task<decimal> CalculateTotalPriceAsync(IEnumerable<int> serviceIds)
