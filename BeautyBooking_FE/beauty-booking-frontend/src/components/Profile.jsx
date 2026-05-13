@@ -166,23 +166,46 @@ const Profile = () => {
                         <Input placeholder="Nhập địa chỉ" />
                       </Form.Item>
                     </Col>
-                    <Col span={12}>
-                      <Form.Item name="wardId" label="Chi nhánh thường sử dụng">
-                        <Select
-                          showSearch 
-                          placeholder="Chọn chi nhánh"
-                          loading={loadingWards}
-                          optionFilterProp="children"
-                          filterOption={(input, option) =>
-                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                          }
-                          options={wards.map(w => ({
-                            value: w.wardId || w.id, 
-                            label: w.fullName || w.name 
-                          }))}
-                        />
-                      </Form.Item>
-                    </Col>
+                    {user?.role?.toLowerCase() === 'customer' ? (
+                      <Col span={12}>
+                        <Form.Item name="wardId" label="Chi nhánh thường sử dụng">
+                          <Select
+                            showSearch
+                            placeholder="Chọn chi nhánh"
+                            loading={loadingWards}
+                            optionFilterProp="children"
+                            filterOption={(input, option) =>
+                              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                            options={wards.map(w => ({
+                              value: w.wardId || w.id,
+                              label: w.fullName || w.name
+                            }))}
+                          />
+                        </Form.Item>
+                      </Col>
+                    ) : user?.role?.toLowerCase() === 'staff' ? (
+                      <Col span={12}>
+                        <Form.Item label="Chi nhánh làm việc">
+                          <div
+                            style={{
+                              padding: '4px 11px',
+                              minHeight: 32,
+                              border: '1px solid #d9d9d9',
+                              borderRadius: 6,
+                              background: '#f5f5f5'
+                            }}
+                          >
+                          <Typography.Text ellipsis={{ tooltip: true }}>
+                            {
+                              wards.find(w => (w.wardId || w.id) === user?.wardId)?.fullName ||
+                              'Chưa phân công'
+                            }
+                          </Typography.Text>
+                          </div>
+                        </Form.Item>
+                      </Col>
+                    ) : null}
                   </Row>
 
                   <Form.Item name="avatarUrl" label="Thay đổi ảnh đại diện">
