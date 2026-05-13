@@ -42,7 +42,7 @@ const Home = () => {
   const [selectedStaff, setSelectedStaff] = useState(null); // Chỉ chọn 1 thợ
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [selectedStaffDetail, setSelectedStaffDetail] = useState(null);
-
+  const [staffPagination, setStaffPagination] = useState({ current: 1, pageSize: 8, total: 0 });
   // Hook phân trang cho Dịch vụ
   const { 
     data: services, loading, pagination, runFetch, handleFilterChange 
@@ -93,16 +93,25 @@ const Home = () => {
 
   // --- LOAD DỮ LIỆU BAN ĐẦU ---
   useEffect(() => {
-    const loadStaticData = async () => {
+    const loadStaticData = async (pageNumber = 1) => {
       try {
-        // 👈 Gọi song song 2 API lấy Category và Staff (Top 8 nhân viên nổi bật)
+        // Sử dụng Promise.all để gọi đồng thời 2 API lấy danh mục và nhân viên
         const [catRes, staffRes] = await Promise.all([
           categoryApi.getAll(),
-          staffApi.getAll({ isActive: true, pageSize: 8 }) 
+          staffApi.getAll({ 
+            isActive: true, 
+            pageNumber: pageNumber, 
+            pageSize: staffPagination.pageSize,
+          }) 
         ]);
         
         setCategories(catRes.items || catRes.data || catRes || []);
-        setStaffs(staffRes.items || staffRes.data || staffRes || []);
+        const staffData = staffRes.items || staffRes.data || staffRes || [];
+        setStaffs(staffData);
+        setStaffPagination(prev => ({ 
+          ...prev, 
+          current: pageNumber,
+          total: staffRes.totalItems || staffData.length }));
       } catch (error) {
         console.error("Lỗi tải dữ liệu ban đầu:", error);
       }
@@ -175,8 +184,8 @@ const Home = () => {
               </Row>
               <div style={paginationContainerStyle}>
                     <Pagination 
-                      current={pagination.current} pageSize={pagination.pageSize} total={pagination.total} showSizeChanger={false}
-                      onChange={(page) => runFetch(page, pagination.pageSize, { ...pagination.currentFilters, Keyword: querySearch })}
+                      current={staffPagination.current} pageSize={staffPagination.pageSize} total={staffPagination.total} showSizeChanger={false}
+                      onChange={(page) => runFetch(page, staffPagination.pageSize, { ...staffPagination.currentFilters, Keyword: querySearch })}
                     />
                   </div>
             </div>
