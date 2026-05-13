@@ -45,18 +45,7 @@ const Helpdesk = () => {
   // Xử lý khi click vào menu Catalog hoặc khi click vào link URL của Catalog
   const handleMenuClick = ({ key }) => {
     const target = catalogs.find(c => (c.catalogId || c.CatalogId).toString() === key);
-    if (target) {
-    if (target.url.startsWith('/')) {
-        navigate(target.url); // Điều hướng nội bộ nếu URL bắt đầu bằng "/"
-    }else{
-        // Nếu URL không phải là đường dẫn nội bộ, mở tab mới
-        window.open(target.url, '_blank');
-    }
-      
-    } else {
-      // 3. Nếu không có URL, cập nhật state để hiển thị nội dung Tiptap
       setSelectedCatalog(target);
-    }
   };
 
   if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" tip="Đang tải hỗ trợ..." /></div>;
@@ -82,11 +71,32 @@ const Helpdesk = () => {
                 items={catalogs.map(c => ({
                     key: c.catalogId.toString(),
                     label: (
-                    <span>
-                        {c.nameVn} {c.url && <LinkOutlined style={{ marginLeft: 8, fontSize: 12 }} />}
-                    </span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <span>{c.nameVn}</span>
+
+                        {c.url && (
+                          <LinkOutlined
+                            style={{ color: '#1890ff' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+
+                              if (c.url.startsWith('/')) {
+                                navigate(c.url);
+                              } else {
+                                window.open(c.url, '_blank');
+                              }
+                            }}
+                          />
+                        )}
+                      </div>
                     ),
-                }))}
+              }))}
             />
           </Sider>
 
