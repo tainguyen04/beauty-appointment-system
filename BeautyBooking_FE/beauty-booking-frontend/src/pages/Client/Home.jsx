@@ -119,7 +119,7 @@ const Home = () => {
     
     loadStaticData();
     runFetch(1, 8, { isActive: true, Keyword: querySearch });
-  }, [runFetch, querySearch]);
+  }, [runFetch, querySearch, staffPagination.pageSize]);
 
   // --- XEM CHI TIẾT ---
   const handleViewDetail = async (serviceId) => {
@@ -189,7 +189,6 @@ const Home = () => {
                     />
                   </div>
             </div>
-            
             ):(
               <Empty description="Không tìm thấy chuyên gia nào" style={{ padding: '80px 0' }} />
             )}
@@ -237,12 +236,14 @@ const Home = () => {
                       </Col>
                     ))}
                   </Row>
+                  {!selectedStaff && ( // Chỉ hiển thị phân trang khi không lọc theo thợ, vì dịch vụ của thợ thường ít và không cần phân trang}
                   <div style={paginationContainerStyle}>
                     <Pagination 
                       current={pagination.current} pageSize={pagination.pageSize} total={pagination.total} showSizeChanger={false}
                       onChange={(page) => runFetch(page, pagination.pageSize, { ...pagination.currentFilters, Keyword: querySearch })}
                     />
                   </div>
+                  )}
                 </div>
               ) : (
                 <Empty description="Không tìm thấy dịch vụ nào" style={{ padding: '80px 0' }} />
