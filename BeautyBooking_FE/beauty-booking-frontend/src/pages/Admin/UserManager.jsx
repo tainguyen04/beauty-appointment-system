@@ -201,7 +201,7 @@ const UserManager = () => {
       }
     },
     {
-    title: 'Khu vực (Phường/Xã)',
+    title: 'Chi nhánh',
     dataIndex: 'wardName', // Trỏ thẳng vào wardName do backend trả về
     key: 'wardName',
     width: 150,
