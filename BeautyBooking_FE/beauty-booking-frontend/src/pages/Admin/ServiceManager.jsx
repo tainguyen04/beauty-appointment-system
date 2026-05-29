@@ -144,6 +144,7 @@ const ServiceManager = () => {
     {
       title: 'Mô tả',
       dataIndex: 'description',
+      ellipsis: true,
       render: (text) => (
         <Text ellipsis={{ tooltip: text }}>
           {text || '—'}
@@ -153,6 +154,7 @@ const ServiceManager = () => {
     { 
       title: 'Danh mục', 
       dataIndex: 'categoryName', 
+      ellipsis: true,
       render: (name) => <Tag color="geekblue">{name || 'Chưa phân loại'}</Tag> 
     },
     { 
