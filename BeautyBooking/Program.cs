@@ -16,6 +16,9 @@ using BeautyBooking.Interface.Repository;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
+using BeautyBooking.AI.Providers;
+using BeautyBooking.AI.Configuration;
+using BeautyBooking.AI.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
@@ -45,12 +48,49 @@ builder.Services.Scan(scan => scan
         .AsImplementedInterfaces()
         .WithScopedLifetime()
 );
+//Scan services in AI layer
+builder.Services.Scan(scan => scan
+    .FromAssembliesOf(typeof(Program))
+    .AddClasses(classes => classes.InNamespaces(
+        "BeautyBooking.AI.Services"))
+        .AsImplementedInterfaces()
+        .WithScopedLifetime()
+);
+//Scan providers in AI layer
+//builder.Services.Scan(scan => scan
+//    .FromAssembliesOf(typeof(Program))
+//    .AddClasses(classes => classes.InNamespaces(
+//        "BeautyBooking.AI.Providers"))
+//        .AsImplementedInterfaces()
+//        .WithScopedLifetime()
+//);
+builder.Services.AddHttpClient<OpenAIProvider>(provider =>
+{
+    provider.BaseAddress = new Uri(
+        "https://api.openai.com/v1/"
+        );
+});
+builder.Services.AddHttpClient<OllamaProvider>(provider =>
+{
+    provider.BaseAddress = new Uri(
+        "http://localhost:11434/"
+        );
+});
+// Đăng ký IAIProvider để sử dụng OllamaProvider làm triển khai mặc định
+builder.Services.AddScoped<IAIProvider>(provider =>
+    provider.GetRequiredService<OllamaProvider>()
+);
 
 builder.Services.AddControllers()
     .AddJsonOptions(option =>
     {
         option.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+
+
+builder.Services.Configure<OpenAIOptions>(
+    builder.Configuration.GetSection("OpenAI")
+);
 
 builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection("Jwt")
