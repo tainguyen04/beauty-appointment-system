@@ -16,14 +16,27 @@ namespace BeautyBooking.AI.Providers
             _openAIOptions = openAIOptions.Value;
         }
         public async Task<string> GenerateResponseAsync(
-            string prompt,
+            string SystemPrompt,
+            string UserPrompt,
             CancellationToken cancellationToken = default)
         {
             // Tạo request body cho API của OpenAI
             var requestBody = new
             {
+                messages = new[]
+                {
+                    new
+                    {
+                        role = "system",
+                        content = SystemPrompt
+                    },
+                    new
+                    {
+                        role = "user",
+                        content = UserPrompt
+                    }
+                },
                 model = _openAIOptions.Model,
-                input = prompt,
                 max_output_tokens = 300
             };
             // Serialize request body to JSON

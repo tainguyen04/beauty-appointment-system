@@ -2,6 +2,6 @@
 {
     public interface IAIProvider
     {
-        Task<string> GenerateResponseAsync(string prompt, CancellationToken cancellationToken = default);
+        Task<string> GenerateResponseAsync(string SystemPrompt, string UserPrompt, CancellationToken cancellationToken = default);
     }
 }
