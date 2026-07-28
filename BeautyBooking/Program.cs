@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using BeautyBooking.AI.Configuration;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.AI.Providers;
+using BeautyBooking.AI.Tools;
 using BeautyBooking.EF;
 using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
@@ -69,10 +70,12 @@ builder.Services.Scan(scan =>
 //Scan tools in AI layer
 builder.Services.Scan(scan =>
     scan.FromAssembliesOf(typeof(Program))
-        .AddClasses(classes => classes.InNamespaces("BeautyBooking.AI.Tools"))
-        .AsSelf()
+        .AddClasses(classes => classes.AssignableTo<ITool>())
+        .AsImplementedInterfaces()
         .WithScopedLifetime()
 );
+builder.Services.AddScoped<IToolRegistry, ToolRegistry>();
+builder.Services.AddScoped<ToolExecutor>();
 
 //Scan providers in AI layer
 //builder.Services.Scan(scan => scan
@@ -88,7 +91,10 @@ builder.Services.AddHttpClient<OpenAIProvider>(provider =>
 });
 builder.Services.AddHttpClient<OllamaProvider>(provider =>
 {
-    provider.BaseAddress = new Uri("http://localhost:11434/");
+    var olalmaBaseUrl =
+        builder.Configuration["Ollama:BaseUrl"]
+        ?? throw new InvalidOperationException("Ollama base URL is not configured.");
+    provider.BaseAddress = new Uri(olalmaBaseUrl);
 });
 
 // Đăng ký IAIProvider để sử dụng OllamaProvider làm triển khai mặc định

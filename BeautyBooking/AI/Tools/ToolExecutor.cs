@@ -1,19 +1,15 @@
 using System.Text.Json;
+using BeautyBooking.AI.Interfaces;
 
 namespace BeautyBooking.AI.Tools
 {
     public class ToolExecutor
     {
-        private readonly SearchServicesTool _searchServicesTool;
-        private readonly JsonSerializerOptions _jsonSerializerOptions;
+        private readonly IToolRegistry _toolRegistry;
 
-        public ToolExecutor(
-            SearchServicesTool searchServicesTool,
-            JsonSerializerOptions jsonSerializerOptions
-        )
+        public ToolExecutor(IToolRegistry toolRegistry)
         {
-            _searchServicesTool = searchServicesTool;
-            _jsonSerializerOptions = jsonSerializerOptions;
+            _toolRegistry = toolRegistry;
         }
 
         public async Task<string> ExecuteAsync(
@@ -22,27 +18,8 @@ namespace BeautyBooking.AI.Tools
             CancellationToken cancellationToken = default
         )
         {
-            switch (toolName)
-            {
-                case "search_services":
-                    string? keyword = null;
-                    int? categoryId = null;
-                    if (parameters.TryGetProperty("keyword", out var keywordElement))
-                    {
-                        keyword = keywordElement.GetString();
-                    }
-                    if (
-                        parameters.TryGetProperty("categoryId", out var categoryIdElement)
-                        && categoryIdElement.ValueKind == JsonValueKind.Number
-                    )
-                    {
-                        categoryId = categoryIdElement.GetInt32();
-                    }
-                    var result = await _searchServicesTool.SearchServicesAsync(keyword, categoryId);
-                    return JsonSerializer.Serialize(result, _jsonSerializerOptions);
-                default:
-                    throw new NotSupportedException($"Tool '{toolName}' is not supported.");
-            }
+            var tool = _toolRegistry.Get(toolName);
+            return await tool.ExecuteAsync(parameters, cancellationToken);
         }
     }
 }
