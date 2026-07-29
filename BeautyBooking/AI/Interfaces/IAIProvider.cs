@@ -1,7 +1,13 @@
-﻿namespace BeautyBooking.AI.Interfaces
+﻿using BeautyBooking.AI.Models;
+
+namespace BeautyBooking.AI.Interfaces
 {
     public interface IAIProvider
     {
-        Task<string> GenerateResponseAsync(string SystemPrompt, string UserPrompt, CancellationToken cancellationToken = default);
+        Task<string> GenerateResponseAsync(
+            string SystemPrompt,
+            List<OllamaChatMessage> messages,
+            CancellationToken cancellationToken = default
+        );
     }
 }

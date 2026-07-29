@@ -63,7 +63,7 @@ namespace BeautyBooking.AI.Providers
             return JsonDocument.Parse(responseContent);
         }
 
-        public async Task<string> ExecuteToolCallAsync(
+        public async Task<List<OllamaChatMessage>> ExecuteToolCallAsync(
             OllamaChatMessage message,
             CancellationToken cancellationToken = default
         )
@@ -72,49 +72,44 @@ namespace BeautyBooking.AI.Providers
             {
                 throw new InvalidOperationException("No tool calls found in the message.");
             }
-
-            foreach (var toolCall in message.ToolCalls)
+            var tasks = message.ToolCalls.Select(async toolCall =>
             {
-                var function = toolCall.Function;
-                var toolName = function.Name;
-                var parameters = function.Arguments;
-
                 var result = await _toolExecutor.ExecuteAsync(
-                    toolName!,
-                    parameters,
+                    toolCall.Function.Name,
+                    toolCall.Function.Arguments,
                     cancellationToken
                 );
-                return result;
-            }
-            throw new InvalidOperationException("No valid tool calls found.");
+                return new OllamaChatMessage { Role = "tool", Content = result };
+            });
+            return (await Task.WhenAll(tasks)).ToList();
         }
 
         public async Task<string> GenerateResponseAsync(
             string SystemPrompt,
-            string UserPrompt,
+            List<OllamaChatMessage> messages,
             CancellationToken cancellationToken = default
         )
         {
-            var messages = new List<OllamaChatMessage>
+            var ollamaMessages = new List<OllamaChatMessage>
             {
                 new() { Role = "system", Content = SystemPrompt },
-                new() { Role = "user", Content = UserPrompt },
             };
+            ollamaMessages.AddRange(messages);
 
             var requestBody = new
             {
                 model = "llama3.2:3b",
-                messages,
+                messages = ollamaMessages,
                 tools = GetToolsForOllama(),
                 stream = false,
             };
-            Console.WriteLine("========== OLLAMA CALL #1 START ==========");
+
             using var document = await CallOllamaApiAsync(
                 "api/chat",
                 requestBody,
                 cancellationToken
             );
-            Console.WriteLine("========== OLLAMA CALL #1 END ==========");
+
             if (!document.RootElement.TryGetProperty("message", out var messageElement))
             {
                 throw new InvalidOperationException("Ollama response did not contain a message.");
@@ -126,22 +121,21 @@ namespace BeautyBooking.AI.Providers
                 );
             if (message.ToolCalls?.Count > 0)
             {
-                var toolResult = await ExecuteToolCallAsync(message, cancellationToken);
                 messages.Add(message);
-                messages.Add(new OllamaChatMessage { Role = "tool", Content = toolResult });
+                var toolResults = await ExecuteToolCallAsync(message, cancellationToken);
+                messages.AddRange(toolResults);
                 var finalRequestBody = new
                 {
                     model = "llama3.2:3b",
-                    messages,
+                    messages = ollamaMessages,
                     stream = false,
                 };
-                Console.WriteLine("========== OLLAMA CALL #2 START ==========");
+
                 using var finalDocument = await CallOllamaApiAsync(
                     "api/chat",
                     finalRequestBody,
                     cancellationToken
                 );
-                Console.WriteLine("========== OLLAMA CALL #2 END ==========");
                 if (
                     !finalDocument.RootElement.TryGetProperty(
                         "message",

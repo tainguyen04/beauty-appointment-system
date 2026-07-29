@@ -1,11 +1,13 @@
 ﻿using BeautyBooking.AI.DTO;
 using BeautyBooking.AI.Interfaces;
+using BeautyBooking.AI.Models;
 using BeautyBooking.AI.Providers;
 
 namespace BeautyBooking.AI.Services
 {
     public class AIService : IAIService
     {
+        private readonly IConversationService _conversationService;
         private readonly IAIProvider _aiProvider;
         private const string SystemPrompt = """
             Bạn là BeautyBooking AI Assistant.
@@ -25,25 +27,71 @@ namespace BeautyBooking.AI.Services
             - Không tự tạo ra thông tin về dịch vụ, giá cả hoặc lịch trống.
             - Nếu không có đủ thông tin, hãy nói rằng bạn chưa có đủ thông tin.
             """;
-        public AIService(IAIProvider aiProvider)
+
+        public AIService(IAIProvider aiProvider, IConversationService conversationService)
         {
             _aiProvider = aiProvider;
+            _conversationService = conversationService;
         }
-        public async Task<ChatResponse> ChatAsync(ChatRequest request, CancellationToken cancellationToken = default)
+
+        public async Task<ChatResponse> ChatAsync(
+            ChatRequest request,
+            CancellationToken cancellationToken = default
+        )
         {
             if (string.IsNullOrWhiteSpace(request.Prompt))
                 throw new ArgumentException("Prompt cannot be empty.");
+            int conversationId;
+            if (request.ConversationId is null or 0)
+            {
+                var conversation = await _conversationService.CreateAsync(cancellationToken);
+                conversationId = conversation.Id;
+            }
+            else
+            {
+                var conversation =
+                    await _conversationService.GetByIdAsync(
+                        request.ConversationId.Value,
+                        cancellationToken
+                    )
+                    ?? throw new ArgumentException(
+                        $"Conversation with ID {request.ConversationId} not found."
+                    );
+                conversationId = conversation.Id;
+            }
+            await _conversationService.AddMessageAsync(
+                conversationId,
+                request.Prompt,
+                "user",
+                cancellationToken
+            );
+            var historyMessages = await _conversationService.GetMessagesAsync(
+                conversationId,
+                cancellationToken
+            );
+            var messages = historyMessages
+                .Select(m => new OllamaChatMessage { Role = m.Role, Content = m.Content })
+                .ToList();
+
             var systemPrompt = SystemPrompt;
             var fullPrompt = $"""
-            {systemPrompt}
-            Câu hỏi của người dùng:
-            {request.Prompt}
-            """;
-            var response = await _aiProvider.GenerateResponseAsync(systemPrompt, request.Prompt, cancellationToken);
-            return new ChatResponse
-            {
-                Message = response
-            };
+                {systemPrompt}
+                Câu hỏi của người dùng:
+                {request.Prompt}
+                """;
+            var response = await _aiProvider.GenerateResponseAsync(
+                systemPrompt,
+                messages,
+                cancellationToken
+            );
+
+            await _conversationService.AddMessageAsync(
+                conversationId,
+                response,
+                "assistant",
+                cancellationToken
+            );
+            return new ChatResponse { ConversationId = conversationId, Message = response };
         }
     }
 }
