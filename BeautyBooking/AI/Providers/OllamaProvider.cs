@@ -1,4 +1,6 @@
 ﻿using System.Text.Json;
+using BeautyBooking.AI.DTO;
+using BeautyBooking.AI.Helper;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.AI.Models;
 using BeautyBooking.AI.Tools;
@@ -40,6 +42,40 @@ namespace BeautyBooking.AI.Providers
                 .ToList();
         }
 
+        private static OllamaChatMessage ToOllamaChatMessage(ChatMessage chatMessage)
+        {
+            return new OllamaChatMessage
+            {
+                Role = chatMessage.Role.ToOllamaRole(),
+                Content = chatMessage.Content,
+            };
+        }
+
+        private static List<OllamaChatMessage> ToOllamaChatMessages(
+            IEnumerable<ChatMessage> chatMessages
+        )
+        {
+            return chatMessages.Select(ToOllamaChatMessage).ToList();
+        }
+
+        private static ChatMessage ToChatMessage(OllamaChatMessage ollamaChatMessage)
+        {
+            return new ChatMessage
+            {
+                Role = ollamaChatMessage.Role switch
+                {
+                    "system" => ChatRole.System,
+                    "user" => ChatRole.User,
+                    "assistant" => ChatRole.Assistant,
+                    "tool" => ChatRole.Tool,
+                    _ => throw new InvalidOperationException(
+                        $"Unknown role: {ollamaChatMessage.Role}"
+                    ),
+                },
+                Content = ollamaChatMessage.Content,
+            };
+        }
+
         public async Task<JsonDocument> CallOllamaApiAsync(
             string endpoint,
             object requestBody,
@@ -60,10 +96,11 @@ namespace BeautyBooking.AI.Providers
                         + $"Response: {responseContent}"
                 );
             }
+            Console.WriteLine(responseContent);
             return JsonDocument.Parse(responseContent);
         }
 
-        public async Task<List<OllamaChatMessage>> ExecuteToolCallAsync(
+        public async Task<List<ChatMessage>> ExecuteToolCallAsync(
             OllamaChatMessage message,
             CancellationToken cancellationToken = default
         )
@@ -79,22 +116,17 @@ namespace BeautyBooking.AI.Providers
                     toolCall.Function.Arguments,
                     cancellationToken
                 );
-                return new OllamaChatMessage { Role = "tool", Content = result };
+                return new ChatMessage { Role = ChatRole.Tool, Content = result };
             });
             return (await Task.WhenAll(tasks)).ToList();
         }
 
         public async Task<string> GenerateResponseAsync(
-            string SystemPrompt,
-            List<OllamaChatMessage> messages,
+            List<ChatMessage> messages,
             CancellationToken cancellationToken = default
         )
         {
-            var ollamaMessages = new List<OllamaChatMessage>
-            {
-                new() { Role = "system", Content = SystemPrompt },
-            };
-            ollamaMessages.AddRange(messages);
+            var ollamaMessages = ToOllamaChatMessages(messages);
 
             var requestBody = new
             {
@@ -103,7 +135,12 @@ namespace BeautyBooking.AI.Providers
                 tools = GetToolsForOllama(),
                 stream = false,
             };
-
+            Console.WriteLine(
+                JsonSerializer.Serialize(
+                    requestBody,
+                    new JsonSerializerOptions { WriteIndented = true }
+                )
+            );
             using var document = await CallOllamaApiAsync(
                 "api/chat",
                 requestBody,
@@ -121,9 +158,10 @@ namespace BeautyBooking.AI.Providers
                 );
             if (message.ToolCalls?.Count > 0)
             {
-                messages.Add(message);
+                messages.Add(ToChatMessage(message));
                 var toolResults = await ExecuteToolCallAsync(message, cancellationToken);
                 messages.AddRange(toolResults);
+                ollamaMessages = ToOllamaChatMessages(messages);
                 var finalRequestBody = new
                 {
                     model = "llama3.2:3b",

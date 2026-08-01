@@ -19,18 +19,12 @@ namespace BeautyBooking.AI.Providers
         }
 
         public async Task<string> GenerateResponseAsync(
-            string SystemPrompt,
-            List<OllamaChatMessage> messages,
+            List<ChatMessage> messages,
             CancellationToken cancellationToken = default
         )
         {
             // Tạo request body cho API của OpenAI
-            var requestBody = new
-            {
-                messages = new[] { new { role = "system", content = SystemPrompt } },
-                model = _openAIOptions.Model,
-                max_output_tokens = 300,
-            };
+            var requestBody = new { model = _openAIOptions.Model, max_output_tokens = 300 };
             // Serialize request body to JSON
             var json = JsonSerializer.Serialize(requestBody);
             // Gửi request đến OpenAI API

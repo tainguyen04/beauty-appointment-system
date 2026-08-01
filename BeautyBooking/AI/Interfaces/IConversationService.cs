@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BeautyBooking.AI.DTO;
 using BeautyBooking.Entities;
 
 namespace BeautyBooking.AI.Interfaces
@@ -17,7 +18,7 @@ namespace BeautyBooking.AI.Interfaces
         Task AddMessageAsync(
             int conversationId,
             string content,
-            string role,
+            ChatRole role,
             CancellationToken cancellationToken = default
         );
         Task<List<Message>> GetMessagesAsync(

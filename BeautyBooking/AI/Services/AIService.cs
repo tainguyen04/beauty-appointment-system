@@ -62,33 +62,27 @@ namespace BeautyBooking.AI.Services
             await _conversationService.AddMessageAsync(
                 conversationId,
                 request.Prompt,
-                "user",
+                ChatRole.User,
                 cancellationToken
             );
             var historyMessages = await _conversationService.GetMessagesAsync(
                 conversationId,
                 cancellationToken
             );
-            var messages = historyMessages
-                .Select(m => new OllamaChatMessage { Role = m.Role, Content = m.Content })
-                .ToList();
-
-            var systemPrompt = SystemPrompt;
-            var fullPrompt = $"""
-                {systemPrompt}
-                Câu hỏi của người dùng:
-                {request.Prompt}
-                """;
-            var response = await _aiProvider.GenerateResponseAsync(
-                systemPrompt,
-                messages,
-                cancellationToken
+            var messages = new List<ChatMessage>
+            {
+                new() { Role = ChatRole.System, Content = SystemPrompt },
+            };
+            messages.AddRange(
+                historyMessages.Select(m => new ChatMessage { Role = m.Role, Content = m.Content })
             );
+
+            var response = await _aiProvider.GenerateResponseAsync(messages, cancellationToken);
 
             await _conversationService.AddMessageAsync(
                 conversationId,
                 response,
-                "assistant",
+                ChatRole.Assistant,
                 cancellationToken
             );
             return new ChatResponse { ConversationId = conversationId, Message = response };

@@ -15,6 +15,12 @@ namespace BeautyBooking.Infrastructure.Configurations
             builder.HasKey(m => m.Id);
             builder.Property(m => m.Content).IsRequired();
             builder.Property(m => m.Role).IsRequired().HasMaxLength(20);
+            builder.Property(m => m.Role).HasConversion<string>();
+            builder
+                .HasOne(m => m.Conversation)
+                .WithMany(c => c.Messages)
+                .HasForeignKey(m => m.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
