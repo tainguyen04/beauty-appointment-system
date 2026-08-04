@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using BeautyBooking.AI.DTO;
+using BeautyBooking.AI.Extensions;
 using BeautyBooking.AI.Helper;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.AI.Models;
@@ -10,6 +11,7 @@ namespace BeautyBooking.AI.Providers
 {
     public class OllamaProvider : IAIProvider
     {
+        public AIProviderType ProviderType => AIProviderType.Ollama;
         private readonly HttpClient _httpClient;
         private readonly ToolExecutor _toolExecutor;
         private readonly IToolRegistry _toolRegistry;
@@ -40,40 +42,6 @@ namespace BeautyBooking.AI.Providers
                     },
                 })
                 .ToList();
-        }
-
-        private static OllamaChatMessage ToOllamaChatMessage(ChatMessage chatMessage)
-        {
-            return new OllamaChatMessage
-            {
-                Role = chatMessage.Role.ToOllamaRole(),
-                Content = chatMessage.Content,
-            };
-        }
-
-        private static List<OllamaChatMessage> ToOllamaChatMessages(
-            IEnumerable<ChatMessage> chatMessages
-        )
-        {
-            return chatMessages.Select(ToOllamaChatMessage).ToList();
-        }
-
-        private static ChatMessage ToChatMessage(OllamaChatMessage ollamaChatMessage)
-        {
-            return new ChatMessage
-            {
-                Role = ollamaChatMessage.Role switch
-                {
-                    "system" => ChatRole.System,
-                    "user" => ChatRole.User,
-                    "assistant" => ChatRole.Assistant,
-                    "tool" => ChatRole.Tool,
-                    _ => throw new InvalidOperationException(
-                        $"Unknown role: {ollamaChatMessage.Role}"
-                    ),
-                },
-                Content = ollamaChatMessage.Content,
-            };
         }
 
         public async Task<JsonDocument> CallOllamaApiAsync(
@@ -126,7 +94,7 @@ namespace BeautyBooking.AI.Providers
             CancellationToken cancellationToken = default
         )
         {
-            var ollamaMessages = ToOllamaChatMessages(messages);
+            var ollamaMessages = messages.ToOllamaChatMessages();
 
             var requestBody = new
             {
@@ -158,10 +126,10 @@ namespace BeautyBooking.AI.Providers
                 );
             if (message.ToolCalls?.Count > 0)
             {
-                messages.Add(ToChatMessage(message));
+                messages.Add(message.ToChatMessage());
                 var toolResults = await ExecuteToolCallAsync(message, cancellationToken);
                 messages.AddRange(toolResults);
-                ollamaMessages = ToOllamaChatMessages(messages);
+                ollamaMessages = messages.ToOllamaChatMessages();
                 var finalRequestBody = new
                 {
                     model = "llama3.2:3b",

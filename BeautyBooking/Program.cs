@@ -6,7 +6,9 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BeautyBooking.AI.Configuration;
+using BeautyBooking.AI.Factories;
 using BeautyBooking.AI.Interfaces;
+using BeautyBooking.AI.Prompt;
 using BeautyBooking.AI.Providers;
 using BeautyBooking.AI.Tools;
 using BeautyBooking.EF;
@@ -18,6 +20,7 @@ using BeautyBooking.Services;
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -74,17 +77,24 @@ builder.Services.Scan(scan =>
         .AsImplementedInterfaces()
         .WithScopedLifetime()
 );
+
+//Scan prompt templates in AI layer
+builder.Services.Scan(scan =>
+    scan.FromAssembliesOf(typeof(Program))
+        .AddClasses(classes => classes.AssignableTo<IPromptTemplate>())
+        .AsImplementedInterfaces()
+        .WithScopedLifetime()
+);
 builder.Services.AddScoped<IToolRegistry, ToolRegistry>();
 builder.Services.AddScoped<ToolExecutor>();
 
 //Scan providers in AI layer
-//builder.Services.Scan(scan => scan
-//    .FromAssembliesOf(typeof(Program))
-//    .AddClasses(classes => classes.InNamespaces(
-//        "BeautyBooking.AI.Providers"))
-//        .AsImplementedInterfaces()
-//        .WithScopedLifetime()
-//);
+// builder.Services.Scan(scan =>
+//     scan.FromAssembliesOf(typeof(Program))
+//         .AddClasses(c => c.AssignableTo<IAIProvider>())
+//         .AsImplementedInterfaces()
+//         .WithScopedLifetime()
+// );
 builder.Services.AddHttpClient<OpenAIProvider>(provider =>
 {
     provider.BaseAddress = new Uri("https://api.openai.com/v1/");
@@ -97,9 +107,8 @@ builder.Services.AddHttpClient<OllamaProvider>(provider =>
     provider.BaseAddress = new Uri(olalmaBaseUrl);
 });
 
-// Đăng ký IAIProvider để sử dụng OllamaProvider làm triển khai mặc định
-builder.Services.AddScoped<IAIProvider>(provider => provider.GetRequiredService<OllamaProvider>());
-
+// Register the AIProviderFactory
+builder.Services.AddScoped<IAIProviderFactory, AIProviderFactory>();
 builder
     .Services.AddControllers()
     .AddJsonOptions(option =>
@@ -114,6 +123,13 @@ builder.Services.AddSingleton(
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     }
 );
+
+builder.Services.Configure<ContextWindowOptions>(
+    builder.Configuration.GetSection("AI:ContextWindow")
+);
+
+builder.Services.Configure<AIOptions>(builder.Configuration.GetSection("AI"));
+
 builder.Services.Configure<OpenAIOptions>(builder.Configuration.GetSection("OpenAI"));
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));

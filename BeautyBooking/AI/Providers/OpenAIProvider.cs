@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Azure;
 using BeautyBooking.AI.Configuration;
+using BeautyBooking.AI.DTO;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.AI.Models;
 using Microsoft.Extensions.Options;
@@ -9,6 +10,7 @@ namespace BeautyBooking.AI.Providers
 {
     public class OpenAIProvider : IAIProvider
     {
+        public AIProviderType ProviderType => AIProviderType.OpenAI;
         private readonly HttpClient _httpClient;
         private readonly OpenAIOptions _openAIOptions;
 
