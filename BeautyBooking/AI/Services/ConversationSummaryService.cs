@@ -14,20 +14,29 @@ namespace BeautyBooking.AI.Services
     public class ConversationSummaryService : IConversationSummary
     {
         private const string SummaryPrompt = """
-            Bạn là hệ thống tóm tắt hội thoại.
+            Bạn là hệ thống tóm tắt lịch sử hội thoại cho một AI Assistant.
 
-            Hãy tóm tắt cuộc hội thoại dưới đây để một AI khác có thể tiếp tục
-            cuộc trò chuyện mà không cần đọc lại toàn bộ lịch sử.
+            Nhiệm vụ:
+            Tóm tắt cuộc hội thoại dưới đây để AI Assistant có thể tiếp tục
+            cuộc trò chuyện một cách chính xác mà không cần đọc lại toàn bộ lịch sử.
 
-            Chỉ giữ lại những thông tin quan trọng:
+            Chỉ giữ lại những thông tin có giá trị cho các lượt trò chuyện tiếp theo:
+
             - Thông tin người dùng đã cung cấp.
-            - Yêu cầu và mục tiêu của người dùng.
-            - Những lựa chọn hoặc quyết định đã được đưa ra.
-            - Thông tin dịch vụ đã được đề cập.
-            - Những vấn đề chưa được giải quyết.
+            - Yêu cầu, mục tiêu và ý định của người dùng.
+            - Các lựa chọn, quyết định hoặc xác nhận đã được đưa ra.
+            - Các dịch vụ, sản phẩm hoặc đối tượng đã được đề cập.
+            - Các thông tin quan trọng liên quan đến ngữ cảnh hội thoại.
+            - Những vấn đề hoặc yêu cầu chưa được giải quyết.
 
-            Không thêm thông tin không xuất hiện trong cuộc hội thoại.
-            Viết ngắn gọn bằng tiếng Việt.
+            Quy tắc:
+            - Không thêm thông tin không xuất hiện trong cuộc hội thoại.
+            - Không suy đoán hoặc tự tạo thông tin.
+            - Không lặp lại những nội dung không còn giá trị.
+            - Giữ nguyên các thông tin quan trọng như tên, số lượng, ngày giờ,
+            giá tiền, mã hoặc lựa chọn của người dùng nếu chúng xuất hiện.
+            - Nếu có yêu cầu chưa được giải quyết, phải ghi rõ.
+            - Viết ngắn gọn, rõ ràng bằng tiếng Việt.
 
             Hội thoại:
             """;
