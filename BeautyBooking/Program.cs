@@ -88,13 +88,6 @@ builder.Services.Scan(scan =>
 builder.Services.AddScoped<IToolRegistry, ToolRegistry>();
 builder.Services.AddScoped<ToolExecutor>();
 
-//Scan providers in AI layer
-// builder.Services.Scan(scan =>
-//     scan.FromAssembliesOf(typeof(Program))
-//         .AddClasses(c => c.AssignableTo<IAIProvider>())
-//         .AsImplementedInterfaces()
-//         .WithScopedLifetime()
-// );
 builder.Services.AddHttpClient<OpenAIProvider>(provider =>
 {
     provider.BaseAddress = new Uri("https://api.openai.com/v1/");
@@ -107,7 +100,12 @@ builder.Services.AddHttpClient<OllamaProvider>(provider =>
     provider.BaseAddress = new Uri(olalmaBaseUrl);
 });
 
-// Register the AIProviderFactory
+builder.Services.AddScoped<IAIProvider>(provider =>
+{
+    var factory = provider.GetRequiredService<IAIProviderFactory>();
+    var aiOptions = provider.GetRequiredService<IOptions<AIOptions>>().Value;
+    return factory.GetProvider(aiOptions.Provider);
+});
 builder.Services.AddScoped<IAIProviderFactory, AIProviderFactory>();
 builder
     .Services.AddControllers()

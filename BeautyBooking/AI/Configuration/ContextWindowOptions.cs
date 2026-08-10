@@ -7,6 +7,7 @@ namespace BeautyBooking.AI.Configuration
 {
     public class ContextWindowOptions
     {
-        public int MaxMessages { get; set; } = 20;
+        public int MaxMessages { get; set; }
+        public int RecentMessages { get; set; }
     }
 }

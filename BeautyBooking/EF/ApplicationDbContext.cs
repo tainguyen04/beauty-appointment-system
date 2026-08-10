@@ -31,6 +31,7 @@ namespace BeautyBooking.EF
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<ConversationSummary> ConversationSummaries { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

@@ -15,14 +15,17 @@ namespace BeautyBooking.AI.Services
     {
         private readonly ContextWindowOptions _options;
         private readonly IConversationService _conversationService;
+        private readonly IConversationSummary _conversationSummaryService;
 
         public ContextWindowService(
             IOptions<ContextWindowOptions> options,
-            IConversationService conversationService
+            IConversationService conversationService,
+            IConversationSummary conversationSummaryService
         )
         {
             _options = options.Value;
             _conversationService = conversationService;
+            _conversationSummaryService = conversationSummaryService;
         }
 
         public async Task<List<ChatMessage>> BuildContextWindowAsync(
@@ -42,10 +45,7 @@ namespace BeautyBooking.AI.Services
 
         private static List<ChatMessage> CreateSystemMessage(string systemPrompt)
         {
-            return new List<ChatMessage>
-            {
-                new() { Role = ChatRole.System, Content = systemPrompt },
-            };
+            return [new() { Role = ChatRole.System, Content = systemPrompt }];
         }
 
         private async Task<List<ChatMessage>> BuildConversationHistoryAsync(
@@ -57,10 +57,45 @@ namespace BeautyBooking.AI.Services
                 conversationId,
                 cancellationToken
             );
-            return historyMessages
-                .TakeLast(_options.MaxMessages)
+            var summaryEntity = await _conversationSummaryService.GetByConversationIdAsync(
+                conversationId,
+                cancellationToken
+            );
+            if (historyMessages.Count > _options.MaxMessages)
+            {
+                var lastSummarizedMessageId = summaryEntity?.LastSummarizedMessageId ?? 0;
+                var chatMessagesToSummarize = historyMessages
+                    .Where(m => m.Id > lastSummarizedMessageId)
+                    .TakeLast(_options.MaxMessages - _options.RecentMessages)
+                    .ToList();
+                if (chatMessagesToSummarize.Count > 0)
+                {
+                    var newLastSummarizedMessageId = chatMessagesToSummarize.Last().Id;
+                    await _conversationSummaryService.SaveSummaryAsync(
+                        conversationId,
+                        chatMessagesToSummarize.Select(m => m.ToChatMessage()).ToList(),
+                        newLastSummarizedMessageId,
+                        cancellationToken
+                    );
+                }
+            }
+            var summary = await _conversationSummaryService.GetSummaryAsync(
+                conversationId,
+                cancellationToken
+            );
+
+            var recentMessages = historyMessages
+                .TakeLast(_options.RecentMessages)
                 .Select(m => m.ToChatMessage())
                 .ToList();
+            if (!string.IsNullOrWhiteSpace(summary))
+            {
+                recentMessages.Insert(
+                    0,
+                    new ChatMessage { Role = ChatRole.System, Content = summary }
+                );
+            }
+            return recentMessages;
         }
     }
 }
