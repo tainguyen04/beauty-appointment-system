@@ -10,15 +10,31 @@ namespace BeautyBooking.AI.Controllers
     public class AIController : ControllerBase
     {
         private readonly IAIService _aiService;
-        public AIController(IAIService aiService)
+        private readonly IKnowledgeService _knowledgeService;
+
+        public AIController(IAIService aiService, IKnowledgeService knowledgeService)
         {
             _aiService = aiService;
+            _knowledgeService = knowledgeService;
         }
+
         [HttpPost("chat")]
         public async Task<IActionResult> Chat([FromBody] ChatRequest request)
         {
             var response = await _aiService.ChatAsync(request);
             return Ok(response);
+        }
+
+        [HttpPost("knowledge")]
+        public async Task<IActionResult> CreateKnowledgeDocument(
+            [FromBody] CreateKnowledgeDocumentRequest request
+        )
+        {
+            var document = await _knowledgeService.CreateKnowledgeDocumentAsync(
+                request.Title,
+                request.Content
+            );
+            return Ok(document);
         }
     }
 }

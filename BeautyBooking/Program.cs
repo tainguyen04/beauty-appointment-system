@@ -10,6 +10,7 @@ using BeautyBooking.AI.Factories;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.AI.Prompt;
 using BeautyBooking.AI.Providers;
+using BeautyBooking.AI.Services;
 using BeautyBooking.AI.Tools;
 using BeautyBooking.EF;
 using BeautyBooking.Entities;
@@ -100,6 +101,14 @@ builder.Services.AddHttpClient<OllamaProvider>(provider =>
     provider.BaseAddress = new Uri(olalmaBaseUrl);
 });
 
+builder.Services.AddHttpClient<IEmBeddingService, OllamaEmbeddingService>(provider =>
+{
+    var olalmaBaseUrl =
+        builder.Configuration["Ollama:BaseUrl"]
+        ?? throw new InvalidOperationException("Ollama base URL is not configured.");
+    provider.BaseAddress = new Uri(olalmaBaseUrl);
+});
+
 builder.Services.AddScoped<IAIProvider>(provider =>
 {
     var factory = provider.GetRequiredService<IAIProviderFactory>();
@@ -125,6 +134,7 @@ builder.Services.AddSingleton(
 builder.Services.Configure<ContextWindowOptions>(
     builder.Configuration.GetSection("AI:ContextWindow")
 );
+builder.Services.Configure<RAGOptions>(builder.Configuration.GetSection("AI:RAG"));
 
 builder.Services.Configure<AIOptions>(builder.Configuration.GetSection("AI"));
 

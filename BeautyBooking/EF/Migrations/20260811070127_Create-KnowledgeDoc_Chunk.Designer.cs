@@ -4,6 +4,7 @@ using BeautyBooking.EF;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BeautyBooking.EF.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260811070127_Create-KnowledgeDoc_Chunk")]
+    partial class CreateKnowledgeDoc_Chunk
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -387,10 +390,6 @@ namespace BeautyBooking.EF.Migrations
                     b.Property<int>("DocumentId")
                         .HasColumnType("int")
                         .HasColumnName("document_id");
-
-                    b.Property<string>("Embedding")
-                        .HasColumnType("vector(768)")
-                        .HasColumnName("embedding");
 
                     b.HasKey("Id")
                         .HasName("pk_knowledge_chunks");
