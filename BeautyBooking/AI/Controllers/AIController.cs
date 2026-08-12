@@ -24,17 +24,5 @@ namespace BeautyBooking.AI.Controllers
             var response = await _aiService.ChatAsync(request);
             return Ok(response);
         }
-
-        [HttpPost("knowledge")]
-        public async Task<IActionResult> CreateKnowledgeDocument(
-            [FromBody] CreateKnowledgeDocumentRequest request
-        )
-        {
-            var document = await _knowledgeService.CreateKnowledgeDocumentAsync(
-                request.Title,
-                request.Content
-            );
-            return Ok(document);
-        }
     }
 }

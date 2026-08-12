@@ -40,6 +40,14 @@ namespace BeautyBooking.AI.Prompt
             {
                 sb.AppendLine($"Tóm tắt cuộc trò chuyện: {context.ConversationSummary}");
             }
+            if (context.KnowledgeBase is { Count: > 0 })
+            {
+                sb.AppendLine("Kiến thức liên quan:");
+                foreach (var item in context.KnowledgeBase)
+                {
+                    sb.AppendLine($"- {item}");
+                }
+            }
             return sb.ToString();
         }
     }
