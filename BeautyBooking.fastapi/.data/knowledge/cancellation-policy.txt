@@ -1,0 +1,3 @@
+Khách hàng có thể hủy lịch trước 24 giờ.
+Nếu hủy sau thời gian quy định thì yêu cầu có thể bị từ chối.
+Vui lòng kiểm tra trạng thái lịch trước khi hủy.
