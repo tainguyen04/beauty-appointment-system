@@ -1,6 +1,7 @@
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+from langchain_core.output_parsers import StrOutputParser
 
 
 def format_docs(docs: list[Document]) -> str:
@@ -33,6 +34,7 @@ class RAGService:
             }
             | self.prompt
             | self.client
+            | StrOutputParser()
         )
 
     async def ask(self, question: str):

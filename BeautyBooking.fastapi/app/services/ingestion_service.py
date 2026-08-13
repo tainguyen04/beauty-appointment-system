@@ -21,15 +21,14 @@ class IngestionService:
             result.extend(chunks)
         return result
 
-    async def ingest_document(self, document: Document):
+    async def ingest_document(self, document_id: int, content: str):
+        document = Document(page_content=content, metadata={"document_id": document_id})
         chunks = self.text_splitter.split_documents([document])
         ids = []
         for index, chunk in enumerate(chunks):
-            source = chunk.metadata.get("source", "unknown")
-            raw_id = f"{source}:{index}"
-            chunk_id = hashlib.sha256(raw_id.encode("utf-8")).hexdigest()
-            chunk.metadata["chunk_id"] = chunk_id
+            chunk_id = f"{document_id}:{index}"
             chunk.metadata["chunk_index"] = index
+            chunk.metadata["chunk_id"] = chunk_id
             ids.append(chunk_id)
 
         await self.vector_store.aadd_documents(chunks, ids=ids)
@@ -37,3 +36,10 @@ class IngestionService:
 
     def split(self, document: Document) -> list[Document]:
         return self.text_splitter.split_documents([document])
+
+    async def delete_by_document_id(self, document_id: int):
+        await self.vector_store.adelete(where={"metadata.document_id": document_id})
+
+    async def update_knowledge(self, document_id: int, content: str):
+        await self.delete_by_document_id(document_id)
+        return await self.ingest_document(document_id, content)

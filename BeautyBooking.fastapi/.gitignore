@@ -22,4 +22,4 @@ __pycache__/
 .DS_Store
 Thumbs.db
 # Thư mục dữ liệu Chroma (nếu bạn đang sử dụng ChromaDB)
-data/chroma/
+.data/chroma/

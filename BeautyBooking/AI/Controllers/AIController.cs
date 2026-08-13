@@ -11,11 +11,17 @@ namespace BeautyBooking.AI.Controllers
     {
         private readonly IAIService _aiService;
         private readonly IKnowledgeService _knowledgeService;
+        private readonly IPythonAIService _pythonAIService;
 
-        public AIController(IAIService aiService, IKnowledgeService knowledgeService)
+        public AIController(
+            IAIService aiService,
+            IKnowledgeService knowledgeService,
+            IPythonAIService pythonAIService
+        )
         {
             _aiService = aiService;
             _knowledgeService = knowledgeService;
+            _pythonAIService = pythonAIService;
         }
 
         [HttpPost("chat")]
@@ -23,6 +29,39 @@ namespace BeautyBooking.AI.Controllers
         {
             var response = await _aiService.ChatAsync(request);
             return Ok(response);
+        }
+
+        [HttpPost("knowledge")]
+        public async Task<IActionResult> CreateKnowledge(
+            [FromBody] CreateKnowledgeDocumentRequest request
+        )
+        {
+            var response = await _knowledgeService.CreateKnowledgeDocumentAsync(
+                request.Title,
+                request.Content
+            );
+            return Ok(response);
+        }
+
+        [HttpGet("python-health")]
+        public async Task<IActionResult> PythonHealth()
+        {
+            var isHealthy = await _pythonAIService.HealthCheckAsync();
+            return Ok(new { IsHealthy = isHealthy });
+        }
+
+        [HttpPost("python-ingest")]
+        public async Task<IActionResult> PythonIngest([FromBody] PythonKnowledgeRequest request)
+        {
+            await _pythonAIService.IngestKnowledgeAsync(request);
+            return Ok();
+        }
+
+        [HttpPost("test-python-ask")]
+        public async Task<IActionResult> TestPythonAsk([FromBody] string question)
+        {
+            var response = await _pythonAIService.AskAsync(question);
+            return Ok(new { Answer = response });
         }
     }
 }

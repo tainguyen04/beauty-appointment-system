@@ -12,6 +12,11 @@ from app.services.gemini_service import GeminiService
 from app.services.gemini_embeddings_service import GeminiEmbeddingsService
 from app.services.rag_service import RAGService
 from app.services.ingestion_service import IngestionService
+from app.models.knowledge_request import (
+    KnowledgeRequest,
+    KnowledgeUpdateRequest,
+    RagRequest,
+)
 
 app = FastAPI()
 api_key = os.getenv("GEMINI_API_KEY")
@@ -28,6 +33,47 @@ rag_service = RAGService(retriever, client=gemini_service.client)
 ingestion_service = IngestionService(vector_store=vector_store)
 
 
+@app.get("/gemini/debug-retriever")
+async def debug_retriever(question: str):
+    docs = await retriever.ainvoke(question)
+
+    return [
+        {
+            "content": doc.page_content,
+            "metadata": doc.metadata,
+        }
+        for doc in docs
+    ]
+
+
+@app.post("/gemini/knowledge/ingest")
+async def ingest_knowledge(request: KnowledgeRequest):
+    chunks = await ingestion_service.ingest_document(
+        document_id=request.document_id, content=request.content
+    )
+    return {
+        "message": f"Knowledge from document {request.document_id} ingested successfully.",
+        "chunks": len(chunks),
+    }
+
+
+@app.delete("/gemini/knowledge/{document_id}")
+async def delete_knowledge(document_id: int):
+    await ingestion_service.delete_by_document_id(document_id)
+    return {"message": f"Knowledge from document {document_id} deleted successfully."}
+
+
+@app.put("/gemini/knowledge/{document_id}")
+async def update_knowledge(document_id: int, request: KnowledgeUpdateRequest):
+    chunks = await ingestion_service.update_knowledge(
+        document_id=document_id, content=request.content
+    )
+    return {
+        "message": f"Knowledge from document {document_id} updated successfully.",
+        "chunks": len(chunks),
+    }
+
+
 @app.post("/gemini/ingest")
 async def ingest():
     chunks = await ingestion_service.ingest_txt(
@@ -37,10 +83,9 @@ async def ingest():
 
 
 @app.post("/gemini/rag")
-async def rag(question: str):
-
-    response = await rag_service.ask(question)
-    return {"response": response.content}
+async def rag(request: RagRequest):
+    response = await rag_service.ask(request.question)
+    return {"response": response}
 
 
 @app.post("/gemini/embeddings")
@@ -49,12 +94,12 @@ async def generate_embeddings(text: str):
     return {"dimensions": len(vector), "first_values": vector[:5]}
 
 
-@app.get("/hello")
-def hello():
-    return {"message": "Hello, World!"}
-
-
 @app.post("/gemini/chat")
 async def gemini_response(prompt: str):
     response = await gemini_service.generate_response(prompt)
     return {"response": response}
+
+
+@app.get("/gemini/health")
+async def health_check():
+    return {"status": "ok"}

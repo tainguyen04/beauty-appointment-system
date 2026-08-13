@@ -10,5 +10,7 @@ namespace BeautyBooking.AI.Interfaces
     public interface IKnowledgeService
     {
         Task<KnowledgeDocumentResponse> CreateKnowledgeDocumentAsync(string title, string content);
+        Task UpdateKnowledgeDocumentAsync(int documentId, string title, string content);
+        Task DeleteKnowledgeDocumentAsync(int documentId);
     }
 }

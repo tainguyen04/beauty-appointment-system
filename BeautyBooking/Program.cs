@@ -108,6 +108,13 @@ builder.Services.AddHttpClient<IEmBeddingService, OllamaEmbeddingService>(provid
         ?? throw new InvalidOperationException("Ollama base URL is not configured.");
     provider.BaseAddress = new Uri(olalmaBaseUrl);
 });
+builder.Services.AddHttpClient<IPythonAIService, PythonAIService>(provider =>
+{
+    var pythonAIBaseUrl =
+        builder.Configuration["PythonAI:BaseUrl"]
+        ?? throw new InvalidOperationException("Python AI base URL is not configured.");
+    provider.BaseAddress = new Uri(pythonAIBaseUrl);
+});
 
 builder.Services.AddScoped<IAIProvider>(provider =>
 {
