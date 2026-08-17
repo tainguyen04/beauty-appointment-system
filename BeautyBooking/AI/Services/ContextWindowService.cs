@@ -1,13 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using BeautyBooking.AI.Configuration;
 using BeautyBooking.AI.DTO;
 using BeautyBooking.AI.Extensions;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.AI.Models;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BeautyBooking.AI.Services
 {
@@ -53,21 +53,24 @@ namespace BeautyBooking.AI.Services
             CancellationToken cancellationToken
         )
         {
-            var historyMessages = await _conversationService.GetMessagesAsync(
-                conversationId,
-                cancellationToken
-            );
             var summaryEntity = await _conversationSummaryService.GetByConversationIdAsync(
                 conversationId,
                 cancellationToken
             );
-            if (historyMessages.Count > _options.MaxMessages)
+            var messageCount = await _conversationService.CountMessagesAsync(
+                conversationId,
+                cancellationToken
+            );
+            if (messageCount > _options.MaxMessages)
             {
                 var lastSummarizedMessageId = summaryEntity?.LastSummarizedMessageId ?? 0;
-                var chatMessagesToSummarize = historyMessages
-                    .Where(m => m.Id > lastSummarizedMessageId)
-                    .TakeLast(_options.MaxMessages - _options.RecentMessages)
-                    .ToList();
+                var summarizeCount = Math.Max(1, _options.MaxMessages - _options.RecentMessages);
+                var chatMessagesToSummarize = await _conversationService.GetMessagesAfterAsync(
+                    conversationId,
+                    lastSummarizedMessageId,
+                    summarizeCount,
+                    cancellationToken
+                );
                 if (chatMessagesToSummarize.Count > 0)
                 {
                     var newLastSummarizedMessageId = chatMessagesToSummarize.Last().Id;
@@ -84,8 +87,12 @@ namespace BeautyBooking.AI.Services
                 cancellationToken
             );
 
-            var recentMessages = historyMessages
-                .TakeLast(_options.RecentMessages)
+            var recentEntities = await _conversationService.GetRecentMessagesAsync(
+                conversationId,
+                Math.Max(1, _options.RecentMessages),
+                cancellationToken
+            );
+            var recentMessages = recentEntities
                 .Select(m => m.ToChatMessage())
                 .ToList();
             if (!string.IsNullOrWhiteSpace(summary))

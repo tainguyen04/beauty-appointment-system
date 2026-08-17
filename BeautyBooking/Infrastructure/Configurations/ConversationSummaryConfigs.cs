@@ -1,10 +1,10 @@
+using BeautyBooking.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BeautyBooking.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BeautyBooking.Infrastructure.Configurations
 {
@@ -13,6 +13,7 @@ namespace BeautyBooking.Infrastructure.Configurations
         public void Configure(EntityTypeBuilder<ConversationSummary> builder)
         {
             builder.HasKey(cs => cs.Id);
+            builder.HasQueryFilter(cs => !cs.IsDeleted && !cs.Conversation.IsDeleted);
             builder
                 .HasOne(cs => cs.Conversation)
                 .WithMany()

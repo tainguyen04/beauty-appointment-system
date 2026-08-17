@@ -1,13 +1,15 @@
+using BeautyBooking.AI.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BeautyBooking.AI.DTO;
 
 namespace BeautyBooking.Entities
 {
     public class Conversation : BaseEntity
     {
+        public int? UserId { get; set; }
+        public User? User { get; set; }
         public ICollection<Message> Messages { get; set; } = [];
     }
 

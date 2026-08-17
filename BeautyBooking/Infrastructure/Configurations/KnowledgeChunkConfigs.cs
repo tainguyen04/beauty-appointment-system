@@ -1,7 +1,7 @@
-using System.Globalization;
 using BeautyBooking.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Globalization;
 
 namespace BeautyBooking.Infrastructure.Configurations
 {
@@ -17,7 +17,7 @@ namespace BeautyBooking.Infrastructure.Configurations
                     // float[] -> string
                     v =>
                         "["
-                        + string.Join(",", v.Select(x => x.ToString(CultureInfo.InvariantCulture)))
+                        + string.Join(",", (v ?? Array.Empty<float>()).Select(x => x.ToString(CultureInfo.InvariantCulture)))
                         + "]",
                     // string -> float[]
                     v =>

@@ -1,11 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Principal;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using BeautyBooking.AI.Configuration;
+﻿using BeautyBooking.AI.Configuration;
 using BeautyBooking.AI.Factories;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.AI.Prompt;
@@ -26,6 +19,14 @@ using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.SemanticKernel;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Principal;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
@@ -82,47 +83,37 @@ builder.Services.Scan(scan =>
 //Scan prompt templates in AI layer
 builder.Services.Scan(scan =>
     scan.FromAssembliesOf(typeof(Program))
-        .AddClasses(classes => classes.AssignableTo<IPromptTemplate>())
+        .AddClasses(classes => classes.AssignableTo<BeautyBooking.AI.Interfaces.IPromptTemplate>())
         .AsImplementedInterfaces()
         .WithScopedLifetime()
 );
 builder.Services.AddScoped<IToolRegistry, ToolRegistry>();
 builder.Services.AddScoped<ToolExecutor>();
 
-builder.Services.AddHttpClient<OpenAIProvider>(provider =>
-{
-    provider.BaseAddress = new Uri("https://api.openai.com/v1/");
-});
-builder.Services.AddHttpClient<OllamaProvider>(provider =>
-{
-    var olalmaBaseUrl =
-        builder.Configuration["Ollama:BaseUrl"]
-        ?? throw new InvalidOperationException("Ollama base URL is not configured.");
-    provider.BaseAddress = new Uri(olalmaBaseUrl);
-});
+// Legacy providers are intentionally kept in the source tree for reference.
+// Their registrations are disabled so all AI requests use Semantic Kernel + Gemini.
+// builder.Services.AddHttpClient<OpenAIProvider>();
+// builder.Services.AddHttpClient<OllamaProvider>();
+// builder.Services.AddHttpClient<IEmBeddingService, OllamaEmbeddingService>();
+// Legacy provider factory registration:
+// builder.Services.AddScoped<IAIProviderFactory, AIProviderFactory>();
 
-builder.Services.AddHttpClient<IEmBeddingService, OllamaEmbeddingService>(provider =>
-{
-    var olalmaBaseUrl =
-        builder.Configuration["Ollama:BaseUrl"]
-        ?? throw new InvalidOperationException("Ollama base URL is not configured.");
-    provider.BaseAddress = new Uri(olalmaBaseUrl);
-});
-builder.Services.AddHttpClient<IPythonAIService, PythonAIService>(provider =>
-{
-    var pythonAIBaseUrl =
-        builder.Configuration["PythonAI:BaseUrl"]
-        ?? throw new InvalidOperationException("Python AI base URL is not configured.");
-    provider.BaseAddress = new Uri(pythonAIBaseUrl);
-});
+builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
+var geminiOptions = builder.Configuration.GetSection("Gemini").Get<GeminiOptions>() ?? new();
 
-builder.Services.AddScoped<IAIProvider>(provider =>
-{
-    var factory = provider.GetRequiredService<IAIProviderFactory>();
-    var aiOptions = provider.GetRequiredService<IOptions<AIOptions>>().Value;
-    return factory.GetProvider(aiOptions.Provider);
-});
-builder.Services.AddScoped<IAIProviderFactory, AIProviderFactory>();
+#pragma warning disable SKEXP0070
+builder
+    .Services.AddKernel()
+    .AddGoogleAIGeminiChatCompletion(geminiOptions.ChatModel, geminiOptions.ApiKey)
+    .AddGoogleAIEmbeddingGenerator(
+        geminiOptions.EmbeddingModel,
+        geminiOptions.ApiKey,
+        dimensions: 768
+    );
+#pragma warning restore SKEXP0070
+
+builder.Services.AddScoped<IAIProvider, GeminiProvider>();
+builder.Services.AddScoped<IEmBeddingService, GeminiEmbeddingService>();
 builder
     .Services.AddControllers()
     .AddJsonOptions(option =>

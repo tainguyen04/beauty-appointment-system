@@ -4,5 +4,6 @@ namespace BeautyBooking.AI.DTO
     {
         Ollama,
         OpenAI,
+        Gemini,
     }
 }

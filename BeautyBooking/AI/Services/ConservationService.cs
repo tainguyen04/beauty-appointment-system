@@ -1,12 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using BeautyBooking.AI.DTO;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BeautyBooking.AI.Services
 {
@@ -47,9 +47,12 @@ namespace BeautyBooking.AI.Services
             await _messageRepository.SaveChangesAsync();
         }
 
-        public async Task<Conversation> CreateAsync(CancellationToken cancellationToken = default)
+        public async Task<Conversation> CreateAsync(
+            int userId,
+            CancellationToken cancellationToken = default
+        )
         {
-            var conversation = new Conversation();
+            var conversation = new Conversation { UserId = userId };
             await _conversationRepository.CreateAsync(conversation);
             await _conversationRepository.SaveChangesAsync();
             return conversation;
@@ -65,6 +68,45 @@ namespace BeautyBooking.AI.Services
                 .FirstOrDefaultAsync(c => c.Id == conversationId, cancellationToken);
         }
 
+        public async Task<Conversation?> GetOwnedByIdAsync(
+            int conversationId,
+            int userId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            return await _conversationRepository
+                .Query()
+                .FirstOrDefaultAsync(
+                    c => c.Id == conversationId && c.UserId == userId,
+                    cancellationToken
+                );
+        }
+
+        public async Task<List<ConversationResponse>> GetConversationsAsync(
+            int userId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            return await _conversationRepository
+                .Query()
+                .Where(c => c.UserId == userId)
+                .Select(c => new ConversationResponse
+                {
+                    Id = c.Id,
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.Messages
+                        .OrderByDescending(m => m.CreatedAt)
+                        .Select(m => (DateTime?)m.CreatedAt)
+                        .FirstOrDefault() ?? c.UpdatedAt,
+                    LastMessage = c.Messages
+                        .OrderByDescending(m => m.CreatedAt)
+                        .Select(m => m.Content)
+                        .FirstOrDefault(),
+                })
+                .OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<List<Message>> GetMessagesAsync(
             int conversationId,
             CancellationToken cancellationToken = default
@@ -73,7 +115,41 @@ namespace BeautyBooking.AI.Services
             return await _messageRepository
                 .Query()
                 .Where(m => m.ConversationId == conversationId)
+                .OrderBy(m => m.CreatedAt)
                 .ToListAsync(cancellationToken);
         }
+
+        public Task<int> CountMessagesAsync(
+            int conversationId,
+            CancellationToken cancellationToken = default
+        ) => _messageRepository.Query().CountAsync(m => m.ConversationId == conversationId, cancellationToken);
+
+        public async Task<List<Message>> GetRecentMessagesAsync(
+            int conversationId,
+            int count,
+            CancellationToken cancellationToken = default
+        )
+        {
+            var messages = await _messageRepository
+                .Query()
+                .Where(m => m.ConversationId == conversationId)
+                .OrderByDescending(m => m.Id)
+                .Take(count)
+                .ToListAsync(cancellationToken);
+            messages.Reverse();
+            return messages;
+        }
+
+        public Task<List<Message>> GetMessagesAfterAsync(
+            int conversationId,
+            int lastMessageId,
+            int count,
+            CancellationToken cancellationToken = default
+        ) => _messageRepository
+            .Query()
+            .Where(m => m.ConversationId == conversationId && m.Id > lastMessageId)
+            .OrderBy(m => m.Id)
+            .Take(count)
+            .ToListAsync(cancellationToken);
     }
 }
