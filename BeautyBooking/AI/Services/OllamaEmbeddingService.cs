@@ -32,5 +32,17 @@ namespace BeautyBooking.AI.Services
             );
             return result?.Embeddings?.FirstOrDefault() ?? [];
         }
+
+        public async Task<IReadOnlyList<float[]>> GenerateEmbeddingsAsync(
+            IReadOnlyList<string> texts,
+            CancellationToken cancellationToken = default
+        )
+        {
+            // Legacy compatibility: Ollama provider is disabled; keep sequential behavior for comparison.
+            var embeddings = new List<float[]>(texts.Count);
+            foreach (var text in texts)
+                embeddings.Add(await GenerateEmbeddingAsync(text, cancellationToken));
+            return embeddings;
+        }
     }
 }

@@ -5,5 +5,6 @@ namespace BeautyBooking.AI.Configuration
         public string ApiKey { get; set; } = string.Empty;
         public string ChatModel { get; set; } = string.Empty;
         public string EmbeddingModel { get; set; } = string.Empty;
+        public int EmbeddingDimensions { get; set; } = EmbeddingConstants.StorageDimensions;
     }
 }

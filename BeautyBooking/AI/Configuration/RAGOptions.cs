@@ -7,7 +7,8 @@ namespace BeautyBooking.AI.Configuration
 {
     public class RAGOptions
     {
-        public int ChunkSize { get; set; }
-        public int Overlap { get; set; }
+        public int ChunkSize { get; set; } = 800;
+        public int Overlap { get; set; } = 100;
+        public int TopK { get; set; } = 3;
     }
 }

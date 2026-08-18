@@ -9,6 +9,9 @@ namespace BeautyBooking.Entities
     {
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
+        public string EmbeddingModel { get; set; } = string.Empty;
+        public int EmbeddingDimensions { get; set; }
+        public DateTime? IndexedAt { get; set; }
         public ICollection<KnowledgeChunk> Chunks { get; set; } = [];
     }
 }

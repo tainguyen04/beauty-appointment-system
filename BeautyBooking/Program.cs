@@ -67,7 +67,11 @@ builder.Services.Scan(scan =>
 //Scan services in AI layer
 builder.Services.Scan(scan =>
     scan.FromAssembliesOf(typeof(Program))
-        .AddClasses(classes => classes.InNamespaces("BeautyBooking.AI.Services"))
+        .AddClasses(classes =>
+            classes
+                .InNamespaces("BeautyBooking.AI.Services")
+                // Legacy: keep OllamaEmbeddingService source code, but do not let assembly scanning register it.
+                .Where(type => type != typeof(OllamaEmbeddingService)))
         .AsImplementedInterfaces()
         .WithScopedLifetime()
 );
@@ -108,7 +112,7 @@ builder
     .AddGoogleAIEmbeddingGenerator(
         geminiOptions.EmbeddingModel,
         geminiOptions.ApiKey,
-        dimensions: 768
+        dimensions: geminiOptions.EmbeddingDimensions
     );
 #pragma warning restore SKEXP0070
 

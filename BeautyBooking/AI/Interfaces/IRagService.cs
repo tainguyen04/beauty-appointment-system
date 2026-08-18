@@ -1,3 +1,4 @@
+using BeautyBooking.AI.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +8,9 @@ namespace BeautyBooking.AI.Interfaces
 {
     public interface IRagService
     {
-        Task<string> BuildContextAsync(
+        Task<RagContext> RetrieveAsync(
             string query,
-            int topK = 3,
+            string? conversationContext = null,
             CancellationToken cancellationToken = default
         );
     }

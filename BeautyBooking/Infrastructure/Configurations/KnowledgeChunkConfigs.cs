@@ -1,5 +1,6 @@
 using BeautyBooking.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.Globalization;
 
@@ -11,7 +12,7 @@ namespace BeautyBooking.Infrastructure.Configurations
         {
             builder.HasKey(kc => kc.Id);
 
-            builder
+            var embeddingProperty = builder
                 .Property(kc => kc.Embedding)
                 .HasConversion(
                     // float[] -> string
@@ -26,7 +27,14 @@ namespace BeautyBooking.Infrastructure.Configurations
                             .Select(x => float.Parse(x, CultureInfo.InvariantCulture))
                             .ToArray()
                 )
-                .HasColumnType("vector(768)");
+                .HasColumnType($"vector({AI.Configuration.EmbeddingConstants.StorageDimensions})");
+
+            // EF Core cannot detect in-place changes inside arrays without a value comparer.
+            embeddingProperty.Metadata.SetValueComparer(
+                new ValueComparer<float[]?>(
+                    (left, right) => left == right || (left != null && right != null && left.SequenceEqual(right)),
+                    value => value == null ? 0 : value.Aggregate(0, (hash, item) => HashCode.Combine(hash, item)),
+                    value => value == null ? null : value.ToArray()));
 
             builder
                 .HasOne(kc => kc.Document)

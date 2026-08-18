@@ -1,8 +1,10 @@
+using BeautyBooking.AI.Configuration;
 using BeautyBooking.AI.DTO;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.EF;
 using BeautyBooking.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace BeautyBooking.AI.Services
 {
@@ -13,14 +15,17 @@ namespace BeautyBooking.AI.Services
         private readonly IEmBeddingService _embeddingService;
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _environment;
+        private readonly GeminiOptions _geminiOptions;
 
         public KnowledgeService(IChunkService chunkService, IEmBeddingService embeddingService,
-            ApplicationDbContext dbContext, IWebHostEnvironment environment)
+            ApplicationDbContext dbContext, IWebHostEnvironment environment,
+            IOptions<GeminiOptions> geminiOptions)
         {
             _chunkService = chunkService;
             _embeddingService = embeddingService;
             _dbContext = dbContext;
             _environment = environment;
+            _geminiOptions = geminiOptions.Value;
         }
 
         public async Task<KnowledgeDocumentResponse> CreateKnowledgeDocumentAsync(
@@ -29,6 +34,7 @@ namespace BeautyBooking.AI.Services
             ValidateDocument(title, content);
             var document = new KnowledgeDocument { Title = title.Trim(), Content = content.Trim() };
             document.Chunks = await CreateChunksAsync(document.Content, cancellationToken);
+            ApplyIndexMetadata(document);
             _dbContext.KnowledgeDocuments.Add(document);
             await _dbContext.SaveChangesAsync(cancellationToken);
             return Map(document);
@@ -45,6 +51,7 @@ namespace BeautyBooking.AI.Services
             document.Title = title.Trim();
             document.Content = content.Trim();
             document.Chunks = await CreateChunksAsync(document.Content, cancellationToken);
+            ApplyIndexMetadata(document);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
@@ -94,6 +101,7 @@ namespace BeautyBooking.AI.Services
             {
                 var document = new KnowledgeDocument { Title = source.Title, Content = source.Content };
                 document.Chunks = await CreateChunksAsync(source.Content, cancellationToken);
+                ApplyIndexMetadata(document);
                 _dbContext.KnowledgeDocuments.Add(document);
             }
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -105,14 +113,26 @@ namespace BeautyBooking.AI.Services
         {
             var chunks = _chunkService.SplitTextIntoChunks(content);
             var result = new List<KnowledgeChunk>(chunks.Count);
+            // Legacy: chia tiếp thành các batch theo EmbeddingBatchSize.
+            // Hệ thống hiện tại nhỏ nên gửi toàn bộ paragraph của một tài liệu trong một lần.
+            var embeddings = await _embeddingService.GenerateEmbeddingsAsync(chunks, cancellationToken);
             for (var index = 0; index < chunks.Count; index++)
+            {
                 result.Add(new KnowledgeChunk
                 {
                     Content = chunks[index],
                     ChunkIndex = index,
-                    Embedding = await _embeddingService.GenerateEmbeddingAsync(chunks[index], cancellationToken)
+                    Embedding = embeddings[index],
                 });
+            }
             return result;
+        }
+
+        private void ApplyIndexMetadata(KnowledgeDocument document)
+        {
+            document.EmbeddingModel = _geminiOptions.EmbeddingModel;
+            document.EmbeddingDimensions = _geminiOptions.EmbeddingDimensions;
+            document.IndexedAt = DateTime.UtcNow;
         }
 
         private static void ValidateDocument(string title, string content)

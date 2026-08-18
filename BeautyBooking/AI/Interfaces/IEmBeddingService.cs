@@ -11,5 +11,9 @@ namespace BeautyBooking.AI.Interfaces
             string text,
             CancellationToken cancellationToken = default
         );
+        Task<IReadOnlyList<float[]>> GenerateEmbeddingsAsync(
+            IReadOnlyList<string> texts,
+            CancellationToken cancellationToken = default
+        );
     }
 }
