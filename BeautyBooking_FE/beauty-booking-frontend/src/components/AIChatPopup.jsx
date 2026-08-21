@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Avatar, Button, Card, Empty, Flex, FloatButton, Grid, Input, Spin, Tooltip, Typography } from 'antd';
+import { Alert, Avatar, Button, Card, Empty, Flex, FloatButton, Grid, Input, Menu, Spin, Tooltip, Typography } from 'antd';
 import { CloseOutlined, DeleteOutlined, HistoryOutlined, RobotOutlined, SendOutlined, UserOutlined } from '@ant-design/icons';
 import aiApi from '../api/aiApi';
 import { GetUser } from '../api/axiosClient';
@@ -21,10 +21,6 @@ const readGuestMessages = () => {
 const getErrorMessage = (error) => error.response?.data?.message
   ?? error.response?.data?.Message
   ?? 'Không thể kết nối trợ lý AI. Vui lòng thử lại.';
-
-const formatConversationTime = (value) => value
-  ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(new Date(value))
-  : '';
 
 const AIChatPopup = () => {
   const screens = Grid.useBreakpoint();
@@ -225,24 +221,18 @@ const AIChatPopup = () => {
           </section>
           {isLoggedIn && showConversations && <aside style={{ width: compact ? 125 : 170, padding: '10px 8px', borderLeft: '1px solid #f0f0f0', background: '#fff', flexShrink: 0 }}>
             <Flex align="center" gap={6} style={{ padding: '2px 4px 8px' }}><HistoryOutlined /><Text strong>Gần đây</Text></Flex>
-            <div style={{ maxHeight: 310, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
               {conversations.length === 0 && !loadingHistory && <Text type="secondary">Chưa có hội thoại</Text>}
-              {conversations.map((conversation) => <Button
-                block
-                type={conversation.id === conversationId ? 'primary' : 'text'}
-                key={conversation.id}
-                onClick={() => handleSelectConversation(conversation.id)}
-                style={{ height: 'auto', minHeight: 52, marginBottom: 5, padding: 8, textAlign: 'left', whiteSpace: 'normal' }}
-              >
-                <Flex vertical align="flex-start" style={{ width: '100%', minWidth: 0 }}>
-                  <Text ellipsis={{ tooltip: conversation.lastMessage }} style={{ width: '100%', color: 'inherit', fontSize: 12 }}>
-                    {conversation.lastMessage || `Hội thoại #${conversation.id}`}
-                  </Text>
-                  <Text style={{ color: 'inherit', fontSize: 10, opacity: 0.75 }}>
-                    {formatConversationTime(conversation.updatedAt ?? conversation.createdAt)}
-                  </Text>
-                </Flex>
-              </Button>)}
+              {conversations.length > 0 && <Menu
+                mode="inline"
+                selectedKeys={conversationId ? [String(conversationId)] : []}
+                onClick={({ key }) => handleSelectConversation(Number(key))}
+                items={conversations.map((conversation) => ({
+                  key: String(conversation.id),
+                  label: conversation.lastMessage || `Hội thoại #${conversation.id}`,
+                }))}
+                style={{ borderInlineEnd: 0 }}
+              />}
             </div>
           </aside>}
         </div>
