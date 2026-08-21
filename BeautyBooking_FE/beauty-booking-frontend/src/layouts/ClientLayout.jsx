@@ -4,6 +4,7 @@ import { Button, Avatar, Dropdown, Space,message, Spin} from 'antd';
 import { UserOutlined, LogoutOutlined, DashboardOutlined } from '@ant-design/icons';
 import { useApiAction } from '../hooks/useApiAction';
 import authApi from '../api/authApi';
+import AIChatPopup from '../components/AIChatPopup';
 const ClientLayout = () => {
   const navigate = useNavigate();
   const user = GetUser(); // Lấy thông tin đã lưu ở Local/Session
@@ -93,6 +94,7 @@ const ClientLayout = () => {
       <footer style={{ padding: '40px 50px', background: '#2c3e50', color: 'white', textAlign: 'center' }}>
         <p>© 2026 EcoBeauty Spa - Trải nghiệm vẻ đẹp tự nhiên</p>
       </footer>
+      <AIChatPopup />
     </div>
   );
 };

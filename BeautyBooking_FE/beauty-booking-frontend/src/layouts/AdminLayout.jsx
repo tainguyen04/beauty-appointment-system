@@ -4,7 +4,7 @@ import {
   DashboardOutlined, UserOutlined, TeamOutlined, IdcardOutlined,
   CalendarOutlined, LogoutOutlined, DownOutlined, SettingOutlined,
   CustomerServiceOutlined, EnvironmentOutlined, AppstoreOutlined,ScheduleOutlined, CoffeeOutlined
-  ,ScissorOutlined ,TagOutlined,HomeOutlined
+  ,ScissorOutlined ,TagOutlined,HomeOutlined, RobotOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import authApi from '../api/authApi';
@@ -80,6 +80,11 @@ const menuItems = [
         key: '/admin/categories',
         icon: <TagOutlined />,
         label: 'Danh mục Dịch vụ',
+      },
+      {
+        key: '/admin/knowledge',
+        icon: <RobotOutlined />,
+        label: 'Kiến thức AI',
       },
     ],
   },

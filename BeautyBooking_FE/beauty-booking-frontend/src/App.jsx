@@ -15,6 +15,7 @@ import WorkScheduleManager from './pages/Admin/WorkScheduleManager';
 import AppointmentManager from './pages/Admin/AppointmentManager';
 import WebLocalizationManager from './pages/Admin/WebLocalizationManager';
 import HelpdeskCatalogManager from './pages/Admin/HelpdeskCatalogManager';
+import KnowledgeManager from './pages/Admin/KnowledgeManager';
 import Appointment from './pages/Client/Appointment'; // Import trang Appointment mới
 import MyAppointment from './pages/Client/MyAppointment';
 import Helpdesk from './pages/Client/Helpdesk'; // Import trang Helpdesk mới
@@ -62,6 +63,7 @@ function App() {
             <Route path="appointments" element={<AppointmentManager />} />
             <Route path="website-localizations" element={<WebLocalizationManager />} />
             <Route path="helpdesk-catalogs" element={<HelpdeskCatalogManager />} />
+            <Route path="knowledge" element={<KnowledgeManager />} />
           </Route>
         </Route>
         

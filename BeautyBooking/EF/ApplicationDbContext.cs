@@ -6,11 +6,16 @@ namespace BeautyBooking.EF
     public class ApplicationDbContext : DbContext
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor httpContextAccessor) 
+
+        public ApplicationDbContext(
+            DbContextOptions<ApplicationDbContext> options,
+            IHttpContextAccessor httpContextAccessor
+        )
             : base(options)
         {
             _httpContextAccessor = httpContextAccessor;
         }
+
         public DbSet<WebsiteLocalization> WebsiteLocalizations { get; set; }
         public DbSet<WebsiteLocalizationWard> WebsiteLocalizationWards { get; set; }
         public DbSet<HelpdeskCatalog> HelpdeskCatalogs { get; set; }
@@ -24,11 +29,20 @@ namespace BeautyBooking.EF
         public DbSet<AppointmentService> AppointmentServices { get; set; }
         public DbSet<WorkSchedule> WorkSchedules { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Conversation> Conversations { get; set; }
+        public DbSet<Message> Messages { get; set; }
+        public DbSet<ConversationSummary> ConversationSummaries { get; set; }
+        public DbSet<KnowledgeDocument> KnowledgeDocuments { get; set; }
+        public DbSet<KnowledgeChunk> KnowledgeChunks { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            var entries = ChangeTracker.Entries()
-                .Where(e => e.Entity is BaseEntity && (e.State == EntityState.Added || e.State == EntityState.Modified));
+            var entries = ChangeTracker
+                .Entries()
+                .Where(e =>
+                    e.Entity is BaseEntity
+                    && (e.State == EntityState.Added || e.State == EntityState.Modified)
+                );
             foreach (var entry in entries)
             {
                 var entity = (BaseEntity)entry.Entity;
@@ -36,13 +50,15 @@ namespace BeautyBooking.EF
                 if (entry.State == EntityState.Added)
                 {
                     entity.CreatedAt = now;
-                    entity.CreatedBy = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                    entity.CreatedBy =
+                        _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
                 }
                 else
                 {
                     entry.Property(nameof(BaseEntity.CreatedAt)).IsModified = false;
                     entity.UpdatedAt = now;
-                    entity.UpdatedBy = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                    entity.UpdatedBy =
+                        _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
                 }
             }
             return base.SaveChangesAsync(cancellationToken);

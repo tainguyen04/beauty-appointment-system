@@ -208,6 +208,107 @@ namespace BeautyBooking.EF.Migrations
                     b.ToTable("categories", (string)null);
                 });
 
+            modelBuilder.Entity("BeautyBooking.Entities.Conversation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("updated_by");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_conversations");
+
+                    b.HasIndex("UserId", "UpdatedAt")
+                        .HasDatabaseName("ix_conversations_user_id_updated_at");
+
+                    b.ToTable("conversations", (string)null);
+                });
+
+            modelBuilder.Entity("BeautyBooking.Entities.ConversationSummary", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ConversationId")
+                        .HasColumnType("int")
+                        .HasColumnName("conversation_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<int>("LastSummarizedMessageId")
+                        .HasColumnType("int")
+                        .HasColumnName("last_summarized_message_id");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("summary");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_conversation_summaries");
+
+                    b.HasIndex("ConversationId")
+                        .HasDatabaseName("ix_conversation_summaries_conversation_id");
+
+                    b.ToTable("conversation_summaries", (string)null);
+                });
+
             modelBuilder.Entity("BeautyBooking.Entities.HelpdeskCatalog", b =>
                 {
                     b.Property<int>("CatalogId")
@@ -270,6 +371,164 @@ namespace BeautyBooking.EF.Migrations
                         .HasDatabaseName("ix_helpdesk_contents_catalog_id");
 
                     b.ToTable("helpdesk_contents", (string)null);
+                });
+
+            modelBuilder.Entity("BeautyBooking.Entities.KnowledgeChunk", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChunkIndex")
+                        .HasColumnType("int")
+                        .HasColumnName("chunk_index");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("content");
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int")
+                        .HasColumnName("document_id");
+
+                    b.Property<string>("Embedding")
+                        .HasColumnType("vector(768)")
+                        .HasColumnName("embedding");
+
+                    b.HasKey("Id")
+                        .HasName("pk_knowledge_chunks");
+
+                    b.HasIndex("DocumentId")
+                        .HasDatabaseName("ix_knowledge_chunks_document_id");
+
+                    b.ToTable("knowledge_chunks", (string)null);
+                });
+
+            modelBuilder.Entity("BeautyBooking.Entities.KnowledgeDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("created_by");
+
+                    b.Property<int>("EmbeddingDimensions")
+                        .HasColumnType("int")
+                        .HasColumnName("embedding_dimensions");
+
+                    b.Property<string>("EmbeddingModel")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("embedding_model");
+
+                    b.Property<DateTime?>("IndexedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("indexed_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_knowledge_documents");
+
+                    b.HasIndex("EmbeddingModel", "EmbeddingDimensions")
+                        .HasDatabaseName("ix_knowledge_documents_embedding_model_embedding_dimensions");
+
+                    b.ToTable("knowledge_documents", (string)null);
+                });
+
+            modelBuilder.Entity("BeautyBooking.Entities.Message", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("content");
+
+                    b.Property<int>("ConversationId")
+                        .HasColumnType("int")
+                        .HasColumnName("conversation_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("role");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_messages");
+
+                    b.HasIndex("ConversationId", "CreatedAt")
+                        .HasDatabaseName("ix_messages_conversation_id_created_at");
+
+                    b.ToTable("messages", (string)null);
                 });
 
             modelBuilder.Entity("BeautyBooking.Entities.RefreshToken", b =>
@@ -810,6 +1069,29 @@ namespace BeautyBooking.EF.Migrations
                     b.Navigation("Service");
                 });
 
+            modelBuilder.Entity("BeautyBooking.Entities.Conversation", b =>
+                {
+                    b.HasOne("BeautyBooking.Entities.User", "User")
+                        .WithMany("Conversations")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_conversations_users_user_id");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BeautyBooking.Entities.ConversationSummary", b =>
+                {
+                    b.HasOne("BeautyBooking.Entities.Conversation", "Conversation")
+                        .WithMany()
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_conversation_summaries_conversations_conversation_id");
+
+                    b.Navigation("Conversation");
+                });
+
             modelBuilder.Entity("BeautyBooking.Entities.HelpdeskContent", b =>
                 {
                     b.HasOne("BeautyBooking.Entities.HelpdeskCatalog", "HelpdeskCatalog")
@@ -820,6 +1102,30 @@ namespace BeautyBooking.EF.Migrations
                         .HasConstraintName("fk_helpdesk_contents_helpdesk_catalogs_catalog_id");
 
                     b.Navigation("HelpdeskCatalog");
+                });
+
+            modelBuilder.Entity("BeautyBooking.Entities.KnowledgeChunk", b =>
+                {
+                    b.HasOne("BeautyBooking.Entities.KnowledgeDocument", "Document")
+                        .WithMany("Chunks")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_knowledge_chunks_knowledge_documents_document_id");
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("BeautyBooking.Entities.Message", b =>
+                {
+                    b.HasOne("BeautyBooking.Entities.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_messages_conversations_conversation_id");
+
+                    b.Navigation("Conversation");
                 });
 
             modelBuilder.Entity("BeautyBooking.Entities.RefreshToken", b =>
@@ -868,7 +1174,7 @@ namespace BeautyBooking.EF.Migrations
                         .HasConstraintName("fk_staff_profiles_users_user_id");
 
                     b.HasOne("BeautyBooking.Entities.WebsiteLocalizationWard", "Ward")
-                        .WithMany()
+                        .WithMany("StaffProfiles")
                         .HasForeignKey("WardId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
@@ -941,9 +1247,19 @@ namespace BeautyBooking.EF.Migrations
                     b.Navigation("Services");
                 });
 
+            modelBuilder.Entity("BeautyBooking.Entities.Conversation", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
             modelBuilder.Entity("BeautyBooking.Entities.HelpdeskCatalog", b =>
                 {
                     b.Navigation("HelpdeskContents");
+                });
+
+            modelBuilder.Entity("BeautyBooking.Entities.KnowledgeDocument", b =>
+                {
+                    b.Navigation("Chunks");
                 });
 
             modelBuilder.Entity("BeautyBooking.Entities.Service", b =>
@@ -962,12 +1278,19 @@ namespace BeautyBooking.EF.Migrations
 
             modelBuilder.Entity("BeautyBooking.Entities.User", b =>
                 {
+                    b.Navigation("Conversations");
+
                     b.Navigation("StaffProfile");
                 });
 
             modelBuilder.Entity("BeautyBooking.Entities.WebsiteLocalization", b =>
                 {
                     b.Navigation("WebsiteLocalizationWards");
+                });
+
+            modelBuilder.Entity("BeautyBooking.Entities.WebsiteLocalizationWard", b =>
+                {
+                    b.Navigation("StaffProfiles");
                 });
 #pragma warning restore 612, 618
         }
