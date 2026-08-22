@@ -16,6 +16,15 @@ const aiApi = {
   createKnowledge: ({ title, content }) =>
     axiosClient.post('/AI/knowledge', { title, content }),
 
+  uploadKnowledgeFile: ({ file, title }) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (title?.trim()) formData.append('title', title.trim());
+    return axiosClient.post('/AI/knowledge/file', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
   reindexKnowledge: () => axiosClient.post('/AI/knowledge/reindex'),
 };
 

@@ -91,7 +91,8 @@ namespace BeautyBooking.AI.Providers
 
         public async Task<string> GenerateResponseAsync(
             List<ChatMessage> messages,
-            CancellationToken cancellationToken = default
+            CancellationToken cancellationToken = default,
+            bool enableTools = false
         )
         {
             var ollamaMessages = messages.ToOllamaChatMessages();
@@ -100,7 +101,7 @@ namespace BeautyBooking.AI.Providers
             {
                 model = "llama3.2:3b",
                 messages = ollamaMessages,
-                tools = GetToolsForOllama(),
+                tools = enableTools ? GetToolsForOllama() : null,
                 stream = false,
             };
             Console.WriteLine(
@@ -124,7 +125,7 @@ namespace BeautyBooking.AI.Providers
                 ?? throw new InvalidOperationException(
                     "Failed to deserialize the message from Ollama response."
                 );
-            if (message.ToolCalls?.Count > 0)
+            if (enableTools && message.ToolCalls?.Count > 0)
             {
                 messages.Add(message.ToChatMessage());
                 var toolResults = await ExecuteToolCallAsync(message, cancellationToken);

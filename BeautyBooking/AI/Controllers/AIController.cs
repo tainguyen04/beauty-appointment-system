@@ -96,6 +96,28 @@ namespace BeautyBooking.AI.Controllers
             return Ok(response);
         }
 
+        [HttpPost("knowledge/file")]
+        [Authorize(Policy = "AdminOnly")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadKnowledge(
+            [FromForm] UploadKnowledgeDocumentRequest request
+        )
+        {
+            try
+            {
+                var response = await _knowledgeService.CreateKnowledgeDocumentFromFileAsync(
+                    request.File,
+                    request.Title,
+                    HttpContext.RequestAborted
+                );
+                return Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
         [HttpPost("knowledge/reindex")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> ReindexKnowledge()

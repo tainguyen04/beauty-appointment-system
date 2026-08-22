@@ -66,7 +66,11 @@ namespace BeautyBooking.AI.Services
                 Role = ChatRole.System,
                 Content = SummaryPrompt + conversationText,
             };
-            var response = await _aiProvider.GenerateResponseAsync([prompt], cancellationToken);
+            var response = await _aiProvider.GenerateResponseAsync(
+                [prompt],
+                cancellationToken,
+                enableTools: false
+            );
             return response;
         }
 

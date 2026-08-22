@@ -22,7 +22,8 @@ namespace BeautyBooking.AI.Providers
 
         public async Task<string> GenerateResponseAsync(
             List<ChatMessage> messages,
-            CancellationToken cancellationToken = default
+            CancellationToken cancellationToken = default,
+            bool enableTools = false
         )
         {
             // Tạo request body cho API của OpenAI
