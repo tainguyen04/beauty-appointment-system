@@ -3,6 +3,7 @@ using BeautyBooking.AI.DTO;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.AI.Models;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace BeautyBooking.AI.Providers
@@ -10,14 +11,17 @@ namespace BeautyBooking.AI.Providers
     public class GeminiProvider : IAIProvider
     {
         private readonly IChatCompletionService _chatCompletionService;
+        private readonly Kernel _kernel;
         private readonly GeminiOptions _options;
 
         public GeminiProvider(
             IChatCompletionService chatCompletionService,
+            Kernel kernel,
             IOptions<GeminiOptions> options
         )
         {
             _chatCompletionService = chatCompletionService;
+            _kernel = kernel;
             _options = options.Value;
         }
 
@@ -25,11 +29,35 @@ namespace BeautyBooking.AI.Providers
 
         public async Task<string> GenerateResponseAsync(
             List<ChatMessage> messages,
-            CancellationToken cancellationToken = default
+            CancellationToken cancellationToken = default,
+            bool enableTools = false
         )
         {
             EnsureConfigured();
 
+            var history = BuildChatHistory(messages);
+            PromptExecutionSettings? executionSettings = null;
+            Kernel? kernel = null;
+            if (enableTools)
+            {
+                executionSettings = new PromptExecutionSettings
+                {
+                    FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
+                };
+                kernel = _kernel;
+            }
+
+            var response = await _chatCompletionService.GetChatMessageContentAsync(
+                history,
+                executionSettings,
+                kernel,
+                cancellationToken: cancellationToken
+            );
+            return response.Content?.Trim() ?? string.Empty;
+        }
+
+        private static ChatHistory BuildChatHistory(IEnumerable<ChatMessage> messages)
+        {
             var history = new ChatHistory();
             foreach (var message in messages)
             {
@@ -50,12 +78,7 @@ namespace BeautyBooking.AI.Providers
                         break;
                 }
             }
-
-            var response = await _chatCompletionService.GetChatMessageContentAsync(
-                history,
-                cancellationToken: cancellationToken
-            );
-            return response.Content?.Trim() ?? string.Empty;
+            return history;
         }
 
         private void EnsureConfigured()

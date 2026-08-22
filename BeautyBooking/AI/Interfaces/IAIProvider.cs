@@ -8,7 +8,8 @@ namespace BeautyBooking.AI.Interfaces
         AIProviderType ProviderType { get; }
         Task<string> GenerateResponseAsync(
             List<ChatMessage> messages,
-            CancellationToken cancellationToken = default
+            CancellationToken cancellationToken = default,
+            bool enableTools = false
         );
     }
 }

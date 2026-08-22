@@ -96,7 +96,11 @@ namespace BeautyBooking.AI.Services
                 cancellationToken
             );
             InjectRagContext(messages, ragContext);
-            var response = await _aiProvider.GenerateResponseAsync(messages, cancellationToken);
+            var response = await _aiProvider.GenerateResponseAsync(
+                messages,
+                cancellationToken,
+                enableTools: true
+            );
 
             await _conversationService.AddMessageAsync(
                 conversationId,
@@ -196,7 +200,11 @@ namespace BeautyBooking.AI.Services
             }));
             messages.Add(new ChatMessage { Role = ChatRole.User, Content = request.Prompt.Trim() });
 
-            var response = await _aiProvider.GenerateResponseAsync(messages, cancellationToken);
+            var response = await _aiProvider.GenerateResponseAsync(
+                messages,
+                cancellationToken,
+                enableTools: true
+            );
             return CreateChatResponse(null, response, ragContext);
         }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Alert, Button, Card, Col, Form, Input, Modal, Row, Space, Typography } from 'antd';
-import { BookOutlined, SyncOutlined } from '@ant-design/icons';
+import { Alert, Button, Card, Col, Divider, Form, Input, Modal, Row, Space, Typography, Upload } from 'antd';
+import { BookOutlined, SyncOutlined, UploadOutlined } from '@ant-design/icons';
 import aiApi from '../../api/aiApi';
 import { useApiAction } from '../../hooks/useApiAction';
 
@@ -8,7 +8,9 @@ const { Paragraph, Title } = Typography;
 
 const KnowledgeManager = () => {
   const [form] = Form.useForm();
+  const [fileForm] = Form.useForm();
   const [indexedCount, setIndexedCount] = useState(null);
+  const [fileList, setFileList] = useState([]);
   const { actionLoading, execute } = useApiAction();
 
   const handleCreateKnowledge = async (values) => {
@@ -18,6 +20,21 @@ const KnowledgeManager = () => {
       'Không thể thêm tài liệu kiến thức.',
     );
     if (success) form.resetFields();
+  };
+
+  const handleUploadKnowledge = async (values) => {
+    const file = fileList[0]?.originFileObj;
+    if (!file) return;
+
+    const { success } = await execute(
+      () => aiApi.uploadKnowledgeFile({ file, title: values.fileTitle }),
+      'Đã thêm file kiến thức cho AI.',
+      'Không thể thêm file kiến thức.',
+    );
+    if (success) {
+      fileForm.resetFields();
+      setFileList([]);
+    }
   };
 
   const handleReindex = () => {
@@ -64,6 +81,33 @@ const KnowledgeManager = () => {
             </Form.Item>
             <Button type="primary" htmlType="submit" loading={actionLoading} icon={<BookOutlined />}>
               Thêm vào knowledge
+            </Button>
+          </Form>
+
+          <Divider>Hoặc tải file lên</Divider>
+
+          <Form form={fileForm} layout="vertical" onFinish={handleUploadKnowledge}>
+            <Form.Item name="fileTitle" label="Tiêu đề file (không bắt buộc)">
+              <Input placeholder="Mặc định sử dụng tên file" maxLength={200} showCount />
+            </Form.Item>
+            <Form.Item label="File kiến thức" required>
+              <Upload
+                accept=".md,.txt"
+                beforeUpload={() => false}
+                fileList={fileList}
+                maxCount={1}
+                onChange={({ fileList: nextFileList }) => setFileList(nextFileList)}
+              >
+                <Button icon={<UploadOutlined />}>Chọn file .md hoặc .txt</Button>
+              </Upload>
+            </Form.Item>
+            <Button
+              htmlType="submit"
+              loading={actionLoading}
+              disabled={fileList.length === 0}
+              icon={<UploadOutlined />}
+            >
+              Thêm file vào knowledge
             </Button>
           </Form>
         </Card>

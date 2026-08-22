@@ -4,6 +4,7 @@ using BeautyBooking.AI.Interfaces;
 using BeautyBooking.EF;
 using BeautyBooking.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace BeautyBooking.AI.Services
@@ -11,6 +12,9 @@ namespace BeautyBooking.AI.Services
     public class KnowledgeService : IKnowledgeService
     {
         private const string SystemPrefix = "system:";
+        private const long MaximumUploadSize = 1024 * 1024;
+        private static readonly HashSet<string> AllowedFileExtensions =
+            new(StringComparer.OrdinalIgnoreCase) { ".md", ".txt" };
         private readonly IChunkService _chunkService;
         private readonly IEmBeddingService _embeddingService;
         private readonly ApplicationDbContext _dbContext;
@@ -38,6 +42,35 @@ namespace BeautyBooking.AI.Services
             _dbContext.KnowledgeDocuments.Add(document);
             await _dbContext.SaveChangesAsync(cancellationToken);
             return Map(document);
+        }
+
+        public async Task<KnowledgeDocumentResponse> CreateKnowledgeDocumentFromFileAsync(
+            IFormFile file,
+            string? title = null,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (file is null || file.Length == 0)
+                throw new ArgumentException("File kiến thức không có nội dung.");
+            if (file.Length > MaximumUploadSize)
+                throw new ArgumentException("File kiến thức không được vượt quá 1 MB.");
+
+            var extension = Path.GetExtension(file.FileName);
+            if (!AllowedFileExtensions.Contains(extension))
+                throw new ArgumentException("Chỉ hỗ trợ file Markdown (.md) hoặc văn bản (.txt).");
+
+            await using var stream = file.OpenReadStream();
+            using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
+            var content = await reader.ReadToEndAsync(cancellationToken);
+            var documentTitle = string.IsNullOrWhiteSpace(title)
+                ? Path.GetFileNameWithoutExtension(file.FileName)
+                : title.Trim();
+
+            return await CreateKnowledgeDocumentAsync(
+                documentTitle,
+                content,
+                cancellationToken
+            );
         }
 
         public async Task UpdateKnowledgeDocumentAsync(int documentId, string title, string content,

@@ -29,4 +29,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <!-- Legacy Ollama provider is kept as source reference; its manual tool infrastructure is inactive. -->
+  <ItemGroup>
+    <Compile Remove="AI/Providers/OllamaProvider.cs" />
+    <Compile Remove="AI/Factories/AIProviderFactory.cs" />
+  </ItemGroup>
+
 </Project>

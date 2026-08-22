@@ -1,5 +1,4 @@
 ﻿using BeautyBooking.AI.Configuration;
-using BeautyBooking.AI.Factories;
 using BeautyBooking.AI.Interfaces;
 using BeautyBooking.AI.Prompt;
 using BeautyBooking.AI.Providers;
@@ -76,14 +75,6 @@ builder.Services.Scan(scan =>
         .WithScopedLifetime()
 );
 
-//Scan tools in AI layer
-builder.Services.Scan(scan =>
-    scan.FromAssembliesOf(typeof(Program))
-        .AddClasses(classes => classes.AssignableTo<ITool>())
-        .AsImplementedInterfaces()
-        .WithScopedLifetime()
-);
-
 //Scan prompt templates in AI layer
 builder.Services.Scan(scan =>
     scan.FromAssembliesOf(typeof(Program))
@@ -91,8 +82,16 @@ builder.Services.Scan(scan =>
         .AsImplementedInterfaces()
         .WithScopedLifetime()
 );
-builder.Services.AddScoped<IToolRegistry, ToolRegistry>();
-builder.Services.AddScoped<ToolExecutor>();
+
+// Legacy manual tool-calling infrastructure for Ollama. Semantic Kernel plugins replace it.
+// builder.Services.Scan(scan =>
+//     scan.FromAssembliesOf(typeof(Program))
+//         .AddClasses(classes => classes.AssignableTo<ITool>())
+//         .AsImplementedInterfaces()
+//         .WithScopedLifetime()
+// );
+// builder.Services.AddScoped<IToolRegistry, ToolRegistry>();
+// builder.Services.AddScoped<ToolExecutor>();
 
 // Legacy providers are intentionally kept in the source tree for reference.
 // Their registrations are disabled so all AI requests use Semantic Kernel + Gemini.
@@ -106,7 +105,7 @@ builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemi
 var geminiOptions = builder.Configuration.GetSection("Gemini").Get<GeminiOptions>() ?? new();
 
 #pragma warning disable SKEXP0070
-builder
+var kernelBuilder = builder
     .Services.AddKernel()
     .AddGoogleAIGeminiChatCompletion(geminiOptions.ChatModel, geminiOptions.ApiKey)
     .AddGoogleAIEmbeddingGenerator(
@@ -114,6 +113,7 @@ builder
         geminiOptions.ApiKey,
         dimensions: geminiOptions.EmbeddingDimensions
     );
+kernelBuilder.Plugins.AddFromType<SearchServicesPlugin>("Services");
 #pragma warning restore SKEXP0070
 
 builder.Services.AddScoped<IAIProvider, GeminiProvider>();
