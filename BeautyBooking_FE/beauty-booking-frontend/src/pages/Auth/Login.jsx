@@ -1,5 +1,6 @@
-import { Form, Input, Button, Card, Typography,Checkbox } from 'antd';
+import { Form, Input, Button, Card, Typography, Checkbox, Divider, message } from 'antd';
 import { UserOutlined, LockOutlined,HomeOutlined } from '@ant-design/icons';
+import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useApiAction } from '../../hooks/useApiAction'; // MỚI: Import useApiAction
 import authApi from '../../api/authApi';
@@ -22,6 +23,38 @@ const Login = () => {
   // MỚI: Khởi tạo hook quản lý action
   const { actionLoading, execute } = useApiAction();
 
+  const handleLoginSuccess = (response, remember, rememberedEmail = null) => {
+    const token = response.accessToken;
+    const userInfo = response.user;
+
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('user');
+
+    if (remember) {
+      localStorage.setItem('remember', 'true');
+      localStorage.setItem('accessToken', token);
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      if (rememberedEmail) {
+        localStorage.setItem('rememberedEmail', rememberedEmail);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+    } else {
+      sessionStorage.setItem('accessToken', token);
+      sessionStorage.setItem('user', JSON.stringify(userInfo));
+      localStorage.removeItem('rememberedEmail');
+      localStorage.removeItem('remember');
+    }
+
+    if (userInfo.role === 'Admin' || userInfo.role === 'Staff') {
+      navigate('/admin');
+    } else {
+      navigate(from, { replace: true });
+    }
+  };
+
   const onFinish = async (values) => {
     // 1. Thực thi API qua hook. Lấy về trạng thái success và dữ liệu response
     const { success, data: response } = await execute(
@@ -33,35 +66,25 @@ const Login = () => {
       "Sai tài khoản hoặc mật khẩu"
     );
 
-    // 2. Nếu thành công, tiến hành lưu token và điều hướng
     if (success && response) {
-      const token = response.accessToken; // Thay bằng đúng tên trường BE trả về nếu khác
-      const userInfo = response.user; // Thay bằng đúng tên trường BE trả về nếu khác
+      handleLoginSuccess(response, values.remember, values.email);
+    }
+  };
 
-      // Trước khi lưu, xóa sạch token và user cũ để tránh rối nếu có
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('accessToken');
-      sessionStorage.removeItem('user');
-      // Lưu vào LocalStorage
-      if(values.remember) {
-        localStorage.setItem('remember', 'true');
-        localStorage.setItem('accessToken', token); 
-        localStorage.setItem('user', JSON.stringify(userInfo));
-        localStorage.setItem('rememberedEmail', values.email); // Lưu email để tự động điền lần sau
-      }else {
-        sessionStorage.setItem('accessToken', token); 
-        sessionStorage.setItem('user', JSON.stringify(userInfo));
-        localStorage.removeItem('rememberedEmail'); // Xóa email đã lưu nếu không nhớ đăng nhập
-        localStorage.removeItem('remember');
-      }
+  const handleGoogleSuccess = async ({ credential }) => {
+    if (!credential) {
+      message.error('Google không trả về thông tin đăng nhập.');
+      return;
+    }
 
-      // 3. CHUYỂN HƯỚNG THÔNG MINH DỰA VÀO QUYỀN (ROLE)
-      if (userInfo.role === 'Admin' || userInfo.role === 'Staff') {
-        navigate('/admin'); // Trực chỉ trang Quản trị
-      } else {
-        navigate(from, { replace: true }); // Khách hàng thì ra trang chủ đặt lịch
-      }
+    const { success, data: response } = await execute(
+      () => authApi.signInGoogle(credential),
+      'Đăng nhập Google thành công!',
+      'Không thể đăng nhập bằng Google.',
+    );
+
+    if (success && response) {
+      handleLoginSuccess(response, form.getFieldValue('remember') ?? true);
     }
   };
 
@@ -102,6 +125,16 @@ const Login = () => {
               Đăng nhập
             </Button>
           </Form.Item>
+          <Divider plain>Hoặc</Divider>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => message.error('Không thể mở đăng nhập Google.')}
+              text="signin_with"
+              shape="rectangular"
+              width="350"
+            />
+          </div>
           <div style={{ textAlign: 'center', marginTop: 10 }}>
             <Link to="/" style={{ color: '#eb2f96' }}>
               <HomeOutlined /> Về trang chủ

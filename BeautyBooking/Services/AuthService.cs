@@ -5,6 +5,7 @@ using BeautyBooking.Entities;
 using BeautyBooking.Infrastructure;
 using BeautyBooking.Interface.Repository;
 using BeautyBooking.Interface.Service;
+using Google.Apis.Auth;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -25,14 +26,17 @@ namespace BeautyBooking.Services
         private readonly AvatarDefaultSettings _avatarSettings;
         private readonly JwtOptions _jwtOptions;
         private readonly SymmetricSecurityKey _securityKey;
+        private readonly GoogleAuthOptions _googleAuthOptions;
 
         public AuthService(IUserRepository userRepo, IMapper mapper, IOptions<JwtOptions> jwtOptions, 
-            SymmetricSecurityKey securityKey, AvatarDefaultSettings avatarSettings, IRefreshTokenRepository tokenRepository)
+            IOptions<GoogleAuthOptions> googleAuthOptions, SymmetricSecurityKey securityKey,
+            AvatarDefaultSettings avatarSettings, IRefreshTokenRepository tokenRepository)
         {
             _userRepo = userRepo;
             _mapper = mapper;
             _jwtOptions = jwtOptions.Value;
             _securityKey = securityKey;
+            _googleAuthOptions = googleAuthOptions.Value;
             _avatarSettings = avatarSettings;
             _tokenRepository = tokenRepository;
         }
@@ -43,9 +47,86 @@ namespace BeautyBooking.Services
             if (user == null || user.IsDeleted || !user.IsActive)
                 return null;
 
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            if (string.IsNullOrWhiteSpace(user.PasswordHash)
+                || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 return null;
 
+            return await CreateLoginSessionAsync(user);
+        }
+
+        public async Task<LoginResponse?> LoginWithGoogleAsync(
+            GoogleLoginRequest request,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (string.IsNullOrWhiteSpace(_googleAuthOptions.ClientId))
+                throw new InvalidOperationException("Google Sign-In chưa được cấu hình.");
+            if (string.IsNullOrWhiteSpace(request.IdToken))
+                throw new ArgumentException("Google ID token không được để trống.");
+
+            GoogleJsonWebSignature.Payload payload;
+            try
+            {
+                payload = await GoogleJsonWebSignature.ValidateAsync(
+                    request.IdToken,
+                    new GoogleJsonWebSignature.ValidationSettings
+                    {
+                        Audience = [_googleAuthOptions.ClientId],
+                    }
+                );
+            }
+            catch (InvalidJwtException)
+            {
+                return null;
+            }
+
+            if (!payload.EmailVerified || string.IsNullOrWhiteSpace(payload.Email))
+                return null;
+
+            var user = await _userRepo.GetByGoogleSubjectAsync(payload.Subject);
+            if (user is null)
+            {
+                user = await _userRepo.GetByEmailForAuthenticationAsync(payload.Email);
+                if (user is null)
+                {
+                    var fullName = string.IsNullOrWhiteSpace(payload.Name)
+                        ? payload.Email.Split('@')[0]
+                        : payload.Name.Trim();
+                    user = new User
+                    {
+                        FullName = fullName,
+                        Email = payload.Email.Trim(),
+                        GoogleSubject = payload.Subject,
+                        PasswordHash = null,
+                        Role = UserRole.Customer,
+                        AvatarUrl = string.IsNullOrWhiteSpace(payload.Picture)
+                            ? string.Format(
+                                _avatarSettings.DefaultAvatarUrl,
+                                Uri.EscapeDataString(fullName)
+                            )
+                            : payload.Picture,
+                        AvatarPublicId = null,
+                    };
+                    await _userRepo.CreateAsync(user);
+                }
+                else
+                {
+                    if (user.IsDeleted || !user.IsActive)
+                        return null;
+                    user.GoogleSubject = payload.Subject;
+                }
+
+                await _userRepo.SaveChangesAsync();
+            }
+
+            if (user.IsDeleted || !user.IsActive)
+                return null;
+
+            return await CreateLoginSessionAsync(user);
+        }
+
+        private async Task<LoginResponse> CreateLoginSessionAsync(User user)
+        {
             var tokenString = GenerateToken(user);
             var refreshTokenString = GenerateRefreshToken();
             var refreshEntity = new RefreshToken

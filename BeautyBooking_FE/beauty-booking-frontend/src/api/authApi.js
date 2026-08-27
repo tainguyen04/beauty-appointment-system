@@ -7,6 +7,9 @@ const authApi = {
     return axiosClient.post(url, data);
   },
 
+  signInGoogle: (idToken) =>
+    axiosClient.post('/Auth/signin-google', { idToken }),
+
   // Hàm gọi API đăng ký
   register: (data) => {
     const url = '/Auth/register';

@@ -29,6 +29,38 @@ namespace BeautyBooking.Controllers
             return Ok(result);
         }
 
+        [HttpPost("signin-google")]
+        public async Task<ActionResult<LoginResponse>> SignInGoogle(
+            [FromBody] GoogleLoginRequest request
+        )
+        {
+            try
+            {
+                var result = await _authService.LoginWithGoogleAsync(
+                    request,
+                    HttpContext.RequestAborted
+                );
+                if (result is null)
+                    return Unauthorized(new { Message = "Google ID token không hợp lệ." });
+
+                SetRefreshTokenCookie(result.RefreshToken);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.StartsWith("Google Sign-In")
+            )
+            {
+                return StatusCode(
+                    StatusCodes.Status503ServiceUnavailable,
+                    new { Message = ex.Message }
+                );
+            }
+        }
+
         [HttpPost("register")]
         public async Task<ActionResult<UserResponse>> Register([FromBody] RegisterRequest request)
         {
