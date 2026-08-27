@@ -18,7 +18,7 @@ Beauty Appointment System là nền tảng đặt lịch dịch vụ làm đẹp
 
 ### Khách hàng
 
-- Đăng ký, đăng nhập và cập nhật hồ sơ cá nhân.
+- Đăng ký, đăng nhập bằng email/mật khẩu hoặc Google và cập nhật hồ sơ cá nhân.
 - Chọn dịch vụ, địa điểm, ngày giờ và nhân viên để đặt lịch.
 - Xem lịch hẹn của mình.
 - Chat với AI Assistant và tiếp tục các cuộc hội thoại đã lưu.
@@ -46,6 +46,7 @@ Beauty Appointment System là nền tảng đặt lịch dịch vụ làm đẹp
 - Entity Framework Core 8, SQL Server và Code First migrations.
 - Repository pattern, dependency injection, Scrutor và AutoMapper.
 - JWT Bearer Authentication, Refresh Token trong HttpOnly Cookie và phân quyền theo role.
+- Google Identity Services và `Google.Apis.Auth` để xác minh Google ID token tại backend.
 - BCrypt để băm mật khẩu.
 - Cloudinary để lưu ảnh.
 - Swagger/OpenAPI.
@@ -60,6 +61,7 @@ Beauty Appointment System là nền tảng đặt lịch dịch vụ làm đẹp
 - Vite `8`.
 - Ant Design `6` và Ant Design Icons.
 - Axios với interceptor gắn JWT và refresh access token.
+- `@react-oauth/google` để hiển thị nút Google Sign-In và nhận ID token.
 - Tiptap cho nội dung Helpdesk.
 - Leaflet và React Leaflet cho dữ liệu vị trí.
 
@@ -126,6 +128,7 @@ Knowledge hệ thống được tổng hợp từ:
 - Helpdesk đang hoạt động.
 - Dịch vụ đang hoạt động.
 - Tài liệu do Admin thêm qua `POST /api/AI/knowledge`.
+- File Markdown hoặc text do Admin tải lên qua `POST /api/AI/knowledge/file`.
 
 RAG hiện sử dụng:
 
@@ -152,6 +155,7 @@ Admin có thể thực hiện tại `Quản lý danh mục → Kiến thức AI 
 | `GET` | `/api/AI/conversations` | JWT | Lấy các conversation của user hiện tại |
 | `GET` | `/api/AI/conversations/{id}/messages` | JWT | Lấy summary và messages sau khi kiểm tra ownership |
 | `POST` | `/api/AI/knowledge` | Admin | Thêm tài liệu, chunks và embeddings |
+| `POST` | `/api/AI/knowledge/file` | Admin | Upload file `.md`/`.txt`, sau đó tạo chunks và embeddings |
 | `POST` | `/api/AI/knowledge/reindex` | Admin | Tạo lại knowledge hệ thống |
 
 Swagger cung cấp danh sách đầy đủ các API nghiệp vụ khác như Auth, Appointment, BeautyService, Category, User, StaffProfile, StaffDayOff, WorkSchedule, Helpdesk, Dashboard và địa điểm.
@@ -163,6 +167,7 @@ Swagger cung cấp danh sách đầy đủ các API nghiệp vụ khác như Aut
 - SQL Server/Azure SQL có hỗ trợ kiểu `vector` và hàm `VECTOR_DISTANCE` được dùng trong source hiện tại.
 - Gemini API key và tên chat/embedding model hợp lệ.
 - Cloudinary account nếu sử dụng chức năng upload ảnh.
+- Google OAuth Client ID loại Web Application nếu sử dụng Google Sign-In.
 
 ## Cấu hình backend
 
@@ -177,6 +182,9 @@ Tạo hoặc cập nhật `BeautyBooking/appsettings.Development.json`. Không c
     "Key": "",
     "Issuer": "",
     "Audience": ""
+  },
+  "GoogleAuth": {
+    "ClientId": ""
   },
   "Gemini": {
     "ApiKey": "",
@@ -213,6 +221,7 @@ Gemini__ChatModel
 Gemini__EmbeddingModel
 ConnectionStrings__DefaultConnection
 Jwt__Key
+GoogleAuth__ClientId
 ```
 
 Backend có thể khởi động khi Gemini key/model còn trống, nhưng endpoint AI sẽ trả lỗi cấu hình có kiểm soát khi được gọi.
@@ -244,12 +253,14 @@ Frontend đọc API base URL từ biến môi trường Vite:
 
 ```text
 VITE_API_BASE_URL
+VITE_GOOGLE_CLIENT_ID
 ```
 
 File `.env` đã được Git ignore. Không đặt secret trong biến có prefix `VITE_` vì giá trị này được đóng gói vào JavaScript phía trình duyệt. Mặc định dự án dùng backend production:
 
 ```dotenv
 VITE_API_BASE_URL=https://beauty-booking-7gd4.onrender.com/api
+VITE_GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
 ```
 
 ```powershell
@@ -273,7 +284,7 @@ cd BeautyBooking_FE/beauty-booking-frontend
 npm run dev
 ```
 
-Để frontend gọi backend local, tạm đổi `.env` thành `VITE_API_BASE_URL=https://localhost:7254/api` trước khi chạy `npm run dev`. Sau khi sửa `.env`, cần khởi động lại Vite. Đổi lại URL production trước khi build/deploy. Nếu biến này bị thiếu, frontend sẽ báo lỗi cấu hình thay vì âm thầm dùng URL hard-code. Environment variable trên nền tảng triển khai vẫn có thể ghi đè giá trị trong file.
+Để frontend gọi backend local, tạm đổi `.env` thành `VITE_API_BASE_URL=https://localhost:7254/api` trước khi chạy `npm run dev`. Sau khi sửa `.env`, cần khởi động lại Vite. Đổi lại URL production trước khi build/deploy. Nếu `VITE_API_BASE_URL` hoặc `VITE_GOOGLE_CLIENT_ID` bị thiếu, frontend sẽ báo lỗi cấu hình thay vì âm thầm dùng giá trị hard-code. Environment variable trên nền tảng triển khai vẫn có thể ghi đè giá trị trong file.
 
 Nếu trình duyệt chưa tin cậy HTTPS development certificate của .NET, chạy `dotnet dev-certs https --trust` một lần trước khi khởi động backend.
 
@@ -296,11 +307,48 @@ Hệ thống có ba role:
 
 Access token được gửi trong header `Authorization: Bearer <token>`. Refresh token được gửi bằng HttpOnly Cookie. Axios interceptor tự gắn access token và thử refresh khi API trả `401`.
 
+### Đăng nhập Google
+
+BeautyBooking sử dụng Google Identity Services theo luồng ID token:
+
+1. Nút Google ở frontend trả về Google ID token.
+2. Frontend gửi token đến `POST /api/Auth/signin-google`.
+3. Backend dùng `Google.Apis.Auth` để xác minh chữ ký, thời hạn, audience và trạng thái email verified.
+4. Backend tìm user theo `google_subject`; nếu chưa có thì liên kết với tài khoản cùng email hoặc tạo Customer mới.
+5. BeautyBooking phát hành access token và refresh token của hệ thống như đăng nhập bằng mật khẩu.
+
+Request:
+
+```json
+{
+  "idToken": "GOOGLE_ID_TOKEN"
+}
+```
+
+| Method | Endpoint | Quyền | Mô tả |
+|---|---|---|---|
+| `POST` | `/api/Auth/login` | Public | Đăng nhập bằng email và mật khẩu |
+| `POST` | `/api/Auth/signin-google` | Public | Xác minh Google ID token và tạo phiên BeautyBooking |
+| `POST` | `/api/Auth/refresh-token` | Public + Cookie | Rotate refresh token và cấp access token mới |
+| `POST` | `/api/Auth/logout` | Public + Cookie | Thu hồi refresh token hiện tại |
+
+User được tạo qua Google luôn có role `Customer`. Tài khoản `Admin` hoặc `Staff` chỉ giữ role hiện tại khi Google được liên kết với đúng email đã có; dữ liệu từ Google không được dùng để cấp role.
+
+Trong Google Cloud Console, OAuth Client phải là Web Application và khai báo Authorized JavaScript origins:
+
+```text
+http://localhost:5173
+https://beauty-appointment-system-ui.onrender.com
+```
+
+Google Client ID là định danh công khai và được dùng ở cả backend lẫn frontend. Không đưa Google Client Secret vào frontend; luồng hiện tại không cần Client Secret.
+
 ## Database
 
 EF Core quản lý schema bằng migrations trong `BeautyBooking/EF/Migrations/`. Các nhóm bảng chính gồm:
 
 - Users, refresh tokens và staff profiles.
+- User hỗ trợ tài khoản password, Google hoặc cả hai; `google_subject` có unique filtered index.
 - Categories, services và staff-service relationships.
 - Appointments và appointment services.
 - Work schedules và staff day off.
