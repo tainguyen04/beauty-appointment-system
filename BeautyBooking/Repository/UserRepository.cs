@@ -31,6 +31,22 @@ namespace BeautyBooking.Repository
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
 
+        public async Task<User?> GetByGoogleSubjectAsync(string googleSubject)
+        {
+            return await _entities
+                .IgnoreQueryFilters()
+                .Include(u => u.StaffProfile)
+                .FirstOrDefaultAsync(u => u.GoogleSubject == googleSubject);
+        }
+
+        public async Task<User?> GetByEmailForAuthenticationAsync(string email)
+        {
+            return await _entities
+                .IgnoreQueryFilters()
+                .Include(u => u.StaffProfile)
+                .FirstOrDefaultAsync(u => u.Email == email);
+        }
+
         public async Task<PagedResult<User>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize)
         {
             return await _entities

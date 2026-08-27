@@ -17,6 +17,11 @@ namespace BeautyBooking.Infrastructure.Configurations
             builder.Property(u => u.Email)
                 .IsRequired()
                 .HasMaxLength(150);
+            builder.Property(u => u.GoogleSubject)
+                .HasMaxLength(255);
+            builder.HasIndex(u => u.GoogleSubject)
+                .IsUnique()
+                .HasFilter("[google_subject] IS NOT NULL");
             builder.Property(u => u.Phone)
                 .HasMaxLength(20);
             builder.HasQueryFilter(u => !u.IsDeleted);

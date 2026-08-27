@@ -143,6 +143,7 @@ builder.Services.Configure<AIOptions>(builder.Configuration.GetSection("AI"));
 builder.Services.Configure<OpenAIOptions>(builder.Configuration.GetSection("OpenAI"));
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<GoogleAuthOptions>(builder.Configuration.GetSection("GoogleAuth"));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
 

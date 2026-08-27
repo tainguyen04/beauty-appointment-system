@@ -8,6 +8,8 @@ namespace BeautyBooking.Interface.Repository
     {
         Task<PagedResult<User>> GetPagedWithProfileAsync(int pageNumber, int pageSize);
         Task<User?> GetByEmailAsync(string email);
+        Task<User?> GetByEmailForAuthenticationAsync(string email);
+        Task<User?> GetByGoogleSubjectAsync(string googleSubject);
         Task<bool> IsEmailUniqueAsync(string email);
         Task<User?> GetWithProfileByIdAsync(int id);
         Task<PagedResult<User>> GetUsersByRoleAsync(UserRole role, int pageNumber, int pageSize);

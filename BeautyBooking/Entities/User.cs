@@ -5,7 +5,8 @@
         public string FullName { get; set; } = null!;
         public string Email { get; set; } = null!;
         public string? Phone { get; set; }
-        public string PasswordHash { get; set; } = null!;
+        public string? PasswordHash { get; set; }
+        public string? GoogleSubject { get; set; }
         public UserRole Role { get; set; } = UserRole.Customer;
         public string? AvatarUrl { get; set; }
         public string? AvatarPublicId { get; set; }
